@@ -12,3 +12,7 @@ Reinicie a placa novamente, agora no armbian-config conecte no wifi para poder i
 * Atualize o APT (sudo apt update)
 * Instale o net-tools (sudo apt install net-tools)
 * Instale o ambiente gráfico XFCE pelo armbian-config
+* Instale o python3-full (sudo apt install python3-full)
+* Instale o python3-pip e o pipx (sudo apt install python3-pip pipx)
+* Instale o ultralytics (pipx install ultralytics)
+* 
