@@ -9,6 +9,8 @@ Após isso, ligue a placa no pelo eMMC e altere o arquivo /boot/armbianEnv.txt
 Insira a linha *overlays=bananapi-m4-sdio-wifi-bt* para o wifi funcionar.
 Reinicie a placa novamente, agora no armbian-config conecte no wifi para poder instalar e atualizar os demais itens.
 
+Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuração do conector CN2 (USB0) para isso precisamos editar o arquivo DTB dele. E alterar as linhas para desativar o USB OTG e ATIVAR os dois modos HOSTs ta porta USB0.
+
 * Atualize o APT (sudo apt update)
 * Instale o net-tools (sudo apt install net-tools)
 * Instale o ambiente gráfico XFCE pelo armbian-config
