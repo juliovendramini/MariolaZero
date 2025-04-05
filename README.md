@@ -21,5 +21,5 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
     * source meu_venv/bin/activate  
     * pip install ultralytics
     * python meu_script.py (como rodar o script)
-* para utilizar as seriais no python é necessário instalar a biblioteca serial (pip install serial), ATENÇÂO, sempre que for usar o PIP, você deve usar o comando "source meu_venv/bin/activate" antes
+* para utilizar as seriais no python é necessário instalar a biblioteca serial (pip install serial pyserial), ATENÇÂO, sempre que for usar o PIP, você deve usar o comando "source meu_venv/bin/activate" antes
 * 
