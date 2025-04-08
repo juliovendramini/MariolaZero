@@ -21,5 +21,7 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
     * source meu_venv/bin/activate  
     * pip install ultralytics
     * python meu_script.py (como rodar o script)
-* para utilizar as seriais no python é necessário instalar a biblioteca serial (pip install serial pyserial), ATENÇÂO, sempre que for usar o PIP, você deve usar o comando "source meu_venv/bin/activate" antes (caso ainda nao esteja com o ambiente personalizado já aberto)
-* 
+* Para utilizar as seriais no python é necessário instalar a biblioteca serial (pip install serial pyserial), ATENÇÂO, sempre que for usar o PIP, você deve usar o comando "source meu_venv/bin/activate" antes (caso ainda nao esteja com o ambiente personalizado já aberto)
+* Para acessar os pinos GPIO do BananaPI é necessário instalar a biblioteca (python3-libgpiod)
+     * Instale python3-libgpiod (sudo apt install python3-libgpiod)
+     * 
