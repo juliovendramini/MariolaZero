@@ -32,4 +32,5 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
          * sudo udevadm control --reload-rules
          * sudo udevadm trigger
       * Reinicie a placa
-*
+* Para usar o PWM é necessario fazer um overlay, para isso, baixe o arquivo pwm-pi12.dts, coloque na pasta do usuario e rode o comando
+     *
