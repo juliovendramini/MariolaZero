@@ -24,4 +24,12 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
 * Para utilizar as seriais no python é necessário instalar a biblioteca serial (pip install serial pyserial), ATENÇÂO, sempre que for usar o PIP, você deve usar o comando "source meu_venv/bin/activate" antes (caso ainda nao esteja com o ambiente personalizado já aberto)
 * Para acessar os pinos GPIO do BananaPI é necessário instalar a biblioteca (python3-libgpiod)
      * Instale python3-libgpiod (sudo apt install python3-libgpiod)
-     * 
+     * Crie o grupo (sudo groupadd gpio)
+     * Adicione o usuario ao grupo de GPIO (sudo usermod -aG gpio $USER)
+     * Crie o arquivo gipo-rules "sudo nano /etc/udev/rules.d/99-gpio.rules"
+          * Dentro do arquivo adicione KERNEL=="gpio*", GROUP="gpio", MODE="0660"
+      * Recarregue as regras do udev
+         * sudo udevadm control --reload-rules
+         * sudo udevadm trigger
+      * Reinicie a placa
+*
