@@ -34,5 +34,12 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
       * Reinicie a placa
 * Para acessar os sensores i2c é necessário instalar o modulo adafruit-blinka e o módulo do multiplexador i2c adafruit-circuitpython-tca9548a (pip install adafruit-blinka adafruit-circuitpython-tca9548a gpiod)
 * Para utilizar o sensor de cor TCS34725 via porta i2c é necessário instalar o módulo adafruit-circuitpython-tcs34725 (pip install adafruit-circuitpython-tcs34725)
+* Para usar o sensor a laser VL53lox via porta i2c...
+* Para poder executar os scripts via python com o usuario normal e acessar os sensores:
+   * monte o debug (sudo mount -t debugfs none /sys/kernel/debug)
+   * Verifique se o grupo existe: (grep gpio /etc/group)
+      * Se não existir, rode: (sudo groupadd gpio)
+   * Adicione o usuario ao grupo (sudo usermod -aG gpio $USER)
+   * Dê permissão para ao diretório (sudo chmod -R a+r /sys/kernel/debug/gpio)
 * Para usar o PWM é necessario fazer um overlay, para isso, baixe o arquivo pwm-pi12.dts, coloque na pasta do usuario e rode o comando
      *
