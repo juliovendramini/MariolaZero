@@ -9,11 +9,12 @@ Após isso, ligue a placa no pelo eMMC rode o comando armbian-config (sudo armbi
 Entre em System -> Kernel -> SY210 Manage device tree overlay e Ative as seguintes opções:
 .
 ![image](https://github.com/user-attachments/assets/436cc935-2355-4c8a-824f-18c14ba28864)
-
 Insira a linha *overlays=bananapi-m4-sdio-wifi-bt* para o wifi funcionar.
+
 Reinicie a placa novamente, agora no armbian-config conecte no wifi para poder instalar e atualizar os demais itens.
 
 Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuração do conector CN2 (USB0) para isso precisamos editar o arquivo DTB dele. E alterar as linhas para desativar o USB OTG e ATIVAR os dois modos HOSTs ta porta USB0.
+(TERMINAR!!!)
 
 * Atualize o APT (sudo apt update)
 * Instale alguns pacotes iniciais (sudo apt install net-tools i2c-tools)
@@ -43,7 +44,10 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
    * Crie o grupo i2c (sudo groupadd i2c) 
    * Adicione seu usuário ao grupo i2c (sudo usermod -aG i2c $USER)
    * Agora reinicie a placa
-* Para acessar os sensores i2c é necessário instalar o modulo adafruit-blinka e o módulo do multiplexador i2c adafruit-circuitpython-tca9548a (pip install adafruit-blinka adafruit-circuitpython-tca9548a gpiod)
+* A porta i2c utilizada para acesso aos sensores é a i2c-1 atravez do multiplexador 
+
+
+
 * Para utilizar o sensor de cor TCS34725 via porta i2c é necessário instalar o módulo adafruit-circuitpython-tcs34725 (pip install adafruit-circuitpython-tcs34725)
 * Para usar o sensor a laser VL53lox via porta i2c...
 * Para poder executar os scripts via python com o usuario normal e acessar os sensores:
