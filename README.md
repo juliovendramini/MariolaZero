@@ -33,5 +33,6 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
          * sudo udevadm trigger
       * Reinicie a placa
 * Para acessar os sensores i2c é necessário instalar o modulo adafruit-blinka (pip install adafruit-blinka)
+* Para utilizar o sensor de cor TCS34725 via porta i2c é necessário instalar o módulo adafruit-circuitpython-tcs34725 (pip install adafruit-circuitpython-tcs34725)
 * Para usar o PWM é necessario fazer um overlay, para isso, baixe o arquivo pwm-pi12.dts, coloque na pasta do usuario e rode o comando
      *
