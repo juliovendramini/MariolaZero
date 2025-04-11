@@ -32,7 +32,9 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
      * Crie o grupo (sudo groupadd gpio)
      * Adicione o usuario ao grupo de GPIO (sudo usermod -aG gpio $USER)
      * Crie o arquivo gipo-rules "sudo nano /etc/udev/rules.d/99-gpio.rules"
-          * Dentro do arquivo adicione KERNEL=="gpio*", GROUP="gpio", MODE="0660"
+          * Dentro do arquivo adicione as duas linhas:
+             SUBSYSTEM=="gpio", KERNEL=="gpiochip[0-9]*", GROUP="gpio", MODE="0660"
+             SUBSYSTEM=="gpio", KERNEL=="gpio[0-9]*", GROUP="gpio", MODE="0660"
       * Recarregue as regras do udev
          * sudo udevadm control --reload-rules
          * sudo udevadm trigger
@@ -44,8 +46,8 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
    * Crie o grupo i2c (sudo groupadd i2c) 
    * Adicione seu usuário ao grupo i2c (sudo usermod -aG i2c $USER)
    * Agora reinicie a placa
-* A porta i2c utilizada para acesso aos sensores é a i2c-1 atravez do multiplexador 
-
+* A porta i2c utilizada para acesso aos sensores é a i2c-1 através do multiplexador TCA9548A
+* Instale a biblioteca para o sensor VL53l0x (pip install vl53l0x)
 
 
 * Para utilizar o sensor de cor TCS34725 via porta i2c é necessário instalar o módulo adafruit-circuitpython-tcs34725 (pip install adafruit-circuitpython-tcs34725)
