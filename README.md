@@ -48,6 +48,10 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
    * Agora reinicie a placa
 * A porta i2c utilizada para acesso aos sensores é a i2c-1 através do multiplexador TCA9548A
 * Instale a biblioteca para o sensor VL53l0x (pip install vl53l0x)
+* Iniciar a tela e o teclado no boot
+   * Crie um script sh na pasta do usuário
+   * Coloque o código python em um loop nesse sh
+   * Crie um serviço para iniciar o script toda vez que a placa ligar
 
 
 * Para utilizar o sensor de cor TCS34725 via porta i2c é necessário instalar o módulo adafruit-circuitpython-tcs34725 (pip install adafruit-circuitpython-tcs34725)
