@@ -28,7 +28,7 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
      * reinicie a placa
 
 * Atualize o APT (sudo apt update)
-* Instale alguns pacotes iniciais (sudo apt install net-tools i2c-tools build-essential)
+* Instale alguns pacotes iniciais (sudo apt install net-tools i2c-tools build-essential libgl1)
 * Instale o ambiente gráfico XFCE pelo armbian-config
 * Instale o python3-full (sudo apt install python3-full)
 * Instale o python3-pip e o pipx (sudo apt install python3-pip pipx)
