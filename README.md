@@ -14,7 +14,13 @@ Insira a linha *overlays=bananapi-m4-sdio-wifi-bt* para o wifi funcionar.
 Reinicie a placa novamente, agora no armbian-config conecte no wifi para poder instalar e atualizar os demais itens.
 
 Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuração do conector CN2 (USB0) para isso precisamos editar o arquivo DTB dele. E alterar as linhas para desativar o USB OTG e ATIVAR os dois modos HOSTs ta porta USB0.
-(TERMINAR!!!)
+   * Primeiro passo é transformar o dtb em dts
+      * Copie o arquivo para a pasta do usuario (cp /boot/dtb-6.6.75-current-sunxi64/allwinner/sun50i-h618-bananapi-m4-zero.dtb ~/)
+      * Transforme ele em dts (dtc -O dts sun50i-h618-bananapi-m4-zero.dtb -o sun50i-h618-bananapi-m4-zero.dts)
+      * abra o arquivo dts criado com o nano
+         * no bloco usb@5100000, coloque ele como *status = "disabled";*
+         * no bloco usb@5101000, coloque ele como *status = "okay"*
+         * no bloco usb@5101400, coloque ele como *status = "okay"*
 
 * Atualize o APT (sudo apt update)
 * Instale alguns pacotes iniciais (sudo apt install net-tools i2c-tools)
