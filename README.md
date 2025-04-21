@@ -28,7 +28,7 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
      * reinicie a placa
 
 * Atualize o APT (sudo apt update)
-* Instale alguns pacotes iniciais (sudo apt install net-tools i2c-tools)
+* Instale alguns pacotes iniciais (sudo apt install net-tools i2c-tools build-essential)
 * Instale o ambiente gráfico XFCE pelo armbian-config
 * Instale o python3-full (sudo apt install python3-full)
 * Instale o python3-pip e o pipx (sudo apt install python3-pip pipx)
@@ -39,7 +39,7 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
     * python meu_script.py (como rodar o script)
 * Para utilizar as seriais no python é necessário instalar a biblioteca serial (pip install serial pyserial), ATENÇÂO, sempre que for usar o PIP, você deve usar o comando "source meu_venv/bin/activate" antes (caso ainda nao esteja com o ambiente personalizado já aberto)
 * Para acessar os pinos GPIO do BananaPI é necessário instalar a biblioteca (python3-libgpiod)
-     * Instale python3-libgpiod e a libgpiod-dev (sudo apt install python3-libgpiod libgpiod-dev)
+     * Instale o que é necessário (sudo apt install python3-libgpiod libgpiod-dev python3-dev)
      * Crie o grupo (sudo groupadd gpio)
      * Adicione o usuario ao grupo de GPIO (sudo usermod -aG gpio $USER)
      * Crie o arquivo gipo-rules "sudo nano /etc/udev/rules.d/99-gpio.rules"
@@ -50,7 +50,7 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
          * sudo udevadm control --reload-rules
          * sudo udevadm trigger
       * Reinicie a placa
-* Para acessar os sensores i2c é necessário instalar o modulo smbus2  (pip install smbus2)
+* Para acessar os sensores i2c é necessário instalar o modulo smbus2 e algumas bibliotecas  (pip install smbus2 gpiod netifaces)
    * Agora temos que dar permissão de acesso as portas i2c
    * Crie um arquivo de regra udev (sudo nano /etc/udev/rules.d/99-i2c.rules)
       * Coloque dentro do arquivo (KERNEL=="i2c-[0-9]*", GROUP="i2c", MODE="0660")
@@ -58,6 +58,7 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
    * Adicione seu usuário ao grupo i2c (sudo usermod -aG i2c $USER)
    * Agora reinicie a placa
 * A porta i2c utilizada para acesso aos sensores é a i2c-1 através do multiplexador TCA9548A
+* Para a tela oled funcionar temos que instalar as seguintes libs: (pip install luma.oled)
 * Possibilitar acessar via ssh sem ficar pedindo senha:
   * Gera uma chave publica no seu computador, se já fez isso antes, nao é necessário refazer (ssh-keygen -t rsa -b 4096)
   * ssh-copy-id USUARIO@IP (substituia o usuario e o IP pelo correto) (no linux)
@@ -67,7 +68,7 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
     * nano ~/.ssh/authorized_keys
     * Agora, copie o valor do arquivo id_rsa.pub e cole dentro desse arquivo, salve e saia
     * Agora, qualquer login por ssh não pedirá mais senha.
-
+* Copie a pasta do projeto menuPrincipal para /usr/share/
 
 
 * Iniciar a tela e o teclado no boot
