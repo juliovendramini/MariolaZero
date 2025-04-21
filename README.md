@@ -68,7 +68,8 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
     * nano ~/.ssh/authorized_keys
     * Agora, copie o valor do arquivo id_rsa.pub e cole dentro desse arquivo, salve e saia
     * Agora, qualquer login por ssh não pedirá mais senha.
-* Copie a pasta do projeto menuPrincipal para /usr/share/
+* Copie a pasta do projeto menuPrincipal para a pasta do usuario
+* 
 
 
 * Iniciar a tela e o teclado no boot
