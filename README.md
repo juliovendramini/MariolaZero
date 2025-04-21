@@ -44,8 +44,8 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
      * Adicione o usuario ao grupo de GPIO (sudo usermod -aG gpio $USER)
      * Crie o arquivo gipo-rules "sudo nano /etc/udev/rules.d/99-gpio.rules"
           * Dentro do arquivo adicione as duas linhas:
-             SUBSYSTEM=="gpio", KERNEL=="gpiochip[0-9]*", GROUP="gpio", MODE="0660"
-             SUBSYSTEM=="gpio", KERNEL=="gpio[0-9]*", GROUP="gpio", MODE="0660"
+             - SUBSYSTEM=="gpio", KERNEL=="gpiochip[0-9]*", GROUP="gpio", MODE="0660"
+             - SUBSYSTEM=="gpio", KERNEL=="gpio[0-9]*", GROUP="gpio", MODE="0660"
       * Recarregue as regras do udev
          * sudo udevadm control --reload-rules
          * sudo udevadm trigger
