@@ -25,7 +25,7 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
      * vamos fazer um backup da versão original e depois substituir com a versão editada na pasta /boot
      * cp /boot/dtb-6.6.75-current-sunxi64/allwinner/sun50i-h618-bananapi-m4-zero.dtb ~/sun50i-h618-bananapi-m4-zero.dtb_original
      * agora, copie para a pasta /boot o modificado (sudo cp ~/sun50i-h618-bananapi-m4-zero.dtb /boot/dtb-6.6.75-current-sunxi64/allwinner/sun50i-h618-bananapi-m4-zero.dtb)
-     * reiniciei a placa
+     * reinicie a placa
 
 * Atualize o APT (sudo apt update)
 * Instale alguns pacotes iniciais (sudo apt install net-tools i2c-tools)
