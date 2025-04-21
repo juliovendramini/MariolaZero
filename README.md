@@ -5,7 +5,7 @@ Como a versão utilizada é a de 8Gb de eMMC, devemos baixar a versão do armbia
 
 Agora devemos instalar no cartão SD, dar boot, configurar inicialmente a instação e depois instalar no eMMC usando o armbian-config.
 
-Após isso, ligue a placa no pelo eMMC rode o comando armbian-config (sudo armbian-config)
+Após isso, ligue a placa já pelo eMMC (remova o cartão SD) rode o comando armbian-config (sudo armbian-config)
 Entre em System -> Kernel -> SY210 Manage device tree overlay e Ative as seguintes opções:
 .
 ![image](https://github.com/user-attachments/assets/436cc935-2355-4c8a-824f-18c14ba28864)
