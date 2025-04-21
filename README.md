@@ -74,5 +74,12 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
       * O código do que colocar no serviço está no arquivo exemplo.service na pasta do projeto
     * Rode agora sudo systemctl daemon-reexec
     * Depois, sudo systemctl enable menuPrincipal.service
+* De permissão para o shutdown e outros comandos necessários sejam executados sem precisar de senha
+  * Digite sudo visudo
+  * Dentro do arquivo, no final dele, coloque as seguintes linhas:
+     - banana ALL=(ALL) NOPASSWD: /usr/bin/psd-overlay-helper
+     - banana ALL=(ALL) NOPASSWD: /sbin/shutdown
+     - banana ALL=(ALL) NOPASSWD: /sbin/ifconfig
+       (troque banana pelo usuario escolhido)
   * Reinicie a placa e veja se a tela exibirá o menu automaticamente (lembre-se a tela e o teclado devem estar encaixados para isso funcionar)
 
