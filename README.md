@@ -69,13 +69,18 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
     * Agora, copie o valor do arquivo id_rsa.pub e cole dentro desse arquivo, salve e saia
     * Agora, qualquer login por ssh não pedirá mais senha.
 * Copie a pasta do projeto menuPrincipal para a pasta do usuario
-* 
+  * Dentro da placa, coloque o arquivo start.sh para ser executável
+    * Crie um serviço para iniciar o script toda vez que a placa ligar (sudo nano /etc/systemd/system/menuPrincipal.service)
+      * O código do que colocar no serviço está no arquivo exemplo.service na pasta do projeto
+    * Rode agora sudo systemctl daemon-reexec
+    * Depois, sudo systemctl enable menuPrincipal.service
+  * Reinicie a placa e veja se a tela exibirá o menu automaticamente (lembre-se a tela e o teclado devem estar encaixados para isso funcionar)
 
 
 * Iniciar a tela e o teclado no boot
    * Crie um script sh na pasta do usuário
    * Coloque o código python em um loop nesse sh
-   * Crie um serviço para iniciar o script toda vez que a placa ligar
+   
 
 
 
