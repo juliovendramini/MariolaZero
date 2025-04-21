@@ -37,7 +37,7 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
     * source meu_venv/bin/activate  
     * pip install ultralytics
     * python meu_script.py (como rodar o script)
-* Para utilizar as seriais no python é necessário instalar a biblioteca serial (pip install serial pyserial), ATENÇÂO, sempre que for usar o PIP, você deve usar o comando "source meu_venv/bin/activate" antes (caso ainda nao esteja com o ambiente personalizado já aberto)
+* Para utilizar as seriais no python é necessário instalar a biblioteca serial (pip install pyserial), ATENÇÂO, sempre que for usar o PIP, você deve usar o comando "source meu_venv/bin/activate" antes (caso ainda nao esteja com o ambiente personalizado já aberto)
 * Para acessar os pinos GPIO do BananaPI é necessário instalar a biblioteca (python3-libgpiod)
      * Instale o que é necessário (sudo apt install python3-libgpiod libgpiod-dev python3-dev)
      * Crie o grupo (sudo groupadd gpio)
@@ -76,25 +76,3 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
     * Depois, sudo systemctl enable menuPrincipal.service
   * Reinicie a placa e veja se a tela exibirá o menu automaticamente (lembre-se a tela e o teclado devem estar encaixados para isso funcionar)
 
-
-* Iniciar a tela e o teclado no boot
-   * Crie um script sh na pasta do usuário
-   * Coloque o código python em um loop nesse sh
-   
-
-
-
-
-
-
-
-
-(ignorar por enquanto)
-* Para poder executar os scripts via python com o usuario normal e acessar os sensores:
-   * monte o debug (sudo mount -t debugfs none /sys/kernel/debug)
-   * Verifique se o grupo existe: (grep gpio /etc/group)
-      * Se não existir, rode: (sudo groupadd gpio)
-   * Adicione o usuario ao grupo (sudo usermod -aG gpio $USER)
-   * Dê permissão para ao diretório (sudo chmod -R a+r /sys/kernel/debug/gpio)
-* Para usar o PWM é necessario fazer um overlay, para isso, baixe o arquivo pwm-pi12.dts, coloque na pasta do usuario e rode o comando
-     *
