@@ -66,7 +66,10 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
     * mkdir -p ~/.ssh
     * nano ~/.ssh/authorized_keys
     * Agora, copie o valor do arquivo id_rsa.pub e cole dentro desse arquivo, salve e saia
-  * 
+    * Agora, qualquer login por ssh não pedirá mais senha.
+
+
+
 * Iniciar a tela e o teclado no boot
    * Crie um script sh na pasta do usuário
    * Coloque o código python em um loop nesse sh
