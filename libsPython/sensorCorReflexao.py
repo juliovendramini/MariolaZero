@@ -54,6 +54,37 @@ class CorReflexao:
                 return None
         return self.lista[0:4]
     
+    def leRGBC(self,sensor):
+        # Atualiza os dados antes de ler
+        if(self.atualizaInstantaneo):
+            if not self.atualiza():
+                return None
+        
+        if sensor == 1:
+            return self.lista[4:8]
+        elif sensor == 2:
+            return self.lista[8:12]
+        elif sensor == 3:
+            return self.lista[12:16]
+        else:
+            return None
+
+    def leHSV(self,sensor):
+        # Atualiza os dados antes de ler
+        if(self.atualizaInstantaneo):
+            if not self.atualiza():
+                return None
+        
+        if sensor == 1:
+            return self.lista[16:19]
+        elif sensor == 2:
+            return self.lista[19:22]
+        elif sensor == 3:
+            return self.lista[22:25]
+        else:
+            return None
+
+
     def calibraBranco(self):
         temp = self.atualizaInstantaneo
         self.atualizaInstantaneo = False
