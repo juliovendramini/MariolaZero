@@ -1,7 +1,9 @@
+import threading
+import time
 import struct
 from cronometro import Cronometro
+from portas import Portas
 class Giroscopio:
-
     GYRO = 0
     GYRO2 = 1
     GYRO_CAL = 2
@@ -9,12 +11,45 @@ class Giroscopio:
     quantidadeBytesModo = 8;
 
     
-    def __init__(self, portaSerial, atualizaInstantaneo = False):
+    def __init__(self, portaSerial):
         #8 valores
-        self.lista = [0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00]
-        self.ser = portaSerial
-        self.atualizaInstantaneo = atualizaInstantaneo
+        self.lista = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+        portas = Portas()
+        self.ser = portas.abrePortaSerial(portaSerial, 115200)
+        if self.ser == None:
+            raise Exception("Erro ao abrir a porta serial do giroscopio")
         self.setModo(self.GYRO)
+        self._thread_ativa = False
+        self._thread = None
+        self._iniciarThread()
+
+    def __del__(self):
+        """Destrutor da classe. Para a thread e fecha a porta serial."""
+        self._pararThread()
+        if self.ser is not None:
+            self.ser.close()
+
+    def _atualizaPeriodicamente(self):
+        """Função que chama `atualiza` a cada 25ms."""
+        while self._thread_ativa:
+            self.atualiza()
+            time.sleep(0.025)  # 25ms
+
+    def _iniciarThread(self):
+        """Inicia a thread para chamar `atualiza` periodicamente."""
+        if not self._thread_ativa:
+            self._thread_ativa = True
+            self._thread = threading.Thread(target=self._atualizaPeriodicamente)
+            self._thread.daemon = True  # Permite que o programa principal encerre mesmo com a thread ativa
+            self._thread.start()
+
+    def _pararThread(self):
+        """Para a thread que chama `atualiza`."""
+        self._thread_ativa = False
+        if self._thread is not None:
+            self._thread.join()
+
+
 
     def setModo(self, modo):
         if modo < 0 or modo > 2:
@@ -44,28 +79,16 @@ class Giroscopio:
             return False
 
     def leAnguloX(self):
-        # Atualiza os dados antes de ler
-        if(self.atualizaInstantaneo):
-            if not self.atualiza():
-                return None
         # tenho q usar struct pra pegar dois bytes da lista e transformar em inteiro com sinal
         angulo_x = struct.unpack('>h', bytes(self.lista[0:2]))[0]
         return angulo_x    
 
     def leAnguloY(self):
-        # Atualiza os dados antes de ler
-        if(self.atualizaInstantaneo):
-            if not self.atualiza():
-                return None
         # tenho q usar struct pra pegar dois bytes da lista e transformar em inteiro com sinal
         angulo_y = struct.unpack('>h', bytes(self.lista[2:4]))[0]
         return angulo_y    
 
     def leAnguloZ(self):
-        # Atualiza os dados antes de ler
-        if(self.atualizaInstantaneo):
-            if not self.atualiza():
-                return None
         # tenho q usar struct pra pegar dois bytes da lista e transformar em inteiro com sinal
         angulo_z = struct.unpack('>h', bytes(self.lista[4:6]))[0]
         return angulo_z    
@@ -76,14 +99,11 @@ class Giroscopio:
             self.modo = self.GYRO2
         else:
             self.modo = self.GYRO
-        self.atualiza()
+        time.sleep(0.025)
 
     def calibra(self):
-        temp = self.atualizaInstantaneo
-        self.atualizaInstantaneo = False
-        tempModo = self.modo
+        self._pararThread()
         self.setModo(self.GYRO_CAL)
-        self.atualizaInstantaneo = temp
         tempo = Cronometro()
         tempo.inicia()
         # Aguarda 5 segundos para a calibração
@@ -94,12 +114,12 @@ class Giroscopio:
             if len(dados) == 1:
                 # Atualiza a lista com os valores recebidos
                 break
+        self._iniciarThread()
         if(tempo.tempo() >= 5000):
             print("Tempo de calibração excedido")
             return False
         # Aguarda 5 segundos para a calibração
         print("Calibração concluída")
-        self.setModo(tempModo)
         return True
     
     
