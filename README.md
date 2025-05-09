@@ -7,27 +7,16 @@ Agora devemos instalar no cartão SD, dar boot, configurar inicialmente a insta�
 
 Após isso, ligue a placa já pelo eMMC (remova o cartão SD) rode o comando armbian-config (sudo armbian-config)
 Entre em System -> Kernel -> SY210 Manage device tree overlay e Ative as seguintes opções:
-.
+
 ![image](https://github.com/user-attachments/assets/ad89cdf0-6a23-4261-a717-17d71dca6672)
-
-
-Insira a linha *overlays=bananapi-m4-sdio-wifi-bt* para o wifi funcionar.
 
 Reinicie a placa novamente, agora no armbian-config conecte no wifi para poder instalar e atualizar os demais itens.
 
-Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuração do conector CN2 (USB0) para isso precisamos editar o arquivo DTB dele. E alterar as linhas para desativar o USB OTG e ATIVAR os dois modos HOSTs ta porta USB0.
-   * Primeiro passo é transformar o dtb em dts
-      * Copie o arquivo para a pasta do usuario (cp /boot/dtb-6.6.75-current-sunxi64/allwinner/sun50i-h618-bananapi-m4-zero.dtb ~/)
-      * Transforme ele em dts (dtc -O dts sun50i-h618-bananapi-m4-zero.dtb -o sun50i-h618-bananapi-m4-zero.dts)
-      * abra o arquivo dts criado com o nano
-         * no bloco usb@5100000, coloque ele como *status = "disabled";*
-         * no bloco usb@5101000, coloque ele como *status = "okay"*
-         * no bloco usb@5101400, coloque ele como *status = "okay"*
-     * agora, salve o arquivo, e converta pra dtb com o comando: (dtc -O dtb sun50i-h618-bananapi-m4-zero.dts -o sun50i-h618-bananapi-m4-zero.dtb)
-     * vamos fazer um backup da versão original e depois substituir com a versão editada na pasta /boot
-     * cp /boot/dtb-6.6.75-current-sunxi64/allwinner/sun50i-h618-bananapi-m4-zero.dtb ~/sun50i-h618-bananapi-m4-zero.dtb_original
-     * agora, copie para a pasta /boot o modificado (sudo cp ~/sun50i-h618-bananapi-m4-zero.dtb /boot/dtb-6.6.75-current-sunxi64/allwinner/sun50i-h618-bananapi-m4-zero.dtb)
-     * reinicie a placa
+* Precisamos agora ativar alguns dispositivos como portas Seriais e USBs. Para isso temos que alterar o arquivo DTB
+  * Copie o arquivo DTB para a pasta do usuario:
+    - scp sun50i-h618-bananapi-m4-zero.dtb banana@192.168.2.208:~
+    - Agora dentro do equipamento mova o arquivo para a pasta (sudo cp sun50i-h618-bananapi-m4-zero.dtb /boot/dtb-6.6.75-current-sunxi64/allwinner/)
+    - Reinicie a placa
 
 * Atualize o APT (sudo apt update)
 * Instale alguns pacotes iniciais (sudo apt install net-tools i2c-tools build-essential libgl1)
@@ -85,3 +74,21 @@ Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuraç
        (troque banana pelo usuario escolhido)
   * Reinicie a placa e veja se a tela exibirá o menu automaticamente (lembre-se a tela e o teclado devem estar encaixados para isso funcionar)
 
+
+
+
+
+
+Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuração do conector CN2 (USB0) para isso precisamos editar o arquivo DTB dele. E alterar as linhas para desativar o USB OTG e ATIVAR os dois modos HOSTs ta porta USB0.
+   * Primeiro passo é transformar o dtb em dts
+      * Copie o arquivo para a pasta do usuario (cp /boot/dtb-6.6.75-current-sunxi64/allwinner/sun50i-h618-bananapi-m4-zero.dtb ~/)
+      * Transforme ele em dts (dtc -O dts sun50i-h618-bananapi-m4-zero.dtb -o sun50i-h618-bananapi-m4-zero.dts)
+      * abra o arquivo dts criado com o nano
+         * no bloco usb@5100000, coloque ele como *status = "disabled";*
+         * no bloco usb@5101000, coloque ele como *status = "okay"*
+         * no bloco usb@5101400, coloque ele como *status = "okay"*
+     * agora, salve o arquivo, e converta pra dtb com o comando: (dtc -O dtb sun50i-h618-bananapi-m4-zero.dts -o sun50i-h618-bananapi-m4-zero.dtb)
+     * vamos fazer um backup da versão original e depois substituir com a versão editada na pasta /boot
+     * cp /boot/dtb-6.6.75-current-sunxi64/allwinner/sun50i-h618-bananapi-m4-zero.dtb ~/sun50i-h618-bananapi-m4-zero.dtb_original
+     * agora, copie para a pasta /boot o modificado (sudo cp ~/sun50i-h618-bananapi-m4-zero.dtb /boot/dtb-6.6.75-current-sunxi64/allwinner/sun50i-h618-bananapi-m4-zero.dtb)
+     * reinicie a placa
