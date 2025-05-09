@@ -8,7 +8,9 @@ Agora devemos instalar no cartão SD, dar boot, configurar inicialmente a insta�
 Após isso, ligue a placa já pelo eMMC (remova o cartão SD) rode o comando armbian-config (sudo armbian-config)
 Entre em System -> Kernel -> SY210 Manage device tree overlay e Ative as seguintes opções:
 .
-![image](https://github.com/user-attachments/assets/436cc935-2355-4c8a-824f-18c14ba28864)
+![image](https://github.com/user-attachments/assets/ad89cdf0-6a23-4261-a717-17d71dca6672)
+
+
 Insira a linha *overlays=bananapi-m4-sdio-wifi-bt* para o wifi funcionar.
 
 Reinicie a placa novamente, agora no armbian-config conecte no wifi para poder instalar e atualizar os demais itens.
