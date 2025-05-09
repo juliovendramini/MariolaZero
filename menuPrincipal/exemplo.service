@@ -1,0 +1,12 @@
+[Unit]
+Description=Meu Script no Boot
+After=network.target
+
+[Service]
+Type=simple
+User=banana ##altere no nome do usuario para o que vc usa na sua instalação
+ExecStart=/home/banana/menuPrincipal/start.sh #altere no nome do usuario para o que vc usa na sua instalação
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

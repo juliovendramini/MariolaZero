@@ -3,25 +3,27 @@ import threading
 import time
 from cronometro import Cronometro
 from portas import Portas
-class PlacaMuxVl53l0x:
+class PlacaMuxTCS34725:
 
-    DISTANCIA_4_PORTAS = 0
+    RGB_4X = 0
+    RGB_16X = 1
+    RGB_4X_LED_OFF = 2
+    RGB_16X_LED_OFF = 3
     modo = 0
-    quantidadeBytesModo = 16;
+    quantidadeBytesModo = 32;
 
     
     def __init__(self, portaSerial):
-        #8 valores
-        self.lista = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+        self.lista = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
         portas = Portas()
         self.ser = portas.abrePortaSerial(portaSerial, 115200)
         if self.ser == None:
-            raise Exception("Erro ao abrir a porta serial da placa mux Vl53l0x")
-        self.modo = self.DISTANCIA_4_PORTAS
+            raise Exception("Erro ao abrir a porta serial da placa mux TCS34725")
+        self.setModo(self.RGB_4X)
         self._thread_ativa = False
         self._thread = None
         self._iniciarThread()
-
+        
     def __del__(self):
         """Destrutor da classe. Para a thread e fecha a porta serial."""
         self._pararThread()
@@ -29,10 +31,10 @@ class PlacaMuxVl53l0x:
             self.ser.close()
 
     def _atualizaPeriodicamente(self):
-        """Função que chama `atualiza` a cada 100ms."""
+        """Função que chama `atualiza` a cada 25ms."""
         while self._thread_ativa:
             self.atualiza()
-            time.sleep(0.1)  # 100ms
+            time.sleep(0.025)  # 25ms
 
     def _iniciarThread(self):
         """Inicia a thread para chamar `atualiza` periodicamente."""
@@ -47,6 +49,11 @@ class PlacaMuxVl53l0x:
         self._thread_ativa = False
         if self._thread is not None:
             self._thread.join()
+
+    def setModo(self, modo):
+        if modo < 0 or modo >= 4:
+            raise ValueError("Modo inválido. Deve ser 0, 1, 2 ou 3")
+        self.modo = modo
 
     def atualiza(self):
         # Envia o comando para solicitar o bytes necessarios
@@ -63,20 +70,14 @@ class PlacaMuxVl53l0x:
         else:
             return False
 
-    def leDistancia(self,porta):
+    def leSensor(self, porta):
         # Atualiza os dados antes de ler
-        if(porta < 0 or porta > 3):
+        if porta < 0 or porta > 3:
             raise ValueError("Porta inválida. Deve ser 0, 1, 2 ou 3.")
-        # tenho q usar struct pra pegar dois bytes da lista e transformar em inteiro com sinal
-        indice = porta * 2
-        distancia = struct.unpack('>h', bytes(self.lista[indice:indice+2]))[0]
-        return distancia
-
-    def botaoApertado(self, porta):
-        if(porta < 0 or porta > 3):
-            raise ValueError("Porta inválida. Deve ser 0, 1, 2 ou 3.")
-        # tenho q usar struct pra pegar dois bytes da lista e transformar em inteiro com sinal
-        indice = (porta * 2) + 8
-        botao = struct.unpack('>h', bytes(self.lista[indice:indice+2]))[0]
-        return (botao == 1) # True or False
-
+        # tenho que usar struct pra pegar dois bytes da lista e transformar em inteiro com sinal
+        indice = porta * 4
+        r = struct.unpack('>h', bytes(self.lista[indice:indice+2]))[0]
+        g = struct.unpack('>h', bytes(self.lista[indice+2:indice+4]))[0]
+        b = struct.unpack('>h', bytes(self.lista[indice+4:indice+6]))[0]
+        c = struct.unpack('>h', bytes(self.lista[indice+6:indice+8]))[0]
+        return (r, g, b, c)
