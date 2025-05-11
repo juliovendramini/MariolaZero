@@ -63,6 +63,9 @@ class CorReflexao:
 
     def atualiza(self):
         # Envia o comando para solicitar os 32 bytes
+        #limpo o buffer de entrada
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
         self.ser.write(bytes([self.modo]))
         
         # Aguarda receber os self.quantidadeBytesModo bytes via serial
@@ -105,6 +108,7 @@ class CorReflexao:
 
     def calibraBranco(self):
         self._pararThread()
+        modoAntigo = self.modo
         self.setModo(self.MODO_CALIBRA_BRANCO)
         tempo = Cronometro()
         tempo.inicia()
@@ -117,16 +121,18 @@ class CorReflexao:
                 # Atualiza a lista com os valores recebidos
                 self.lista = list(dados)
                 break
+        self.setModo(modoAntigo)
+        self.ser.write(bytes([self.modo])) #envio o modo novo de calibração do branco
         self._iniciarThread()
         if(tempo.tempo() >= 5000):
             print("Tempo de calibração excedido")
             return False
-        # Aguarda 5 segundos para a calibração
         print("Calibração concluída")
         return True
     
     def calibraPreto(self):
         self._pararThread()
+        modoAntigo = self.modo
         self.setModo(self.MODO_CALIBRA_PRETO)
         tempo = Cronometro()
         tempo.inicia()
@@ -139,10 +145,12 @@ class CorReflexao:
                 # Atualiza a lista com os valores recebidos
                 self.lista = list(dados)
                 break
+        self.setModo(modoAntigo)
+        self.ser.write(bytes([self.modo])) #envio o modo novo de calibração do branco
         self._iniciarThread()
         if(tempo.tempo() >= 3000):
             print("Tempo de calibração excedido")
             return False
-        # Aguarda 5 segundos para a calibração
+        # Aguarda 3 segundos para a calibração
         print("Calibração concluída")
         return True

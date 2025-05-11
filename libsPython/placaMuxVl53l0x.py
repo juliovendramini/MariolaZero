@@ -49,6 +49,12 @@ class PlacaMuxVl53l0x:
             self._thread.join()
 
     def atualiza(self):
+        #limpo o buffer de entrada
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
+        #limpo o buffer de entrada
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
         # Envia o comando para solicitar o bytes necessarios
         self.ser.write(bytes([self.modo]))
         
