@@ -25,7 +25,7 @@ class Motores:
     ser = None
     def __init__(self, atualizaInstantaneo = False):
         self.listaServos = [0xfd, 200, 200, 200, 200, 200, 200, 0, 0, 0]
-        self.listaMotores = [0xfc, 0, 0, 0, 0, 0, 0, 0, 0, 0] #nos motores enviar 100 significa zero
+        self.listaMotores = [0xfc, 0, 0, 0, 0, 0, 0, 0, 0, 0] 
         portas = Portas()
         self.ser = portas.abrePortaSerial(Portas._SERIAL0, 250000)
         if self.ser == None:
@@ -222,7 +222,7 @@ class Motores:
             velocidade1 = 120
         if(self.motorInvertido[motor - 1]):
             velocidade1 = -velocidade1
-        self.listaMotores[motor + 1] =struct.pack('b', velocidade1)[0]
+        self.listaMotores[motor] =struct.pack('b', velocidade1)[0]
         motor = 2
         if(velocidade2 < -120):
             velocidade2 = -120
