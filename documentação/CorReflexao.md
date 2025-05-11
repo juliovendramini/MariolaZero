@@ -129,10 +129,11 @@ Realiza a calibração do sensor para preto.
 ## Exemplo de Uso
 
 ```python
+from portas import Portas
 from sensorCorReflexao import CorReflexao
 
 # Inicializa o sensor na porta serial
-sensor = CorReflexao("/dev/ttyUSB0")
+sensor = CorReflexao(Portas.SERIAL1)
 
 # Lê os valores de reflexão
 reflexao = sensor.leReflexao()
