@@ -11,7 +11,9 @@ from teclado import Teclado
 from tela import Tela
 from tcs import TCS34725
 motores = Motores(True)
-sensorCor = CorReflexao(Portas.SERIAL4)
+motores.direcaoMotor(2,Motores.INVERTIDO)
+motores.modoFreio(Motores.HOLD)
+sensorCor = CorReflexao(Portas.SERIAL1)
 #placaMuxLaser = PlacaMuxVl53l0x(Portas.SERIAL3)
 giroscopio = Giroscopio(Portas.SERIAL2)
 #placaMuxCor = PlacaMuxTCS34725(Portas.SERIAL4)
@@ -20,8 +22,8 @@ giroscopio = Giroscopio(Portas.SERIAL2)
 
 
 
-velocidadeMotor1 = 80
-velocidadeMotor2 = 80
+velocidadeMotor1 = 100
+velocidadeMotor2 = 100
 posicaoServo1 = 0
 tela = Tela()
 teclado = Teclado()
@@ -29,18 +31,24 @@ teclado.botaoParaEncerrarPrograma(Teclado.ENTER)
 tela.escreve("teste")
 
 # sensorTCS1 = TCS34725(Portas.I2C1)
-
-sleep(1)
-tela.escreve("teste", 1)
-tela.escreve("teste", 2)
-tela.escreve("teste", 3)
-
-
+# motores.velocidadeMotor(1, velocidadeMotor1)
+# motores.velocidadeMotor(2, velocidadeMotor2)
+# sleep(1)
+# velocidadeMotor1 = 0
+# velocidadeMotor2 = 0
+# # motores.velocidadeMotor(1, velocidadeMotor1)
+# # motores.velocidadeMotor(2, velocidadeMotor2)
+# motores.velocidadeMotores(velocidadeMotor1, velocidadeMotor2)
+# sensorCor.calibraBranco();
+# sleep(2)
+# sensorCor.calibraPreto();
+# sleep(2)
 
 try:   
     while True:
+
         # print(placaMuxCor.leSensor(0))
-        # print(sensorCor.leReflexao())
+        print(sensorCor.leReflexao())
         # print(giroscopio.leAnguloX())
         # print(sensorTCS1.leValores())
         if(teclado.botaoPressionado(Teclado.ESC)):
