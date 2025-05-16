@@ -97,11 +97,11 @@ class CorReflexao:
     def leHSV(self,sensor):
         # Atualiza os dados antes de ler
         if sensor == 1:
-            return self.lista[16:19]
+            return self.lista[20:23]
         elif sensor == 2:
-            return self.lista[19:22]
+            return self.lista[23:26]
         elif sensor == 3:
-            return self.lista[22:25]
+            return self.lista[26:29]
         else:
             return None
 
