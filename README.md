@@ -73,7 +73,10 @@ Reinicie a placa novamente, agora no armbian-config conecte no wifi para poder i
      - banana ALL=(ALL) NOPASSWD: /sbin/ifconfig
        (troque banana pelo usuario escolhido)
   * Reinicie a placa e veja se a tela exibirá o menu automaticamente (lembre-se a tela e o teclado devem estar encaixados para isso funcionar)
-
+* Inserir no script de login do usuario a opção já iniciar o terminal com o ambiente python do usuario
+  * abra o arquivo .nashrc (nano ~/.bashrc)
+  * no final do arquivo adicione (source ~/meu_venv/bin/activate)
+  * Agora sempre que logar com o usuario no ssh, o ambiente python já será selecionado. (Um comando a menos para esquecer :D )
 
 
 
