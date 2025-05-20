@@ -33,7 +33,7 @@ class Giroscopio:
         """Função que chama `atualiza` a cada 25ms."""
         while self._thread_ativa:
             self.atualiza()
-            time.sleep(0.005)  # 25ms
+            time.sleep(0.025)  # 25ms
 
     def _iniciarThread(self):
         """Inicia a thread para chamar `atualiza` periodicamente."""
@@ -115,7 +115,6 @@ class Giroscopio:
             if len(dados) == 1:
                 # Atualiza a lista com os valores recebidos
                 break
-        self.setModo(self.GYRO)
         self._iniciarThread()
         if(tempo.tempo() >= 5000):
             print("Tempo de calibração excedido")

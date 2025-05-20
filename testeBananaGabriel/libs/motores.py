@@ -23,8 +23,6 @@ class Motores:
     GIRANDO_INVERTIDO = 2
     atualizaInstantaneo = False
     ser = None
-
-
     def __init__(self, atualizaInstantaneo = False):
         self.listaServos = [0xfd, 200, 200, 200, 200, 200, 200, 0, 0, 0]
         self.listaMotores = [0xfc, 0, 0, 0, 0, 0, 0, 0, 0, 0] 
@@ -62,8 +60,6 @@ class Motores:
             self.atualizaServos()
 
     def atualizaServos(self):
-        self.ser.reset_input_buffer()
-        self.ser.reset_output_buffer()
         self.ser.write(bytes(self.listaServos))
         if self.DEBUG:
             print(f"Enviando: {self.listaServos}")
@@ -74,8 +70,6 @@ class Motores:
         raise Exception("Erro ao ler o estado dos servos")
     
     def atualizaMotores(self):
-        self.ser.reset_input_buffer()
-        self.ser.reset_output_buffer()
         self.ser.write(bytes(self.listaMotores))
         if self.DEBUG:
             print(f"Enviando: {self.listaMotores}")
@@ -100,12 +94,11 @@ class Motores:
     
     #funcao que envia informacao mas sem atualizar velocidades do controlador de motor
     def estado(self):
-        temp = self.listaMotores[0]
         self.listaMotores[0] = 0xfb
         self.ser.write(bytes(self.listaMotores))
         if self.DEBUG:
             print(f"Enviando: {self.listaMotores}")
-        self.listaMotores[0] = temp
+        self.listaMotores[0] = 0xfc
         #leio o retorno da serial e salvo na lista
         retornoSerial = self.ser.read(10) 
         if(len(retornoSerial) == 10): #só leio se o retorno for exatamente 10 bytes
@@ -119,7 +112,6 @@ class Motores:
         raise Exception("Erro ao ler o estado dos motores")
 
     def direcaoMotor(self,motor, direcao):
-        self.listaMotores[0] = 0xfc #comando para enviar motores como velocidade
         if(motor <= 0):
             return
         if(motor > 4):
@@ -141,7 +133,6 @@ class Motores:
             self.atualizaServos()
     
     def velocidadeMotor(self,motor,velocidade):
-        self.listaMotores[0] = 0xfc #comando para enviar motores como velocidade
         if(motor <= 0):
             return
         if(motor > 4):
@@ -158,7 +149,6 @@ class Motores:
 
     #essa função só move os motores 1 e 2, pois são os únicos que possuem encoder
     def moveMotor(self, motor, velocidade, angulo):
-        self.listaMotores[0] = 0xfc #comando para enviar motores como velocidade
         angulo = abs(angulo) #sempre será positivo
         if(angulo > 65535): #erro, nao aceito valores maiores que 65535
             return
@@ -190,7 +180,6 @@ class Motores:
     #Função que move os motores 1 e 2 ao mesmo tempo
     #velocidade1 e velocidade2 são os valores de velocidade dos motores, angulo1 e angulo2 são os angulos que os motores devem se mover
     def moveMotores(self,velocidade1,angulo1,velocidade2,angulo2):
-        self.listaMotores[0] = 0xfc #comando para enviar motores como velocidade
         angulo1 = abs(angulo1) #sempre será positivo
         if(angulo1 > 65535):
             return
@@ -204,7 +193,7 @@ class Motores:
             velocidade1 = 120
         if(self.motorInvertido[motor - 1]):
             velocidade1 = -velocidade1
-        self.listaMotores[motor] = struct.pack('b', int(velocidade1))[0]
+        self.listaMotores[motor] = struct.pack('b', velocidade1)[0]
         motor = 2
         if(velocidade2 < -120):
             velocidade2 = -120
@@ -212,7 +201,7 @@ class Motores:
             velocidade2 = 120
         if(self.motorInvertido[motor - 1]):
             velocidade2 = -velocidade2
-        self.listaMotores[motor] = struct.pack('b', int(velocidade2))[0]
+        self.listaMotores[motor] = struct.pack('b', velocidade2)[0]
         self.anguloMotor1 = angulo1
         self.listaMotores[5] = (angulo1 >> 8) & 0xFF #pego o byte mais significativo
         self.listaMotores[6] = angulo1 & 0xFF
@@ -226,7 +215,6 @@ class Motores:
     #Função que move para sempre os motores 1 e 2 ao mesmo tempo
     #velocidade1 e velocidade2 são os valores de velocidade dos motores
     def velocidadeMotores(self,velocidade1,velocidade2):
-        self.listaMotores[0] = 0xfc #comando para enviar motores como velocidade
         motor = 1
         if(velocidade1 < -120):
             velocidade1 = -120
@@ -234,7 +222,7 @@ class Motores:
             velocidade1 = 120
         if(self.motorInvertido[motor - 1]):
             velocidade1 = -velocidade1
-        self.listaMotores[motor] =struct.pack('b', int(velocidade1))[0]
+        self.listaMotores[motor] =struct.pack('b', velocidade1)[0]
         motor = 2
         if(velocidade2 < -120):
             velocidade2 = -120
@@ -242,46 +230,17 @@ class Motores:
             velocidade2 = 120
         if(self.motorInvertido[motor - 1]):
             velocidade2 = -velocidade2
-        self.listaMotores[motor] = struct.pack('b', int(velocidade2))[0]
-        if self.atualizaInstantaneo:
-            self.atualizaMotores()
-
-    #Função que move para sempre os motores 1 e 2 ao mesmo tempo
-    #potencia1 e potencia2 são os valores de potencia do pwm dos motores
-    def potenciaMotores(self,potencia1,potencia2):
-        self.listaMotores[0] = 0xfa #comando para enviar motores como potencia
-        motor = 1
-        if(potencia1 < -100):
-            potencia1 = -100
-        if(potencia1 > 100):
-            potencia1 = 100
-        if(self.motorInvertido[motor - 1]):
-            potencia1 = -potencia1
-        self.listaMotores[motor] =struct.pack('b', int(potencia1))[0]
-        motor = 2
-        if(potencia2 < -100):
-            potencia2 = -100
-        if(potencia2 > 100):
-            potencia2 = 100
-        if(self.motorInvertido[motor - 1]):
-            potencia2 = -potencia2
-        self.listaMotores[motor] = struct.pack('b', int(potencia2))[0]
+        self.listaMotores[motor] = struct.pack('b', velocidade2)[0]
         if self.atualizaInstantaneo:
             self.atualizaMotores()
 
 
     #para todos os 4 motores
     def paraMotores(self):
-        self.listaMotores[0] = 0xfc
         self.listaMotores[1] = 0
         self.listaMotores[2] = 0
         self.listaMotores[3] = 0
         self.listaMotores[4] = 0
-        self.listaMotores[5] = 0
-        self.listaMotores[6] = 0
-        self.listaMotores[7] = 0
-        self.listaMotores[8] = 0
-        self.listaMotores[9] = 0
         self.anguloMotor1 = 0
         self.anguloMotor2 = 0
         if self.atualizaInstantaneo:
@@ -318,6 +277,8 @@ class Motores:
             return self.anguloAbsolutoMotor2 - self.anguloDeltaMotor2
         else:
             return 0
+        if self.atualizaInstantaneo:
+            self.atualiza()
     
     def estadoMotor(self,motor):
         if(motor == 1):
@@ -326,3 +287,5 @@ class Motores:
             return (self.estadoMotores >> 2) & 0b11
         else:
             return 0
+        if self.atualizaInstantaneo:
+            self.atualiza()

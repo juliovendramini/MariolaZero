@@ -9,7 +9,6 @@ class CorReflexao:
     MODO_CALIBRA_BRANCO = 3
     MODO_CALIBRA_PRETO = 4
     MODO_RAW_AUTO = 5
-    quantidadeAtualizacoes = 0
 
 
     
@@ -24,7 +23,6 @@ class CorReflexao:
         self.quantidadeBytesModo = 32
         self._thread_ativa = False
         self._thread = None
-        self.quantidadeAtualizacoes = 0
         self._iniciarThread()
 
     def __del__(self):
@@ -36,14 +34,8 @@ class CorReflexao:
     def _atualizaPeriodicamente(self):
         """Função que chama `atualiza` a cada 25ms."""
         while self._thread_ativa:
-            self.quantidadeAtualizacoes += 1
             self.atualiza()
-            time.sleep(0.001)  # 25ms
-
-    def taxaAtualizacao(self):
-        i = self.quantidadeAtualizacoes
-        self.quantidadeAtualizacoes = 0
-        return i
+            time.sleep(0.025)  # 25ms
 
     def _iniciarThread(self):
         """Inicia a thread para chamar `atualiza` periodicamente."""
@@ -91,10 +83,6 @@ class CorReflexao:
         # Atualiza os dados antes de ler
         return self.lista[0:4]
     
-    def posicao(self):
-        # Atualiza os dados antes de ler
-        return self.lista[29]
-
     def leRGBC(self,sensor):
         # Atualiza os dados antes de ler
         if sensor == 1:
@@ -109,11 +97,11 @@ class CorReflexao:
     def leHSV(self,sensor):
         # Atualiza os dados antes de ler
         if sensor == 1:
-            return self.lista[20:23]
+            return self.lista[16:19]
         elif sensor == 2:
-            return self.lista[23:26]
+            return self.lista[19:22]
         elif sensor == 3:
-            return self.lista[26:29]
+            return self.lista[22:25]
         else:
             return None
 
