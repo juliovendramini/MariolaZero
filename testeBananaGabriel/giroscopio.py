@@ -33,7 +33,7 @@ class Giroscopio:
         """Função que chama `atualiza` a cada 25ms."""
         while self._thread_ativa:
             self.atualiza()
-            time.sleep(0.005)  # 25ms
+            time.sleep(0.001)  # 25ms
 
     def _iniciarThread(self):
         """Inicia a thread para chamar `atualiza` periodicamente."""

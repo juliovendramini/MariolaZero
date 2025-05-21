@@ -17,7 +17,7 @@ def pid():
     # print(sensor.leReflexaoTodos())
     
     kp = 0.5
-    kd = 2.5
+    kd = 1.5
     erro = se.erro_pid()
  
 
@@ -30,21 +30,20 @@ def pid():
     valor = int(valor)
     # print(valor)
 
+    # valorEsq = vb_pid + valor
+    # valorDir = vb_pid - valor
 
+    # if valorEsq > 100:
+    #     valorEsq -= 100
+    # else: valorEsq = 0
 
-    valorEsq = vb_pid + valor
-    valorDir = vb_pid - valor
+    # if valorDir > 100:
+    #     valorDir -= 100
+    # else: valorDir = 0
 
-    if valorEsq > 100:
-        valorEsq -= 100
-    else: valorEsq = 0
-
-    if valorDir > 100:
-        valorDir -= 100
-    else: valorDir = 0
-
+    #m.potenciaMotores(vb_pid + valor, vb_pid - valor)
     m.potenciaMotores(vb_pid + valor, vb_pid - valor)
-    #m.velocidadeMotores(vb_pid + valor, vb_pid - valor)
+    # m.velocidadeMotores(vb_pid + valor, vb_pid - valor)
     
 
     # m.velocidadeMotor(esq, vb_pid + valor - valorDir) # +
@@ -56,59 +55,64 @@ def pid():
     erroAnterior = erro
 
 
-def reto(cm, direc = frente, vb = 20):
-    # m.paraMotores()
-    # sleep(0.2)
-    espera = cr.Cronometro()
-    espera.inicia()
+def reto(cm, direc = frente, vb = 80):
+    #sleep(0.2)
     print("anda reto")
-    distancia = cm * 49 #valor encontrado por meio de testes
+    distancia = cm * 46 #valor encontrado por meio de testes
  
     if direc == frente: 
-
-        # m.moveMotores(vb/2, distancia, (vb/2) - DELTA, distancia)
-        m.moveMotores(vb/2, distancia, vb/2, distancia)
-        espera.reseta()
-        while espera.tempo() < 100:
-            cr.reset()
-        m.estado()
-        if not(m.estadoMotor(1) == m.PARADO and m.estadoMotor(2) == m.PARADO): 
-            m.velocidadeMotores(vb, vb - DELTA)
+        m.moveMotores(vb, distancia, vb, distancia)
+        # sleep(0.1)
+        # cr.dorme(400)
+        # if not(m.estadoMotor(1) == m.PARADO and m.estadoMotor(2) == m.PARADO): 
+        #     m.velocidadeMotores(vb, vb - DELTA)
 
 
     if direc == tras: 
-        m.moveMotores(-vb/2, distancia, -(vb/2) - DELTA, distancia)
+        m.moveMotores(-vb, distancia, -(vb) - DELTA, distancia)
+        # sleep(0.1)
+        # cr.dorme(400)
+        # if not(m.estadoMotor(1) == m.PARADO and m.estadoMotor(2) == m.PARADO): 
+        #     m.velocidadeMotores(-vb, -vb - DELTA)
 
-        espera.reseta()
-        while espera.tempo() < 100:
-            cr.reset()
-        m.estado()
-        if not(m.estadoMotor(1) == m.PARADO and m.estadoMotor(2) == m.PARADO): 
-            m.velocidadeMotores(-vb, -vb - DELTA)
-
-
+    counter = 0
+    cr.espera.reseta()
     while True:
-        cr.reset()
-        print(se.leReflexaoTodos())
+        # cr.reset()
+        # print(se.leReflexaoTodos())
         m.estado()
         if m.estadoMotor(1) == m.PARADO and m.estadoMotor(2) == m.PARADO: break
-        #sleep(0.05)
+        counter += 1
+        if cr.espera.tempo() > 1000: 
+            print("tempo demais no loop do reto")
+            raise Exception("tempo demais no loop do reto")
+            break
 
-    # print("anda reto")
-
+    print("numero de loops do reto: ", counter)
+        
     m.paraMotores()
+    sleep(1)
+
+# def reto(cm, direc = frente, vb = 30):
+#     print("anda reto")
+#     distancia = cm * 46
+#     if direc == frente: 
+
+#         m.moveMotores(vb, distancia, vb, distancia)
+
+#     if direc == tras: 
+
+#         m.moveMotores(-vb, distancia, -vb, distancia)
+#     print("anda reto fim")
 
 def girarGraus(direc, graus, vb = velRapida):
 
     print("girando")
-    # m.paraMotores()
-    # sleep(0.2)
 
     giroscopio.resetaZ()
 
     while graus > abs(giroscopio.leAnguloZ()):
-        cr.reset()
-        print(giroscopio.leAnguloZ())
+        # cr.reset()
         # print(angFinal, giroscopio.leAnguloZ())
         if direc == esq:
             if graus*0.5 < abs(giroscopio.leAnguloZ()):
@@ -126,12 +130,13 @@ def girarGraus(direc, graus, vb = velRapida):
     
 def girarGrausAtePreto(direc, graus, vb = velRapida):
     # m.paraMotores()
-    sleep(0.2)
+    # cr.dorme(50)
+    # sleep(0.2)
 
     giroscopio.resetaZ()
 
     while graus > abs(giroscopio.leAnguloZ()):
-        cr.reset()
+        # cr.reset()
         # print(angFinal, giroscopio.leAnguloZ())
         if cr.PretoDir.tempo() < 60 and cr.PretoEs.tempo() < 60: 
                 m.paraMotores()

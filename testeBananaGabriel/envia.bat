@@ -1,5 +1,5 @@
 @echo off
-scp -r * banana@192.168.2.208:~\testeBananaGabriel\
+scp -r * banana@192.168.2.208:~\testeBananaGabriel
 ssh banana@192.168.2.208 "killall main.py"
 @REM ssh banana@192.168.2.151 "bash ~/testeBanana/executa.sh" || (
 @REM     echo "Interrupção detectada! Enviando sinal para o script remoto..."

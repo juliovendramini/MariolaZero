@@ -21,8 +21,7 @@ def leReflexaoTodos():
 
 #calcula o erro pro pid
 def erro_pid():
-    valErro = (leReflexaoEsqEX()*1.5 + leReflexaoEsq()) - (leReflexaoDirEX()*1.5 + leReflexaoDir())
-    valErro = valErro/2
+    valErro = (leReflexaoEsqEX() + leReflexaoEsq()) - (leReflexaoDirEX() + leReflexaoDir())
     # valErro = (leReflexaoEsqEX() + leReflexaoEsq()) - (leReflexaoDirEX() + leReflexaoDir())
     # valErro = (leReflexaoEsq()) - (leReflexaoDir())
     # valErro = valErro/2.5
@@ -151,8 +150,8 @@ def checarCorHSV(valores):
 
 
     #checa se os valores estao dentro de um intervalo especifico encontrado por meio de testes
-    if (55 >= h >= 30) and (s >= 15) and (v > 15): #VERDE
-
+    if (55 >= h >= 30) and (s >= 20) and (v > 10): #VERDE
+        print(h,s,v)
         return const.verde
     
     elif ((7 >= h >= 0) or (125 >= h >= 123)) and (s >= 55) and (v > 10): #VERMELHO

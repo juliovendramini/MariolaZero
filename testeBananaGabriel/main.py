@@ -6,6 +6,7 @@
 #ordem dos botoes 
 #ESC ENTER UP DOWN
 
+from defs import tela
 from defs import teclado
 from defs import Teclado
 from defs import motores
@@ -28,58 +29,58 @@ def calibracaoSensorCor():
     se.sensorCor.calibraPreto()
 
 # calibracaoSensorCor()
-# giroscopio.leAnguloZ()
-#giroscopio.calibra()
-#giroscopio.resetaZ()
-# mov.reto(30, const.frente, 40)
+# giroscopio.calibra()
+
+# mov.reto(6, const.frente, 100)
+# motores.moveMotores(50, 300, 50, 300)
 # mov.girarGraus(const.esq, 90)
-# motores.moveMotores(40, 2000, 40, 2000)
-# motores.moveMotor(2, 70, 10000)
+# sleep(2000)
 # motores.potenciaMotores()
 
+def seguidorDeLinha():
+    funcs.verde()
+    #funcs.intercessao()
+    mov.pid()
+
 try:   
+    cr.iniciarThreadCronometros()
     run = 1
     while run == 1:
 
-        cr.espera.reseta()
-        cr.reset()
+        seguidorDeLinha()
+
         # print(cr.PretoEsEX.tempo(), cr.PretoDirEX.tempo())
         # print(cr.Fez90.tempo())
-        #print(se.sensorCor.leReflexao())
-        # print(se.leReflexaoTodos())
-        #mov.reto(15, const.frente)
+        # print(se.sensorCor.leReflexao())
+        # mov.reto(15, const.tras)
         #motores.velocidadeMotores(50,50)
-        
+
         # sleep(2)
-        # mov.reto(10, const.tras, 40)
+        # mov.reto(30)
         # sleep(2)
 
         # mov.girarGraus(const.dir, 90)
-        # sleep(2)
+        # sleep(3)
 
         # mov.girarGraus(const.esq, 90)
         # mov.reto(30, const.frente)
         
-        # funcs.intercessao()
-        funcs.verde()
-        mov.pid()
-
-
         # print(mov.calculoErro())
         
         # print(cr.VerdeEs.tempo(), cr.VerdeMeio.tempo(), cr.VerdeDir.tempo())
+
+        # print(cr.PretoEsEX.tempo(), cr.PretoEs.tempo(), cr.PretoDir.tempo(), cr.PretoDirEX.tempo())
+  
         # print(se.leReflexaoTodos())
-        # print(se.leHSVesq(), se.leHSVmeio(), se.leHSVdir())
-        # sleep(1)
+
+        # print(se.leHSVesq(), se.checarCorHSV(se.leHSVesq()) == const.verde)
+        # sleep(0.5)
 
         # print(giroscopio.leAnguloZ())
         # break
-        # leep(0.025)
+
         if (teclado.botaoPressionado(Teclado.ENTER)):
             break
-        # while cr.espera.tempo() < 25:
-        #     continue
-        # print(se.sensorCor.taxaAtualizacao())
 
 
 except KeyboardInterrupt as e:

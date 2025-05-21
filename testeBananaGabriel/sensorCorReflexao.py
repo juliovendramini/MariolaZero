@@ -9,7 +9,6 @@ class CorReflexao:
     MODO_CALIBRA_BRANCO = 3
     MODO_CALIBRA_PRETO = 4
     MODO_RAW_AUTO = 5
-    quantidadeAtualizacoes = 0
 
 
     
@@ -24,7 +23,6 @@ class CorReflexao:
         self.quantidadeBytesModo = 32
         self._thread_ativa = False
         self._thread = None
-        self.quantidadeAtualizacoes = 0
         self._iniciarThread()
 
     def __del__(self):
@@ -36,14 +34,8 @@ class CorReflexao:
     def _atualizaPeriodicamente(self):
         """Função que chama `atualiza` a cada 25ms."""
         while self._thread_ativa:
-            self.quantidadeAtualizacoes += 1
             self.atualiza()
-            time.sleep(0.001)  # 25ms
-
-    def taxaAtualizacao(self):
-        i = self.quantidadeAtualizacoes
-        self.quantidadeAtualizacoes = 0
-        return i
+            time.sleep(0.01)  # 25ms
 
     def _iniciarThread(self):
         """Inicia a thread para chamar `atualiza` periodicamente."""

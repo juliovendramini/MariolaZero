@@ -15,7 +15,7 @@ from tcs import TCS34725
 motores = Motores(True)
 motores.direcaoMotor(2, motores.NORMAL)
 motores.direcaoMotor(1, motores.INVERTIDO)
-
+motores.modoFreio(motores.HOLD)
 
 sensorCor = CorReflexao(Portas.SERIAL1)
 #placaMuxLaser = PlacaMuxVl53l0x(Portas.SERIAL3)
@@ -30,4 +30,5 @@ posicaoServo1 = 0
 tela = Tela()
 teclado = Teclado()
 teclado.botaoParaEncerrarPrograma(Teclado.ESC)
-tela.escreve("teste")
+# tela.escreve("teste")
+
