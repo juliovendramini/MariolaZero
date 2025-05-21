@@ -78,7 +78,16 @@ class Motores:
         self.ser.reset_output_buffer()
         self.ser.write(bytes(self.listaMotores))
         if self.DEBUG:
-            print(f"Enviando: {self.listaMotores}")
+            #print(f"Enviando: {self.listaMotores}")
+            #print("Enviando:" , [struct.unpack('b', bytes([x]))[0] for x in self.listaMotores])
+            print("Enviando:" , self.listaMotores[0], end=" ")
+            print(struct.unpack('b', bytes([self.listaMotores[1]]))[0], end=" ")
+            print(struct.unpack('b', bytes([self.listaMotores[2]]))[0], end=" ")
+            print(struct.unpack('b', bytes([self.listaMotores[3]]))[0], end=" ")
+            print(struct.unpack('b', bytes([self.listaMotores[4]]))[0], end=" ")
+            print(struct.unpack('>H', bytes(self.listaMotores[5:7]))[0], end=" ")
+            print(struct.unpack('>H', bytes(self.listaMotores[7:9]))[0], end=" ")
+            print(struct.unpack('b', bytes([self.listaMotores[9]]))[0])
         self.anguloMotor1 = 0 #assim q envio zero isso pq zerado ele nao anda por angulo
         self.anguloMotor2 = 0
         self.listaMotores[5] = 0
@@ -88,13 +97,16 @@ class Motores:
         #leio o retorno da serial e salvo na lista
 
         retornoSerial = self.ser.read(10) 
-        if self.DEBUG:
-            print(f"retornoSerial: {retornoSerial}")
+        #if self.DEBUG:
+            #print(f"retornoSerial: {retornoSerial}")
+            #print("retornoSerial:", [struct.unpack('b', bytes([x]))[0] for x in retornoSerial])
         if(len(retornoSerial) == 10): #só leio se o retorno for exatamente 10 bytes
             if(retornoSerial[0] == 0xfc):
                 self.anguloAbsolutoMotor1 = struct.unpack('>i', bytes(retornoSerial[1:5]))[0]
                 self.anguloAbsolutoMotor2 = struct.unpack('>i', bytes(retornoSerial[5:9]))[0]
                 self.estadoMotores = retornoSerial[9]
+                if self.DEBUG:
+                    print("retorno serial: ", retornoSerial[0], self.anguloAbsolutoMotor1, self.anguloAbsolutoMotor2, self.estadoMotores)
                 return True
         raise Exception("Erro ao ler o estado dos motores")
     
@@ -103,8 +115,17 @@ class Motores:
         temp = self.listaMotores[0]
         self.listaMotores[0] = 0xfb
         self.ser.write(bytes(self.listaMotores))
-        if self.DEBUG:
-            print(f"Enviando: {self.listaMotores}")
+        # if self.DEBUG:
+        #     #print(f"Enviando: {self.listaMotores}")
+        #     #print("Enviando:", [struct.unpack('b', bytes([x]))[0] for x in self.listaMotores])
+        #     print("Enviando:" , self.listaMotores[0], end=" ")
+        #     print(struct.unpack('b', bytes([self.listaMotores[1]]))[0], end=" ")
+        #     print(struct.unpack('b', bytes([self.listaMotores[2]]))[0], end=" ")
+        #     print(struct.unpack('b', bytes([self.listaMotores[3]]))[0], end=" ")
+        #     print(struct.unpack('b', bytes([self.listaMotores[4]]))[0], end=" ")
+        #     print(struct.unpack('>H', bytes(self.listaMotores[5:7]))[0], end=" ")
+        #     print(struct.unpack('>H', bytes(self.listaMotores[7:9]))[0], end=" ")
+        #     print(struct.unpack('b', bytes([self.listaMotores[9]]))[0])
         self.listaMotores[0] = temp
         #leio o retorno da serial e salvo na lista
         retornoSerial = self.ser.read(10) 
@@ -113,8 +134,9 @@ class Motores:
                 self.anguloAbsolutoMotor1 = struct.unpack('>i', bytes(retornoSerial[1:5]))[0]
                 self.anguloAbsolutoMotor2 = struct.unpack('>i', bytes(retornoSerial[5:9]))[0]
                 self.estadoMotores = retornoSerial[9]
-                if self.DEBUG:
-                    print("Estado atualizado")
+                # if self.DEBUG:
+                #     print("Estado atualizado")
+                #     print("retorno serial: ", retornoSerial[0], self.anguloAbsolutoMotor1, self.anguloAbsolutoMotor2, self.estadoMotores)
                 return True
         raise Exception("Erro ao ler o estado dos motores")
 
