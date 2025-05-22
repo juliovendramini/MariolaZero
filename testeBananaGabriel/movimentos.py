@@ -16,15 +16,15 @@ def pid():
 
     # print(sensor.leReflexaoTodos())
     
-    kp = 0.5
-    kd = 1.5
+    kp = 1
+    kd = 5
     erro = se.erro_pid()
  
 
     p = erro * kp 
     d = (erro - erroAnterior) * kd
     
-    vb_pid = 50
+    vb_pid = 40
     valor = p + d #variacao da potencia do motor
     # print(erro)
     valor = int(valor)
@@ -55,7 +55,7 @@ def pid():
     erroAnterior = erro
 
 
-def reto(cm, direc = frente, vb = 80):
+def reto(cm, direc = frente, vb = 40):
     #sleep(0.2)
     print("anda reto")
     distancia = cm * 46 #valor encontrado por meio de testes
@@ -91,7 +91,7 @@ def reto(cm, direc = frente, vb = 80):
     print("numero de loops do reto: ", counter)
         
     m.paraMotores()
-    sleep(1)
+    # sleep(1)
 
 # def reto(cm, direc = frente, vb = 30):
 #     print("anda reto")

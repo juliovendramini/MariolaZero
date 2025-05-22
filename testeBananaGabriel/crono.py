@@ -53,7 +53,7 @@ def reset():
         VerdeDir.reseta()
 
     if sensor.checarCorHSV(sensor.leHSVmeio()) == const.verde:
-        # print("resetou meio")
+        print("resetou meio")
         VerdeMeio.reseta()
 
     if sensor.checarCorHSV(sensor.leHSVesq()) == const.verde:

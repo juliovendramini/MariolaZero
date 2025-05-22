@@ -14,7 +14,7 @@ def intercessao():
     if cr.PretoDirEX.tempo() > 800 and cr.PretoEsEX.tempo() < 100 and cr.Fez90.tempo() > 500:
         print("curva de 90 graus para esquerda")
 
-        mov.reto(3)
+        mov.reto(6)
 
         if con.tudoBranco():
             print("esq valido")
@@ -26,7 +26,7 @@ def intercessao():
     elif cr.PretoDirEX.tempo() < 100 and cr.PretoEsEX.tempo() > 800 and cr.Fez90.tempo() > 500:
         print("dir")
 
-        mov.reto(3)
+        mov.reto(6)
 
         if con.tudoBranco():
             print("dir valido")
@@ -45,12 +45,12 @@ def verde():
             if cr.VerdeDir.tempo() < 100:
                 print("verde 180 valido")
                 mov.girarGraus(const.dir, 180)
-                mov.reto(2, const.tras)
+                mov.reto(2, const.tras, 25)
                 cr.FezVerde.reseta()
             else:
                 print("verde esq valido")
                 mov.girarGraus(const.esq, 90)
-                mov.reto(2, const.tras)
+                mov.reto(2, const.tras, 25)
                 cr.FezVerde.reseta()
         else: print("nao aceitei o verde esquerdo: ", cr.PretoEsEX.tempo(), cr.VerdeEs.tempo())
 
@@ -63,12 +63,12 @@ def verde():
             if cr.VerdeEs.tempo() < 100:
                 print("verde 180 valido")
                 mov.girarGraus(const.dir, 180)
-                mov.reto(2, const.tras)
+                mov.reto(2, const.tras, 25)
                 cr.FezVerde.reseta()
             else:
                 print("verde dir valido")
                 mov.girarGraus(const.dir, 90)
-                mov.reto(2, const.tras)
+                mov.reto(2, const.tras, 25)
                 cr.FezVerde.reseta()
         else: print("nao aceitei o verde direito: ", cr.PretoDirEX.tempo(), cr.VerdeDir.tempo())
 
@@ -80,6 +80,6 @@ def verde():
         if cr.PretoDirEX.tempo() < cr.VerdeDir.tempo():
             print("verde 180 valido")
             mov.girarGraus(const.dir, 180)
-            mov.reto(2, const.tras)
+            mov.reto(2, const.tras, 25)
             cr.FezVerde.reseta()
 

@@ -32,19 +32,27 @@ def calibracaoSensorCor():
 # giroscopio.calibra()
 
 # mov.reto(6, const.frente, 100)
-# motores.moveMotores(50, 300, 50, 300)
+# while True: 
+# motores.moveMotores(100, 900, 100, 900)
+#     #motores.velocidadeMotores(50, 50)
+#     # motores.potenciaMotores(50, 50)
+#     sleep(2)
+    # motores.velocidadeMotores(0, 0)
+    # motores.potenciaMotores(0, 0)
+# sleep(200)
 # mov.girarGraus(const.esq, 90)
 # sleep(2000)
 # motores.potenciaMotores()
 
 def seguidorDeLinha():
     funcs.verde()
-    #funcs.intercessao()
+    funcs.intercessao()
     mov.pid()
 
 try:   
     cr.iniciarThreadCronometros()
     run = 1
+    sleep(1)
     while run == 1:
 
         seguidorDeLinha()
@@ -86,8 +94,7 @@ try:
 except KeyboardInterrupt as e:
     print("\nInterrupção detectada! Parando os motores e encerrando...")
     # Parar os motores
-    motores.velocidadeMotor(1, 0)
-    motores.velocidadeMotor(2, 0)
+    motores.desligaMotores()
     #desativo todos os servos
     motores.desativaServo(1)
     motores.desativaServo(2)

@@ -293,7 +293,7 @@ class Motores:
 
 
     #para todos os 4 motores
-    def paraMotores(self):
+    def desligaMotores(self):
         self.listaMotores[0] = 0xfc
         self.listaMotores[1] = 0
         self.listaMotores[2] = 0
@@ -308,6 +308,10 @@ class Motores:
         self.anguloMotor2 = 0
         if self.atualizaInstantaneo:
             self.atualizaMotores()
+
+    #para todos os 2 motores com encoder
+    def paraMotores(self):
+        self.velocidadeMotores(0,0)
 
 
     def modoFreio(self,modo):
