@@ -12,14 +12,15 @@ Entre em System -> Kernel -> SY210 Manage device tree overlay e Ative as seguint
 
 Reinicie a placa novamente, agora no armbian-config conecte no wifi para poder instalar e atualizar os demais itens.
 
-* Vamos ativar o debug na porta serial que usamos para o primeiro terminal.
- * Edite o arquivo /boot/armbianEnv.txt, "sudo nano /boot/armbianEnv.txt" e adicione a linha "verbosity=7". No proximo reboot, você já verá o log do kernel pela serial. Isso é só para identificar problemas.
-
 * Precisamos agora ativar alguns dispositivos como portas Seriais e USBs. Para isso temos que alterar o arquivo DTB
   * Copie o arquivo DTB para a pasta do usuario:
     - scp sun50i-h618-bananapi-m4-zero.dtb banana@192.168.2.208:~
     - Agora dentro do equipamento mova o arquivo para a pasta (sudo cp sun50i-h618-bananapi-m4-zero.dtb /boot/dtb-6.6.75-current-sunxi64/allwinner/)
     - Reinicie a placa
+
+* Vamos ativar o debug na porta serial que usamos para o primeiro terminal.
+ * Edite o arquivo /boot/armbianEnv.txt, "sudo nano /boot/armbianEnv.txt" e adicione a linha "verbosity=7". No proximo reboot, você já verá o log do kernel pela serial. Isso é só para identificar problemas.
+
 
 * Atualize o APT (sudo apt update)
 * Instale alguns pacotes iniciais (sudo apt install net-tools i2c-tools build-essential libgl1)
