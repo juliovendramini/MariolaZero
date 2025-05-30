@@ -138,7 +138,8 @@ class Motores:
                 #     print("Estado atualizado")
                 #     print("retorno serial: ", retornoSerial[0], self.anguloAbsolutoMotor1, self.anguloAbsolutoMotor2, self.estadoMotores)
                 return True
-        raise Exception("Erro ao ler o estado dos motores")
+        # raise Exception("Erro ao ler o estado dos motores")
+        return True
 
     def direcaoMotor(self,motor, direcao):
         self.listaMotores[0] = 0xfc #comando para enviar motores como velocidade
@@ -314,7 +315,7 @@ class Motores:
         self.velocidadeMotores(0,0)
 
 
-    def modoFreio(self,modo):
+    def modoFreio_(self,modo):
         if(modo == self.BREAK):
             self.modoFreio = 0
         else:

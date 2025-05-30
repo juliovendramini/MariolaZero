@@ -1,12 +1,15 @@
-[Unit]
+Unit]
 Description=Meu Script no Boot
 After=network.target
 
 [Service]
 Type=simple
-User=banana ##altere no nome do usuario para o que vc usa na sua instalação
-ExecStart=/home/banana/menuPrincipal/start.sh #altere no nome do usuario para o que vc usa na sua instalação
+User=banana
+WorkingDirectory=/home/banana/
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/home/banana/menuPrincipal/start.sh
 Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
+

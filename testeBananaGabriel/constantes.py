@@ -15,4 +15,4 @@ velRapida = 80
 
 velLenta = 55
 
-DELTA = 1 #conserta a diferenca de potencia entre os motores (soma no motor direito)
+DELTA = -1 #conserta a diferenca de potencia entre os motores (soma no motor direito)

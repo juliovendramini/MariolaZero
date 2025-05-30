@@ -4,7 +4,7 @@ from defs import sleep
 import sensor as se
 from constantes import esq, dir, frente, tras, velRapida, DELTA
 import crono as cr
-
+import conds as con
 
 m = motores
 
@@ -16,52 +16,34 @@ def pid():
 
     # print(sensor.leReflexaoTodos())
     
-    kp = 1
-    kd = 5
+    kp = 0.5
+    kd = 5.2
     erro = se.erro_pid()
  
-
     p = erro * kp 
     d = (erro - erroAnterior) * kd
     
-    vb_pid = 40
+    vb_pid = 60
     valor = p + d #variacao da potencia do motor
     # print(erro)
     valor = int(valor)
     # print(valor)
 
-    # valorEsq = vb_pid + valor
-    # valorDir = vb_pid - valor
-
-    # if valorEsq > 100:
-    #     valorEsq -= 100
-    # else: valorEsq = 0
-
-    # if valorDir > 100:
-    #     valorDir -= 100
-    # else: valorDir = 0
-
-    #m.potenciaMotores(vb_pid + valor, vb_pid - valor)
     m.potenciaMotores(vb_pid + valor, vb_pid - valor)
-    # m.velocidadeMotores(vb_pid + valor, vb_pid - valor)
-    
+    # m.potenciaMotores(vb_pid + valor, 0)
+    # m.potenciaMotores(0, vb_pid - valor)
 
-    # m.velocidadeMotor(esq, vb_pid + valor - valorDir) # +
-    # m.velocidadeMotor(dir, vb_pid - valor - valorEsq) # -
-
-    # m.velocidadeMotor(esq, vb_pid + valor) # +
-    # m.velocidadeMotor(dir, vb_pid - valor) # -
-    
     erroAnterior = erro
 
 
-def reto(cm, direc = frente, vb = 40):
+def reto(cm, direc = frente, vb = 30):
+    m.paraMotores()
     #sleep(0.2)
     print("anda reto")
-    distancia = cm * 46 #valor encontrado por meio de testes
+    distancia = int(cm * 58) #valor encontrado por meio de testes
  
     if direc == frente: 
-        m.moveMotores(vb, distancia, vb, distancia)
+        m.moveMotores(vb, distancia, vb - DELTA, distancia)
         # sleep(0.1)
         # cr.dorme(400)
         # if not(m.estadoMotor(1) == m.PARADO and m.estadoMotor(2) == m.PARADO): 
@@ -83,29 +65,62 @@ def reto(cm, direc = frente, vb = 40):
         m.estado()
         if m.estadoMotor(1) == m.PARADO and m.estadoMotor(2) == m.PARADO: break
         counter += 1
-        if cr.espera.tempo() > 1000: 
+        if cr.espera.tempo() > 3000: 
             print("tempo demais no loop do reto")
             raise Exception("tempo demais no loop do reto")
-            break
 
     print("numero de loops do reto: ", counter)
         
-    m.paraMotores()
+    hold()
+    # m.paraMotores()
     # sleep(1)
 
-# def reto(cm, direc = frente, vb = 30):
-#     print("anda reto")
-#     distancia = cm * 46
-#     if direc == frente: 
+def retoAtePreto(cm, direc = frente, vb = 30):
+    m.paraMotores()
+    #sleep(0.2)
+    print("anda reto")
+    distancia = int(cm * 60) #valor encontrado por meio de testes
+ 
+    if direc == frente: 
+        m.moveMotores(vb, distancia, vb - DELTA, distancia)
+        # sleep(0.1)
+        # cr.dorme(400)
+        # if not(m.estadoMotor(1) == m.PARADO and m.estadoMotor(2) == m.PARADO): 
+        #     m.velocidadeMotores(vb, vb - DELTA)
 
-#         m.moveMotores(vb, distancia, vb, distancia)
 
-#     if direc == tras: 
+    if direc == tras: 
+        m.moveMotores(-vb, distancia, -(vb) - DELTA, distancia)
+        # sleep(0.1)
+        # cr.dorme(400)
+        # if not(m.estadoMotor(1) == m.PARADO and m.estadoMotor(2) == m.PARADO): 
+        #     m.velocidadeMotores(-vb, -vb - DELTA)
 
-#         m.moveMotores(-vb, distancia, -vb, distancia)
-#     print("anda reto fim")
+    counter = 0
+    cr.espera.reseta()
+    while True:
+        # cr.reset()
+        # print(se.leReflexaoTodos())
+        m.estado()
+        if m.estadoMotor(1) == m.PARADO and m.estadoMotor(2) == m.PARADO: break
+        if con.meioBranco() == False: m.paraMotores; break
+        counter += 1
+        if cr.espera.tempo() > 3000: 
+            print("tempo demais no loop do reto")
+            raise Exception("tempo demais no loop do reto")
 
-def girarGraus(direc, graus, vb = velRapida):
+    print("numero de loops do reto: ", counter)
+        
+    hold()
+    # m.paraMotores()
+    # sleep(1)
+
+def hold():
+    m.modoFreio_(1)
+    m.paraMotores()
+    m.modoFreio_(0)
+
+def girarGraus(direc, graus, vb = 80):
 
     print("girando")
 
@@ -116,19 +131,19 @@ def girarGraus(direc, graus, vb = velRapida):
         # print(angFinal, giroscopio.leAnguloZ())
         if direc == esq:
             if graus*0.5 < abs(giroscopio.leAnguloZ()):
-                m.velocidadeMotores(-2*vb/5, 2*vb/5 - DELTA)
+                m.velocidadeMotores(-3*vb/5, 3*vb/5 - DELTA)
 
             else: m.velocidadeMotores(-vb, vb - DELTA)
 
         elif direc == dir:
             if graus*0.5 < abs(giroscopio.leAnguloZ()):
-                m.velocidadeMotores(2*vb/5, -2*vb/5 - DELTA)
+                m.velocidadeMotores(3*vb/5, -3*vb/5 - DELTA)
 
             else: m.velocidadeMotores(vb, -vb - DELTA)
 
     m.paraMotores()
     
-def girarGrausAtePreto(direc, graus, vb = velRapida):
+def girarGrausAtePreto(direc, graus, vb = 80):
     # m.paraMotores()
     # cr.dorme(50)
     # sleep(0.2)
@@ -144,16 +159,14 @@ def girarGrausAtePreto(direc, graus, vb = velRapida):
         
         if direc == esq:
             if graus*0.6 < abs(giroscopio.leAnguloZ()):
-                m.velocidadeMotores(-2*vb/5, 2*vb/5 - DELTA)
+                m.velocidadeMotores(-3*vb/5, 3*vb/5 - DELTA)
 
             else: m.velocidadeMotores(-vb, vb - DELTA)
 
         elif direc == dir:
             if graus*0.6 < abs(giroscopio.leAnguloZ()):
-                m.velocidadeMotores(2*vb/5, -2*vb/5 - DELTA)
+                m.velocidadeMotores(3*vb/5, -3*vb/5 - DELTA)
 
             else: m.velocidadeMotores(vb, -vb - DELTA)
 
     m.paraMotores()
-    
-

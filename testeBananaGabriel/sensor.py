@@ -151,15 +151,15 @@ def checarCorHSV(valores):
 
     #checa se os valores estao dentro de um intervalo especifico encontrado por meio de testes
     if (55 >= h >= 30) and (s >= 20) and (v > 10): #VERDE
-        print(h,s,v)
+        # print(h,s,v)
         return const.verde
     
-    elif ((7 >= h >= 0) or (125 >= h >= 123)) and (s >= 55) and (v > 10): #VERMELHO
+    elif ((5 >= h >= 0) or (119 >= h >= 117)) and (s >= 55) and (v > 10): #VERMELHO
+        # print("viu vermelho")
 
         return const.vermelho
     
-    else:
-        return "erro"
+    else: return "erro"
     
 
 #FAZ A CHEACAGEM DE COR POR VALORES RGB
@@ -169,6 +169,10 @@ def checarCorRGBC(valores):
     b = valores[2]
     c = valores[3]
 
+    if (122< r <= 127) and (122< g <= 127) and (122< b <= 127) and (122< c <= 127):
+        return const.prata
+    
+    else: return "erro"
 
     #checa se os valores estao dentro de um intervalo especifico encontrado por meio de testes
     
