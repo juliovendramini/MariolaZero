@@ -83,28 +83,28 @@ Reinicie a placa novamente, agora no armbian-config conecte no wifi para poder i
   * Agora sempre que logar com o usuario no ssh, o ambiente python já será selecionado. (Um comando a menos para esquecer :D )
 
 * Vamos inserir um script para verificar a partição toda vez que o brick iniciar, isso pode impedir falhar de inicialização e de partição corrompida
- * Rode o comando: sudo nano /etc/systemd/system/force-fsck-root.service
- * Agora crie adicione as linhas no arquivo:
-```
-[Unit]
-Description=Force fsck on root filesystem
-DefaultDependencies=no
-Before=local-fs.target
+  * Rode o comando: sudo nano /etc/systemd/system/force-fsck-root.service
+  * Agora crie adicione as linhas no arquivo:
+  ```
+  [Unit]
+  Description=Force fsck on root filesystem
+  DefaultDependencies=no
+  Before=local-fs.target
+  
+  [Service]
+  Type=oneshot
+  ExecStart=/sbin/fsck -f -y /
+  RemainAfterExit=true
+  
+  [Install]
+  WantedBy=local-fs.target
+  ```
 
-[Service]
-Type=oneshot
-ExecStart=/sbin/fsck -f -y /
-RemainAfterExit=true
-
-[Install]
-WantedBy=local-fs.target
-```
-
- * Ative o Serviço:
-```
-   sudo systemctl daemon-reexec
-   sudo systemctl enable force-fsck-root.service
-```
+  * Ative o Serviço:
+  ```
+     sudo systemctl daemon-reexec
+     sudo systemctl enable force-fsck-root.service
+  ```
 
 Agora é só reiniciar. Caso queira verificar se o fsck está rodando, rode o comando journalctl -u force-fsck-root.service
 
