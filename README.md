@@ -19,7 +19,7 @@ Reinicie a placa novamente, agora no armbian-config conecte no wifi para poder i
     - Reinicie a placa
 
 * Vamos ativar o debug na porta serial que usamos para o primeiro terminal.
- * Edite o arquivo /boot/armbianEnv.txt, "sudo nano /boot/armbianEnv.txt" e adicione a linha "verbosity=7". No proximo reboot, você já verá o log do kernel pela serial. Isso é só para identificar problemas.
+   * Edite o arquivo /boot/armbianEnv.txt, "sudo nano /boot/armbianEnv.txt" e adicione a linha "verbosity=7". No proximo reboot, você já verá o log do kernel pela serial. Isso é só para identificar problemas.
 
 
 * Atualize o APT (sudo apt update)
