@@ -78,20 +78,26 @@ Reinicie a placa novamente, agora no armbian-config conecte no wifi para poder i
   * no final do arquivo adicione (source ~/meu_venv/bin/activate)
   * Agora sempre que logar com o usuario no ssh, o ambiente python já será selecionado. (Um comando a menos para esquecer :D )
 
+* Vamos inserir um script para verificar a partição toda vez que o brick iniciar, isso pode impedir falhar de inicialização e de partição corrompida
+ * Rode o comando: sudo nano /etc/systemd/system/force-fsck-root.service
+ * Agora crie adicione as linhas no arquivo:
+```
+[Unit]
+Description=Force fsck on root filesystem
+DefaultDependencies=no
+Before=local-fs.target
 
+[Service]
+Type=oneshot
+ExecStart=/sbin/fsck -f -y /
+RemainAfterExit=true
 
+[Install]
+WantedBy=local-fs.target
+```
 
-
-Para as duas portas usbC funcionarem como HOST, precisamos alterar a configuração do conector CN2 (USB0) para isso precisamos editar o arquivo DTB dele. E alterar as linhas para desativar o USB OTG e ATIVAR os dois modos HOSTs ta porta USB0.
-   * Primeiro passo é transformar o dtb em dts
-      * Copie o arquivo para a pasta do usuario (cp /boot/dtb-6.6.75-current-sunxi64/allwinner/sun50i-h618-bananapi-m4-zero.dtb ~/)
-      * Transforme ele em dts (dtc -O dts sun50i-h618-bananapi-m4-zero.dtb -o sun50i-h618-bananapi-m4-zero.dts)
-      * abra o arquivo dts criado com o nano
-         * no bloco usb@5100000, coloque ele como *status = "disabled";*
-         * no bloco usb@5101000, coloque ele como *status = "okay"*
-         * no bloco usb@5101400, coloque ele como *status = "okay"*
-     * agora, salve o arquivo, e converta pra dtb com o comando: (dtc -O dtb sun50i-h618-bananapi-m4-zero.dts -o sun50i-h618-bananapi-m4-zero.dtb)
-     * vamos fazer um backup da versão original e depois substituir com a versão editada na pasta /boot
-     * cp /boot/dtb-6.6.75-current-sunxi64/allwinner/sun50i-h618-bananapi-m4-zero.dtb ~/sun50i-h618-bananapi-m4-zero.dtb_original
-     * agora, copie para a pasta /boot o modificado (sudo cp ~/sun50i-h618-bananapi-m4-zero.dtb /boot/dtb-6.6.75-current-sunxi64/allwinner/sun50i-h618-bananapi-m4-zero.dtb)
-     * reinicie a placa
+ * Ative o Serviço:
+```
+   sudo systemctl daemon-reexec
+   sudo systemctl enable force-fsck-root.service
+```
