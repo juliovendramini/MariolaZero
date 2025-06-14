@@ -11,11 +11,11 @@ class Teclado:
     ESC = 4
     CIMA = 2
     BAIXO = 1
-    def __init__(self, i2c_bus=1, i2c_address=0x20):
+    def __init__(self, i2c_bus=1, i2c_address=0x38):
         """
-        Inicializa o PCF8574.
+        Inicializa o PCF8574A.
         :param i2c_bus: Número do barramento I2C (ex.: 0 para /dev/i2c-0).
-        :param i2c_address: Endereço I2C do PCF8574 (padrão: 0x20).
+        :param i2c_address: Endereço I2C do PCF8574A (padrão: 0x38).
         """
         self.bus = SMBus(i2c_bus)
         self.address = i2c_address
