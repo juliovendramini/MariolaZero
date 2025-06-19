@@ -13,7 +13,7 @@ torch.set_num_threads(4)  # ou quantos núcleos quiser usar
 device = 'cpu'
 print(f"Usando dispositivo: {device}")
 # Carrega a rede treinada
-model = YOLO("./best.pt")
+model = YOLO("yolov8n.pt")
 
 app = Flask(__name__)
 camera = cv2.VideoCapture(0)
