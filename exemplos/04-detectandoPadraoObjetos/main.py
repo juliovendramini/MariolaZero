@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 import time
 
+
+
 # Função para verificar se um contorno é retangular
 def is_rectangle(contour, epsilon_ratio=0.02):
     peri = cv2.arcLength(contour, True)

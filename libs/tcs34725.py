@@ -1,5 +1,6 @@
 from smbus2 import SMBus
-
+'''Classe para controlar os sensores i2c TCS34725 nas portas I2C do MariolaZero.
+Precisamos passar como parametro qual porta ele I2C está usando'''
 class TCS34725:
     MUX_ADDR = 0x70  # Endereço do TCA9548A
     TCS_ADDR = 0x29  # Endereço do sensor TCS34725
@@ -16,7 +17,7 @@ class TCS34725:
         self.portaMux = portaMux
         if self.portaMux > 7 or self.portaMux < 0:
             raise ValueError("Canal inválido (deve ser 0 a 7)")
-        self.select_channel()
+        self._selectChannel()
             # Ativa o sensor (PON + AEN)
         self.bus.write_byte_data(self.TCS_ADDR, self.COMMAND_BIT | self.ENABLE, 0x03)
 
@@ -27,28 +28,28 @@ class TCS34725:
         self.bus.write_byte_data(self.TCS_ADDR, self.COMMAND_BIT | self.CONTROL, 0x01)
     
     # Função para selecionar canal no TCA9548A
-    def select_channel(self):
+    def _selectChannel(self):
         self.bus.write_byte(self.MUX_ADDR, 1 << self.portaMux)
             
 
     # Função para ler ID do TCS34725 (deve retornar 0x44 ou 0x10)
-    def read_tcs_id(self):
+    def _readTcsId(self):
         TCS34725_ID = 0x12
         return self.bus.read_byte_data(self.TCS_ADDR, TCS34725_ID)
 
 
     # Funções auxiliares
-    def read_word(self, reg):
+    def _readWord(self, reg):
         low = self.bus.read_byte_data(self.TCS_ADDR, self.COMMAND_BIT | reg)
         high = self.bus.read_byte_data(self.TCS_ADDR, self.COMMAND_BIT | (reg + 1))
         return (high << 8) | low
 
     def leValores(self):
         # Lê os valores
-        self.select_channel()
-        self.select_channel()
-        clear = self.read_word(self.CDATAL)
-        red = self.read_word(self.CDATAL + 2)
-        green = self.read_word(self.CDATAL + 4)
-        blue = self.read_word(self.CDATAL + 6)
-        return (clear, red, green, blue)
+        self._selectChannel()
+        self._selectChannel()
+        clear = self._readWord(self.CDATAL)
+        red = self._readWord(self.CDATAL + 2)
+        green = self._readWord(self.CDATAL + 4)
+        blue = self._readWord(self.CDATAL + 6)
+        return (red, green, blue, clear)
