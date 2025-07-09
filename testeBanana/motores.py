@@ -26,6 +26,7 @@ class Motores:
     def __init__(self, atualizaInstantaneo = False):
         self.listaServos = [0xfd, 200, 200, 200, 200, 200, 200, 0, 0, 0]
         self.listaMotores = [0xfc, 0, 0, 0, 0, 0, 0, 0, 0, 0] 
+        self.listaPID = [0xfa, 0, 0, 0, 0, 0, 0, 0, 0, 0] #
         portas = Portas()
         self.ser = portas.abrePortaSerial(Portas._SERIAL0, 250000)
         if self.ser == None:
@@ -289,3 +290,29 @@ class Motores:
             return 0
         if self.atualizaInstantaneo:
             self.atualiza()
+
+    def PIDMotor(self, kp, ki, kd):
+        # Envia os valores de kp, ki e kd como inteiros de 16 bits para a placa usando listaPID
+        # kp, ki, kd devem estar no intervalo 0~65535
+        kp = kp * 100  # mando os valores multiplicados por 100 para evitar problemas de precisão
+        ki = ki * 100
+        kd = kd * 100
+        kp = max(0, min(65535, int(kp)))
+        ki = max(0, min(65535, int(ki)))
+        kd = max(0, min(65535, int(kd)))
+        self.listaPID[1] = (kp >> 8) & 0xFF
+        self.listaPID[2] = kp & 0xFF
+        self.listaPID[3] = (ki >> 8) & 0xFF
+        self.listaPID[4] = ki & 0xFF
+        self.listaPID[5] = (kd >> 8) & 0xFF
+        self.listaPID[6] = kd & 0xFF
+        self.ser.write(bytes(self.listaPID))
+        if self.DEBUG:
+            print(f"Enviando PID: kp={kp}, ki={ki}, kd={kd} -> {self.listaPID}")
+        # Opcional: ler resposta da placa, se necessário
+        #analiso se recebeu um byte de retorno
+        retornoSerial = self.ser.read(1)
+        if len(retornoSerial) == 1:
+            if retornoSerial[0] == 0xfa:
+                return True
+        raise Exception("Erro ao configurar PID dos motores")
