@@ -13,7 +13,8 @@ Entre em System -> Kernel -> SY210 Manage device tree overlay e Ative as seguint
 Reinicie a placa novamente, agora no armbian-config conecte no wifi para poder instalar e atualizar os demais itens.
 
 * Precisamos agora ativar alguns dispositivos como portas Seriais e USBs. Para isso temos que alterar o arquivo DTB
-  * Copie o arquivo DTB para a pasta do usuario:
+  * Baixe o arquivo Dtb que está neste repositório para seu computador. 
+  * Acesse pelo terminal, entre no local onde está o DTB e copie o arquivo DTB para a pasta do usuario:
     - scp sun50i-h618-bananapi-m4-zero.dtb banana@192.168.2.208:~
     - Agora dentro do equipamento mova o arquivo para a pasta (sudo cp sun50i-h618-bananapi-m4-zero.dtb /boot/dtb-6.6.75-current-sunxi64/allwinner/)
     - Reinicie a placa
