@@ -10,7 +10,7 @@ class Motores:
     INVERTIDO = 1
     anguloMotor1 = 0
     anguloMotor2 = 0
-    modoFreio = 0
+    modoFreioAtual = 0
     BREAK = 0
     HOLD = 1
     anguloAbsolutoMotor1 = 0
@@ -317,10 +317,10 @@ class Motores:
 
     def modoFreio(self,modo):
         if(modo == self.BREAK):
-            self.modoFreio = 0
+            self.modoFreioAtual = 0
         else:
-            self.modoFreio = 1
-        self.listaMotores[9] = self.modoFreio
+            self.modoFreioAtual = 1
+        self.listaMotores[9] = self.modoFreioAtual
         if self.atualizaInstantaneo:
             self.atualizaMotores()
 
