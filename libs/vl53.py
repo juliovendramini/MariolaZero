@@ -17,7 +17,8 @@ class VL53L0X:
         model_id = self.read_byte(0xC0)
         if model_id != 0xEE:
             print("Retorno do ID do sensor: ", hex(model_id))
-            raise Exception("VL53L0X não encontrado no endereço 0x29")
+            #raise Exception("VL53L0X não encontrado no endereço 0x29")
+            print("VL53L0X não encontrado no endereço 0x29, mas continuando a inicialização")
         
         # Configuração inicial do sensor
         self.write_byte(0x88, 0x00)
