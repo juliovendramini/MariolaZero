@@ -1,361 +1,283 @@
 # Classe para controlar os motores e servos da placa do Motores do novo brick
 import struct
 import time
-import struct
-from portas import Portas
+
+from libs.portas import Portas
+
+
 class Motores:
-    motorInvertido = [False, False, False, False]
+    motor_invertido = [False, False, False, False]
     DEBUG = False
     NORMAL = 0
     INVERTIDO = 1
-    anguloMotor1 = 0
-    anguloMotor2 = 0
-    modoFreioAtual = 0
+    angulo_motor1 = 0
+    angulo_motor2 = 0
+    modo_freio = 0
     BREAK = 0
     HOLD = 1
-    anguloAbsolutoMotor1 = 0
-    anguloAbsolutoMotor2 = 0
-    anguloDeltaMotor1 = 0 #o angulo delta é o angulo que o motor andou desde a ultima vez que foi resetado
-    anguloDeltaMotor2 = 0 #o angulo delta é o angulo que o motor andou desde a ultima vez que foi resetado
-    estadoMotores = 0
+    angulo_absoluto_motor1 = 0
+    angulo_absoluto_motor2 = 0
+    angulo_delta_motor1 = 0  # o angulo delta é o angulo que o motor andou desde a ultima vez que foi resetado
+    angulo_delta_motor2 = 0  # o angulo delta é o angulo que o motor andou desde a ultima vez que foi resetado
+    estado_motores = 0
     PARADO = 0
     GIRANDO_NORMAL = 1
     GIRANDO_INVERTIDO = 2
-    atualizaInstantaneo = False
+    atualiza_instantaneo = False
     ser = None
 
-
-    def __init__(self, atualizaInstantaneo = False):
-        self.listaServos = [0xfd, 200, 200, 200, 200, 200, 200, 0, 0, 0]
-        self.listaMotores = [0xfc, 0, 0, 0, 0, 0, 0, 0, 0, 0] 
-        self.listaPID = [0xf9, 0, 0, 0, 0, 0, 0, 0, 0, 0] #
+    def __init__(self, atualiza_instantaneo=False):
+        self.lista_servos = [0xFD, 200, 200, 200, 200, 200, 200, 0, 0, 0]
+        self.lista_motores = [0xFC, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.lista_pid = [0xFE, 0, 0, 0, 0, 0, 0]
         portas = Portas()
-        self.ser = portas.abrePortaSerial(Portas._SERIAL0, 250000)
-        if self.ser == None:
-            raise Exception("Erro ao abrir a porta serial")
-        self.atualizaInstantaneo = atualizaInstantaneo
-        self.atualizaMotores()
-        self.atualizaServos()
-        self.resetaAnguloMotor(1)
-        self.resetaAnguloMotor(2)
+        self.ser = portas.abre_porta_serial(Portas._SERIAL0, 250000)
+        if self.ser is None:
+            raise Exception('Erro ao abrir a porta serial')
+        self.atualiza_instantaneo = atualiza_instantaneo
+        self.atualiza_motores()
+        self.atualiza_servos()
+        self.reseta_angulo_motor(1)
+        self.reseta_angulo_motor(2)
 
     def __del__(self):
-        self.paraMotores()
+        self.para_motores()
         self.ser.close()
         if self.DEBUG:
-            print("Fechando a porta serial do motores")
-        #self.ser.close() #não fecha a serial aqui pq o main.py fecha
-        #self.ser = None
-        #if self.DEBUG:
-        #    print("Fechando a porta serial")
+            print('Fechando a porta serial do motores')
 
-    def moveServo(self,servo,angulo):
-        if(servo <= 0):
+    def move_servo(self, servo, angulo):
+        if servo <= 0:
             return
-        if(servo > 6):
+        if servo > 6:
             return
-        if(angulo < 0):
-            angulo = 0
-        if(angulo > 180):
-            angulo = 180
-        self.listaServos[servo] = angulo
-        if self.atualizaInstantaneo:
-            self.atualizaServos()
+        angulo = max(angulo, 0)
+        angulo = min(angulo, 180)
+        self.lista_servos[servo] = angulo
+        if self.atualiza_instantaneo:
+            self.atualiza_servos()
 
-    def atualizaServos(self):
+    def atualiza_servos(self):
         self.ser.reset_input_buffer()
         self.ser.reset_output_buffer()
-        self.ser.write(bytes(self.listaServos))
+        self.ser.write(bytes(self.lista_servos))
         if self.DEBUG:
-            print(f"Enviando: {self.listaServos}")
-        retornoSerial = self.ser.read(1) 
-        if(len(retornoSerial) == 1):
-            if(retornoSerial[0] == 0xfd):
+            print(f'Enviando: {self.lista_servos}')
+        retorno_serial = self.ser.read(1)
+        if len(retorno_serial) == 1:
+            if retorno_serial[0] == 0xFD:
                 return True
-        raise Exception("Erro ao ler o estado dos servos")
-    
-    def atualizaMotores(self):
+        raise Exception('Erro ao ler o estado dos servos')
+
+    def atualiza_motores(self):
         self.ser.reset_input_buffer()
         self.ser.reset_output_buffer()
-        self.ser.write(bytes(self.listaMotores))
+        self.ser.write(bytes(self.lista_motores))
         if self.DEBUG:
-            #print(f"Enviando: {self.listaMotores}")
-            #print("Enviando:" , [struct.unpack('b', bytes([x]))[0] for x in self.listaMotores])
-            print("Enviando:" , self.listaMotores[0], end=" ")
-            print(struct.unpack('b', bytes([self.listaMotores[1]]))[0], end=" ")
-            print(struct.unpack('b', bytes([self.listaMotores[2]]))[0], end=" ")
-            print(struct.unpack('b', bytes([self.listaMotores[3]]))[0], end=" ")
-            print(struct.unpack('b', bytes([self.listaMotores[4]]))[0], end=" ")
-            print(struct.unpack('>H', bytes(self.listaMotores[5:7]))[0], end=" ")
-            print(struct.unpack('>H', bytes(self.listaMotores[7:9]))[0], end=" ")
-            print(struct.unpack('b', bytes([self.listaMotores[9]]))[0])
-        self.anguloMotor1 = 0 #assim q envio zero isso pq zerado ele nao anda por angulo
-        self.anguloMotor2 = 0
-        self.listaMotores[5] = 0
-        self.listaMotores[6] = 0
-        self.listaMotores[7] = 0
-        self.listaMotores[8] = 0
-        #leio o retorno da serial e salvo na lista
+            print(f'Enviando: {self.lista_motores}')
+        self.angulo_motor1 = 0  # assim q envio zero isso pq zerado ele nao anda por angulo
+        self.angulo_motor2 = 0
+        self.lista_motores[5] = 0
+        self.lista_motores[6] = 0
+        self.lista_motores[7] = 0
+        self.lista_motores[8] = 0
+        # leio o retorno da serial e salvo na lista
 
-        retornoSerial = self.ser.read(10) 
-        #if self.DEBUG:
-            #print(f"retornoSerial: {retornoSerial}")
-            #print("retornoSerial:", [struct.unpack('b', bytes([x]))[0] for x in retornoSerial])
-        if(len(retornoSerial) == 10): #só leio se o retorno for exatamente 10 bytes
-            if(retornoSerial[0] == 0xfc):
-                self.anguloAbsolutoMotor1 = struct.unpack('>i', bytes(retornoSerial[1:5]))[0]
-                self.anguloAbsolutoMotor2 = struct.unpack('>i', bytes(retornoSerial[5:9]))[0]
-                self.estadoMotores = retornoSerial[9]
-                if self.DEBUG:
-                    print("retorno serial: ", retornoSerial[0], self.anguloAbsolutoMotor1, self.anguloAbsolutoMotor2, self.estadoMotores)
+        retorno_serial = self.ser.read(10)
+        if self.DEBUG:
+            print(f'retorno_serial: {retorno_serial}')
+        if len(retorno_serial) == 10:  # só leio se o retorno for exatamente 10 bytes
+            if retorno_serial[0] == 0xFC:
+                self.angulo_absoluto_motor1 = struct.unpack('>i', bytes(retorno_serial[1:5]))[0]
+                self.angulo_absoluto_motor2 = struct.unpack('>i', bytes(retorno_serial[5:9]))[0]
+                self.estado_motores = retorno_serial[9]
                 return True
-        raise Exception("Erro ao ler o estado dos motores")
-    
-    #funcao que envia informacao mas sem atualizar velocidades do controlador de motor
+        raise Exception('Erro ao ler o estado dos motores')
+
+    # funcao que envia informacao mas sem atualizar velocidades do controlador de motor
     def estado(self):
-        temp = self.listaMotores[0]
-        self.listaMotores[0] = 0xfb
-        self.ser.write(bytes(self.listaMotores))
-        # if self.DEBUG:
-        #     #print(f"Enviando: {self.listaMotores}")
-        #     #print("Enviando:", [struct.unpack('b', bytes([x]))[0] for x in self.listaMotores])
-        #     print("Enviando:" , self.listaMotores[0], end=" ")
-        #     print(struct.unpack('b', bytes([self.listaMotores[1]]))[0], end=" ")
-        #     print(struct.unpack('b', bytes([self.listaMotores[2]]))[0], end=" ")
-        #     print(struct.unpack('b', bytes([self.listaMotores[3]]))[0], end=" ")
-        #     print(struct.unpack('b', bytes([self.listaMotores[4]]))[0], end=" ")
-        #     print(struct.unpack('>H', bytes(self.listaMotores[5:7]))[0], end=" ")
-        #     print(struct.unpack('>H', bytes(self.listaMotores[7:9]))[0], end=" ")
-        #     print(struct.unpack('b', bytes([self.listaMotores[9]]))[0])
-        self.listaMotores[0] = temp
-        #leio o retorno da serial e salvo na lista
-        retornoSerial = self.ser.read(10) 
-        if(len(retornoSerial) == 10): #só leio se o retorno for exatamente 10 bytes
-            if(retornoSerial[0] == 0xfb):
-                self.anguloAbsolutoMotor1 = struct.unpack('>i', bytes(retornoSerial[1:5]))[0]
-                self.anguloAbsolutoMotor2 = struct.unpack('>i', bytes(retornoSerial[5:9]))[0]
-                self.estadoMotores = retornoSerial[9]
-                # if self.DEBUG:
-                #     print("Estado atualizado")
-                #     print("retorno serial: ", retornoSerial[0], self.anguloAbsolutoMotor1, self.anguloAbsolutoMotor2, self.estadoMotores)
+        temp = self.lista_motores[0]
+        self.lista_motores[0] = 0xFB
+        self.ser.write(bytes(self.lista_motores))
+        if self.DEBUG:
+            print(f'Enviando: {self.lista_motores}')
+        self.lista_motores[0] = temp
+        # leio o retorno da serial e salvo na lista
+        retorno_serial = self.ser.read(10)
+        if len(retorno_serial) == 10:  # só leio se o retorno for exatamente 10 bytes
+            if retorno_serial[0] == 0xFB:
+                self.angulo_absoluto_motor1 = struct.unpack('>i', bytes(retorno_serial[1:5]))[0]
+                self.angulo_absoluto_motor2 = struct.unpack('>i', bytes(retorno_serial[5:9]))[0]
+                self.estado_motores = retorno_serial[9]
+                if self.DEBUG:
+                    print('Estado atualizado')
                 return True
-        raise Exception("Erro ao ler o estado dos motores")
+        raise Exception('Erro ao ler o estado dos motores')
 
-    def direcaoMotor(self,motor, direcao):
-        self.listaMotores[0] = 0xfc #comando para enviar motores como velocidade
-        if(motor <= 0):
+    def direcao_motor(self, motor, direcao):
+        self.lista_motores[0] = 0xFC  # comando para enviar motores como velocidade
+        if motor <= 0:
             return
-        if(motor > 4):
+        if motor > 4:
             return
-        if(direcao == self.NORMAL):
-            self.motorInvertido[motor - 1] = False
+        if direcao == self.NORMAL:
+            self.motor_invertido[motor - 1] = False
         else:
-            self.motorInvertido[motor - 1] = True
-        if self.atualizaInstantaneo:
-            self.atualizaMotores()
+            self.motor_invertido[motor - 1] = True
+        if self.atualiza_instantaneo:
+            self.atualiza_motores()
 
-    def desativaServo(self,servo):
-        if(servo <= 0):
+    def desativa_servo(self, servo):
+        if servo <= 0:
             return
-        if(servo > 6):
+        if servo > 6:
             return
-        self.listaServos[servo] = 200 #maior que 180 desativa ele
-        if self.atualizaInstantaneo:
-            self.atualizaServos()
-    
-    def velocidadeMotor(self,motor,velocidade):
-        self.listaMotores[0] = 0xfc #comando para enviar motores como velocidade
-        if(motor <= 0):
-            return
-        if(motor > 4):
-            return
-        if(velocidade < -120):
-            velocidade = -120
-        if(velocidade > 120):
-            velocidade = 120
-        if(self.motorInvertido[motor - 1]):
-            velocidade = -velocidade
-        self.listaMotores[motor] = struct.pack('b', velocidade)[0]
-        if self.atualizaInstantaneo:
-            self.atualizaMotores()
+        self.lista_servos[servo] = 200  # maior que 180 desativa ele
+        if self.atualiza_instantaneo:
+            self.atualiza_servos()
 
-    #essa função só move os motores 1 e 2, pois são os únicos que possuem encoder
-    def moveMotor(self, motor, velocidade, angulo):
-        self.listaMotores[0] = 0xfc #comando para enviar motores como velocidade
-        angulo = abs(angulo) #sempre será positivo
-        if(angulo > 65535): #erro, nao aceito valores maiores que 65535
+    def velocidade_motor(self, motor, velocidade):
+        self.lista_motores[0] = 0xFC  # comando para enviar motores como velocidade
+        if motor <= 0:
             return
-        if(motor <= 0):
+        if motor > 4:
             return
-        if(motor > 2):
-            return
-        self.anguloMotor1 = angulo
-        if(motor == 1):
-            posicaoAnguloLista = 5
-            self.anguloMotor1 = angulo
-        if(motor == 2):
-            posicaoAnguloLista = 7
-            self.anguloMotor2 = angulo
-        if(velocidade < -120):
-            velocidade = -120
-        if(velocidade > 120):
-            velocidade = 120
-        if(self.motorInvertido[motor - 1]):
+        velocidade = max(velocidade, -120)
+        velocidade = min(velocidade, 120)
+        if self.motor_invertido[motor - 1]:
             velocidade = -velocidade
-        self.listaMotores[motor] = struct.pack('b', velocidade)[0]
-        self.listaMotores[posicaoAnguloLista] = (angulo >> 8) & 0xFF #pego o byte mais significativo
-        self.listaMotores[posicaoAnguloLista+1] = angulo & 0xFF #pego o byte menos significativo
-        if self.atualizaInstantaneo:
-            self.atualizaMotores()
+        self.lista_motores[motor] = struct.pack('b', velocidade)[0]
+        if self.atualiza_instantaneo:
+            self.atualiza_motores()
+
+    # essa função só move os motores 1 e 2, pois são os únicos que possuem encoder
+    def move_motor(self, motor, velocidade, angulo):
+        self.lista_motores[0] = 0xFC  # comando para enviar motores como velocidade
+        angulo = abs(angulo)  # sempre será positivo
+        if angulo > 65535:  # erro, nao aceito valores maiores que 65535
+            return
+        if motor <= 0:
+            return
+        if motor > 2:
+            return
+        self.angulo_motor1 = angulo
+        if motor == 1:
+            posicao_angulo_lista = 5
+            self.angulo_motor1 = angulo
+        if motor == 2:
+            posicao_angulo_lista = 7
+            self.angulo_motor2 = angulo
+        velocidade = max(velocidade, -120)
+        velocidade = min(velocidade, 120)
+        if self.motor_invertido[motor - 1]:
+            velocidade = -velocidade
+        self.lista_motores[motor] = struct.pack('b', velocidade)[0]
+        self.lista_motores[posicao_angulo_lista] = (angulo >> 8) & 0xFF  # pego o byte mais significativo
+        self.lista_motores[posicao_angulo_lista + 1] = angulo & 0xFF  # pego o byte menos significativo
+        if self.atualiza_instantaneo:
+            self.atualiza_motores()
             time.sleep(0.05)
 
-
-    #Função que move os motores 1 e 2 ao mesmo tempo
-    #velocidade1 e velocidade2 são os valores de velocidade dos motores, angulo1 e angulo2 são os angulos que os motores devem se mover
-    def moveMotores(self,velocidade1,angulo1,velocidade2,angulo2):
-        self.listaMotores[0] = 0xfc #comando para enviar motores como velocidade
-        angulo1 = abs(angulo1) #sempre será positivo
-        if(angulo1 > 65535):
+    # Função que move os motores 1 e 2 ao mesmo tempo
+    # velocidade1 e velocidade2 são os valores de velocidade dos motores, angulo1 e angulo2 são os angulos que os motores devem se mover
+    def move_motores(self, velocidade1, angulo1, velocidade2, angulo2):
+        self.lista_motores[0] = 0xFC  # comando para enviar motores como velocidade
+        angulo1 = abs(angulo1)  # sempre será positivo
+        if angulo1 > 65535:
             return
-        angulo2 = abs(angulo2) #sempre será positivo
-        if(angulo2 > 65535):
+        angulo2 = abs(angulo2)  # sempre será positivo
+        if angulo2 > 65535:
             return
         motor = 1
-        if(velocidade1 < -120):
-            velocidade1 = -120
-        if(velocidade1 > 120):
-            velocidade1 = 120
-        if(self.motorInvertido[motor - 1]):
+        velocidade1 = max(velocidade1, -120)
+        velocidade1 = min(velocidade1, 120)
+        if self.motor_invertido[motor - 1]:
             velocidade1 = -velocidade1
-        self.listaMotores[motor] = struct.pack('b', int(velocidade1))[0]
+        self.lista_motores[motor] = struct.pack('b', int(velocidade1))[0]
         motor = 2
-        if(velocidade2 < -120):
-            velocidade2 = -120
-        if(velocidade2 > 120):
-            velocidade2 = 120
-        if(self.motorInvertido[motor - 1]):
+        velocidade2 = max(velocidade2, -120)
+        velocidade2 = min(velocidade2, 120)
+        if self.motor_invertido[motor - 1]:
             velocidade2 = -velocidade2
-        self.listaMotores[motor] = struct.pack('b', int(velocidade2))[0]
-        self.anguloMotor1 = angulo1
-        self.listaMotores[5] = (angulo1 >> 8) & 0xFF #pego o byte mais significativo
-        self.listaMotores[6] = angulo1 & 0xFF
-        self.anguloMotor2 = angulo2
-        self.listaMotores[7] = (angulo2 >> 8) & 0xFF #pego o byte mais significativo
-        self.listaMotores[8] = angulo2 & 0xFF
-        if self.atualizaInstantaneo:
-            self.atualizaMotores()
+        self.lista_motores[motor] = struct.pack('b', int(velocidade2))[0]
+        self.angulo_motor1 = angulo1
+        self.lista_motores[5] = (angulo1 >> 8) & 0xFF  # pego o byte mais significativo
+        self.lista_motores[6] = angulo1 & 0xFF
+        self.angulo_motor2 = angulo2
+        self.lista_motores[7] = (angulo2 >> 8) & 0xFF  # pego o byte mais significativo
+        self.lista_motores[8] = angulo2 & 0xFF
+        if self.atualiza_instantaneo:
+            self.atualiza_motores()
             time.sleep(0.05)
 
-    #Função que move para sempre os motores 1 e 2 ao mesmo tempo
-    #velocidade1 e velocidade2 são os valores de velocidade dos motores
-    def velocidadeMotores(self,velocidade1,velocidade2):
-        self.listaMotores[0] = 0xfc #comando para enviar motores como velocidade
+    # Função que move para sempre os motores 1 e 2 ao mesmo tempo
+    # velocidade1 e velocidade2 são os valores de velocidade dos motores
+    def velocidade_motores(self, velocidade1, velocidade2):
+        self.lista_motores[0] = 0xFC  # comando para enviar motores como velocidade
         motor = 1
-        if(velocidade1 < -120):
-            velocidade1 = -120
-        if(velocidade1 > 120):
-            velocidade1 = 120
-        if(self.motorInvertido[motor - 1]):
+        velocidade1 = max(velocidade1, -120)
+        velocidade1 = min(velocidade1, 120)
+        if self.motor_invertido[motor - 1]:
             velocidade1 = -velocidade1
-        self.listaMotores[motor] =struct.pack('b', int(velocidade1))[0]
+        self.lista_motores[motor] = struct.pack('b', int(velocidade1))[0]
         motor = 2
-        if(velocidade2 < -120):
-            velocidade2 = -120
-        if(velocidade2 > 120):
-            velocidade2 = 120
-        if(self.motorInvertido[motor - 1]):
+        velocidade2 = max(velocidade2, -120)
+        velocidade2 = min(velocidade2, 120)
+        if self.motor_invertido[motor - 1]:
             velocidade2 = -velocidade2
-        self.listaMotores[motor] = struct.pack('b', int(velocidade2))[0]
-        if self.atualizaInstantaneo:
-            self.atualizaMotores()
+        self.lista_motores[motor] = struct.pack('b', int(velocidade2))[0]
+        if self.atualiza_instantaneo:
+            self.atualiza_motores()
 
-    #Função que move para sempre os motores 1 e 2 ao mesmo tempo
-    #potencia1 e potencia2 são os valores de potencia do pwm dos motores
-    def potenciaMotores(self,potencia1,potencia2):
-        self.listaMotores[0] = 0xfa #comando para enviar motores como potencia
+    # Função que move para sempre os motores 1 e 2 ao mesmo tempo
+    # potencia1 e potencia2 são os valores de potencia do pwm dos motores
+    def potencia_motores(self, potencia1, potencia2):
+        self.lista_motores[0] = 0xFA  # comando para enviar motores como potencia
         motor = 1
-        if(potencia1 < -100):
-            potencia1 = -100
-        if(potencia1 > 100):
-            potencia1 = 100
-        if(self.motorInvertido[motor - 1]):
+        potencia1 = max(potencia1, -100)
+        potencia1 = min(potencia1, 100)
+        if self.motor_invertido[motor - 1]:
             potencia1 = -potencia1
-        self.listaMotores[motor] =struct.pack('b', int(potencia1))[0]
+        self.lista_motores[motor] = struct.pack('b', int(potencia1))[0]
         motor = 2
-        if(potencia2 < -100):
-            potencia2 = -100
-        if(potencia2 > 100):
-            potencia2 = 100
-        if(self.motorInvertido[motor - 1]):
+        potencia2 = max(potencia2, -100)
+        potencia2 = min(potencia2, 100)
+        if self.motor_invertido[motor - 1]:
             potencia2 = -potencia2
-        self.listaMotores[motor] = struct.pack('b', int(potencia2))[0]
-        if self.atualizaInstantaneo:
-            self.atualizaMotores()
+        self.lista_motores[motor] = struct.pack('b', int(potencia2))[0]
+        if self.atualiza_instantaneo:
+            self.atualiza_motores()
 
+    # para todos os 4 motores
+    def para_motores(self):
+        self.move_motores(0, 1, 0, 1)
+        return
+        self.lista_motores[0] = 0xFC
+        self.lista_motores[1] = 0
+        self.lista_motores[2] = 0
+        self.lista_motores[3] = 0
+        self.lista_motores[4] = 0
+        self.lista_motores[5] = 0
+        self.lista_motores[6] = 0
+        self.lista_motores[7] = 0
+        self.lista_motores[8] = 0
+        self.lista_motores[9] = 0
+        self.angulo_motor1 = 0
+        self.angulo_motor2 = 0
+        if self.atualiza_instantaneo:
+            self.atualiza_motores()
 
-    #para todos os 4 motores
-    def desligaMotores(self):
-        self.listaMotores[0] = 0xfc
-        self.listaMotores[1] = 0
-        self.listaMotores[2] = 0
-        self.listaMotores[3] = 0
-        self.listaMotores[4] = 0
-        self.listaMotores[5] = 0
-        self.listaMotores[6] = 0
-        self.listaMotores[7] = 0
-        self.listaMotores[8] = 0
-        self.listaMotores[9] = 0
-        self.anguloMotor1 = 0
-        self.anguloMotor2 = 0
-        if self.atualizaInstantaneo:
-            self.atualizaMotores()
-
-    #para todos os 2 motores com encoder
-    def paraMotores(self):
-        self.velocidadeMotores(0,0)
-
-
-    def modoFreio(self,modo):
-        if(modo == self.BREAK):
-            self.modoFreioAtual = 0
+    def set_modo_freio(self, modo):
+        if modo == self.BREAK:
+            self.modo_freio = 0
         else:
-            self.modoFreioAtual = 1
-        self.listaMotores[9] = self.modoFreioAtual
-        if self.atualizaInstantaneo:
-            self.atualizaMotores()
+            self.modo_freio = 1
+        self.lista_motores[9] = self.modo_freio
+        if self.atualiza_instantaneo:
+            self.atualiza_motores()
 
-    def resetaAnguloMotor(self, motor): # nao reseto o angulo diretalmente na placa, apenas crio uma diferença
-        if(motor == 1):
-            self.anguloDeltaMotor1 = self.anguloAbsolutoMotor1
-        elif(motor == 2):
-            self.anguloDeltaMotor2 = self.anguloAbsolutoMotor2
-        else:
-            return
-        if self.atualizaInstantaneo:
-            self.atualizaMotores()
-
-    def anguloMotor(self, motor): #sempre vou retornar a subtração pelo Delta, e o anguloAbsoluto real sempre será transparente para o usuario
-        if(motor == 1):
-            if(self.motorInvertido[0] == True):
-                return -self.anguloAbsolutoMotor1 + self.anguloDeltaMotor1
-            return self.anguloAbsolutoMotor1 - self.anguloDeltaMotor1
-        elif(motor == 2):
-            if(self.motorInvertido[1] == True):
-                return -self.anguloAbsolutoMotor2 + self.anguloDeltaMotor2
-            return self.anguloAbsolutoMotor2 - self.anguloDeltaMotor2
-        else:
-            return 0
-    
-    def estadoMotor(self,motor):
-        if(motor == 1):
-            return self.estadoMotores & 0b11
-        elif(motor == 2):
-            return (self.estadoMotores >> 2) & 0b11
-        else:
-            return 0
-
-    def PIDMotor(self, kp, ki, kd):
-        # Envia os valores de kp, ki e kd como inteiros de 16 bits para a placa usando listaPID
+    def pid_motor(self, kp, ki, kd):
+        # Envia os valores de kp, ki e kd como inteiros de 16 bits para a placa usando lista_pid
         # kp, ki, kd devem estar no intervalo 0~65535
         kp = kp * 100  # mando os valores multiplicados por 100 para evitar problemas de precisão
         ki = ki * 100
@@ -363,19 +285,47 @@ class Motores:
         kp = max(0, min(65535, int(kp)))
         ki = max(0, min(65535, int(ki)))
         kd = max(0, min(65535, int(kd)))
-        self.listaPID[1] = (kp >> 8) & 0xFF
-        self.listaPID[2] = kp & 0xFF
-        self.listaPID[3] = (ki >> 8) & 0xFF
-        self.listaPID[4] = ki & 0xFF
-        self.listaPID[5] = (kd >> 8) & 0xFF
-        self.listaPID[6] = kd & 0xFF
-        self.ser.write(bytes(self.listaPID))
+        self.lista_pid[1] = (kp >> 8) & 0xFF
+        self.lista_pid[2] = kp & 0xFF
+        self.lista_pid[3] = (ki >> 8) & 0xFF
+        self.lista_pid[4] = ki & 0xFF
+        self.lista_pid[5] = (kd >> 8) & 0xFF
+        self.lista_pid[6] = kd & 0xFF
+        self.ser.write(bytes(self.lista_pid))
         if self.DEBUG:
-            print(f"Enviando PID: kp={kp}, ki={ki}, kd={kd} -> {self.listaPID}")
+            print(f"Enviando PID: kp={kp}, ki={ki}, kd={kd} -> {self.lista_pid}")
         # Opcional: ler resposta da placa, se necessário
-        #analiso se recebeu um byte de retorno
-        retornoSerial = self.ser.read(1)
-        if len(retornoSerial) == 1:
-            if retornoSerial[0] == 0xf9:
-                return True
-        raise Exception("Erro ao configurar PID dos motores")
+
+    def reseta_angulo_motor(
+        self, motor
+    ):  # nao reseto o angulo diretalmente na placa, apenas crio uma diferença
+        if motor == 1:
+            self.angulo_delta_motor1 = self.angulo_absoluto_motor1
+        elif motor == 2:
+            self.angulo_delta_motor2 = self.angulo_absoluto_motor2
+        else:
+            return
+        if self.atualiza_instantaneo:
+            self.atualiza_motores()
+
+    def angulo_motor(
+        self, motor
+    ):  # sempre vou retornar a subtração pelo Delta, e o angulo_absoluto real sempre será transparente para o usuario
+        if motor == 1:
+            if self.motor_invertido[0]:
+                return -self.angulo_absoluto_motor1 + self.angulo_delta_motor1
+            return self.angulo_absoluto_motor1 - self.angulo_delta_motor1
+        elif motor == 2:
+            if self.motor_invertido[1]:
+                return -self.angulo_absoluto_motor2 + self.angulo_delta_motor2
+            return self.angulo_absoluto_motor2 - self.angulo_delta_motor2
+        else:
+            return 0
+
+    def estado_motor(self, motor):
+        if motor == 1:
+            return self.estado_motores & 0b11
+        elif motor == 2:
+            return (self.estado_motores >> 2) & 0b11
+        else:
+            return 0

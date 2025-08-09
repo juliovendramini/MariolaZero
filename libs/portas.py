@@ -1,7 +1,8 @@
-import os
-import netifaces
 import subprocess
+
 import serial
+
+
 class Portas:
     _SERIAL0 = 0
     SERIAL1 = 1
@@ -19,7 +20,7 @@ class Portas:
     I2C7 = 6
     I2C8 = 7
 
-    def portaSerialReal(self, porta):
+    def porta_serial_real(self, porta):
         if porta == self._SERIAL0:
             try:
                 result = subprocess.check_output(['ls', '-l', '/dev/serial/by-path/'], text=True)
@@ -29,7 +30,7 @@ class Portas:
                         caminho = '/dev/' + caminho.split('/')[-1]
                         return caminho
             except Exception as e:
-                raise RuntimeError(f"Erro ao descobrir a porta serial: {e}")
+                raise RuntimeError(f'Erro ao descobrir a porta serial: {e}')
         if porta == self.SERIAL1:
             try:
                 result = subprocess.check_output(['ls', '-l', '/dev/serial/by-path/'], text=True)
@@ -39,7 +40,7 @@ class Portas:
                         caminho = '/dev/' + caminho.split('/')[-1]
                         return caminho
             except Exception as e:
-                raise RuntimeError(f"Erro ao descobrir a porta serial: {e}")
+                raise RuntimeError(f'Erro ao descobrir a porta serial: {e}')
         if porta == self.SERIAL2:
             try:
                 result = subprocess.check_output(['ls', '-l', '/dev/serial/by-path/'], text=True)
@@ -49,7 +50,7 @@ class Portas:
                         caminho = '/dev/' + caminho.split('/')[-1]
                         return caminho
             except Exception as e:
-                raise RuntimeError(f"Erro ao descobrir a porta serial: {e}")
+                raise RuntimeError(f'Erro ao descobrir a porta serial: {e}')
         if porta == self.SERIAL3:
             try:
                 result = subprocess.check_output(['ls', '-l', '/dev/serial/by-path/'], text=True)
@@ -59,24 +60,24 @@ class Portas:
                         caminho = '/dev/' + caminho.split('/')[-1]
                         return caminho
             except Exception as e:
-                raise RuntimeError(f"Erro ao descobrir a porta serial: {e}")
+                raise RuntimeError(f'Erro ao descobrir a porta serial: {e}')
             except Exception as e:
-                raise RuntimeError(f"Erro ao descobrir a porta serial: {e}")
+                raise RuntimeError(f'Erro ao descobrir a porta serial: {e}')
         if porta == self.SERIAL4:
-            return "/dev/ttyS4";
+            return '/dev/ttyS4'
         if porta == self.SERIAL5:
-            return "/dev/ttyS2";
+            return '/dev/ttyS2'
         if porta == self.SERIAL6:
-            return "/dev/ttyS5";
+            return '/dev/ttyS5'
         else:
-            raise ValueError("Porta serial inválida.")
-        
-    def abrePortaSerial(self, porta, baud_rate=115200):
-        portaReal = self.portaSerialReal(porta)
+            raise ValueError('Porta serial inválida.')
+
+    def abre_porta_serial(self, porta, baud_rate=115200):
+        porta_real = self.porta_serial_real(porta)
         try:
-            ser = serial.Serial(portaReal, baud_rate, timeout=0.01)
-            print(f"Comunicação estabelecida com sucesso na porta {portaReal}.")
+            ser = serial.Serial(porta_real, baud_rate, timeout=0.01)
+            print(f'Comunicação estabelecida com sucesso na porta {porta_real}.')
             return ser
         except serial.SerialException as e:
-            print(f"Erro ao tentar se comunicar com a porta {portaReal}: {e}")
+            print(f'Erro ao tentar se comunicar com a porta {porta_real}: {e}')
             return None

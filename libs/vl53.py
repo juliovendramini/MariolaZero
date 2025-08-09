@@ -1,25 +1,26 @@
 from smbus2 import SMBus
 
-class VL53L0X:
-    
+
+class VL53L0X:  # noqa
     VL53L0X_I2C_ADDR = 0x29  # Endereço padrão
     MUX_ADDR = 0x70  # Endereço do TCA9548A
     bus = None
     I2C_BUS = 1  # Verifique qual /dev/i2c-X você está usando
     stop_variable = 0
-    def __init__(self,portaMux=None):
+
+    def __init__(self, porta_mux=None):
         self.bus = self.bus = SMBus(self.I2C_BUS)
-        self.portaMux = portaMux
-        if self.portaMux > 7 or self.portaMux < 0:
-            raise ValueError("Canal inválido (deve ser 0 a 7)")
+        self.porta_mux = porta_mux
+        if self.porta_mux > 7 or self.porta_mux < 0:
+            raise ValueError('Canal inválido (deve ser 0 a 7)')
         self.select_channel()
         self.select_channel()
         model_id = self.read_byte(0xC0)
         if model_id != 0xEE:
-            print("Retorno do ID do sensor: ", hex(model_id))
-            #raise Exception("VL53L0X não encontrado no endereço 0x29")
-            print("VL53L0X não encontrado no endereço 0x29, mas continuando a inicialização")
-        
+            print('Retorno do ID do sensor: ', hex(model_id))
+            # raise Exception("VL53L0X não encontrado no endereço 0x29")
+            print('VL53L0X nao encontrado no endereço 0x29')
+
         # Configuração inicial do sensor
         self.write_byte(0x88, 0x00)
         self.write_byte(0x80, 0x01)
@@ -49,7 +50,6 @@ class VL53L0X:
         self.write_byte(0xFF, 0x00)
         self.write_byte(0xB6, 0xB4)  # GLOBAL_CONFIG_REF_EN_START_SELECT
 
-
         first_spad_to_enable = 12 if spad_type_is_aperture else 0
         spads_enabled = 0
 
@@ -74,15 +74,15 @@ class VL53L0X:
         measurement_timing_budget_us = self.get_measurement_timing_budget()
 
         self.write_byte(0x01, 0xE8)  # SYSTEM_SEQUENCE_CONFIG
-        
+
         self.set_measurement_timing_budget(measurement_timing_budget_us)
 
         # Calibração de referência
         self.perform_ref_calibration()
 
     def select_channel(self):
-        self.bus.write_byte(self.MUX_ADDR, 1 << self.portaMux)
-    
+        self.bus.write_byte(self.MUX_ADDR, 1 << self.porta_mux)
+
     def write_byte(self, reg, value):
         self.bus.write_byte_data(self.VL53L0X_I2C_ADDR, reg, value)
 
@@ -140,28 +140,7 @@ class VL53L0X:
 
     def load_tuning_settings(self):
         # Carregar configurações de ajuste padrão
-        tuning_settings = [
-            (0xFF, 0x01), (0x00, 0x00), (0xFF, 0x00), (0x09, 0x00),
-            (0x10, 0x00), (0x11, 0x00), (0x24, 0x01), (0x25, 0xFF),
-            (0x75, 0x00), (0xFF, 0x01), (0x4E, 0x2C), (0x48, 0x00),
-            (0x30, 0x20), (0xFF, 0x00), (0x30, 0x09), (0x54, 0x00),
-            (0x31, 0x04), (0x32, 0x03), (0x40, 0x83), (0x46, 0x25),
-            (0x60, 0x00), (0x27, 0x00), (0x50, 0x06), (0x51, 0x00),
-            (0x52, 0x96), (0x56, 0x08), (0x57, 0x30), (0x61, 0x00),
-            (0x62, 0x00), (0x64, 0x00), (0x65, 0x00), (0x66, 0xA0),
-            (0xFF, 0x01), (0x22, 0x32), (0x47, 0x14), (0x49, 0xFF),
-            (0x4A, 0x00), (0xFF, 0x00), (0x7A, 0x0A), (0x7B, 0x00),
-            (0x78, 0x21), (0xFF, 0x01), (0x23, 0x34), (0x42, 0x00),
-            (0x44, 0xFF), (0x45, 0x26), (0x46, 0x05), (0x40, 0x40),
-            (0x0E, 0x06), (0x20, 0x1A), (0x43, 0x40), (0xFF, 0x00),
-            (0x34, 0x03), (0x35, 0x44), (0xFF, 0x01), (0x31, 0x04),
-            (0x4B, 0x09), (0x4C, 0x05), (0x4D, 0x04), (0xFF, 0x00),
-            (0x44, 0x00), (0x45, 0x20), (0x47, 0x08), (0x48, 0x28),
-            (0x67, 0x00), (0x70, 0x04), (0x71, 0x01), (0x72, 0xFE),
-            (0x76, 0x00), (0x77, 0x00), (0xFF, 0x01), (0x0D, 0x01),
-            (0xFF, 0x00), (0x80, 0x01), (0x01, 0xF8), (0xFF, 0x01),
-            (0x8E, 0x01), (0x00, 0x01), (0xFF, 0x00), (0x80, 0x00)
-        ]
+        tuning_settings = [(0xFF, 0x01), (0x00, 0x00), (0xFF, 0x00), (0x09, 0x00), (0x10, 0x00), (0x11, 0x00), (0x24, 0x01), (0x25, 0xFF), (0x75, 0x00), (0xFF, 0x01), (0x4E, 0x2C), (0x48, 0x00), (0x30, 0x20), (0xFF, 0x00), (0x30, 0x09), (0x54, 0x00), (0x31, 0x04), (0x32, 0x03), (0x40, 0x83), (0x46, 0x25), (0x60, 0x00), (0x27, 0x00), (0x50, 0x06), (0x51, 0x00), (0x52, 0x96), (0x56, 0x08), (0x57, 0x30), (0x61, 0x00), (0x62, 0x00), (0x64, 0x00), (0x65, 0x00), (0x66, 0xA0), (0xFF, 0x01), (0x22, 0x32), (0x47, 0x14), (0x49, 0xFF), (0x4A, 0x00), (0xFF, 0x00), (0x7A, 0x0A), (0x7B, 0x00), (0x78, 0x21), (0xFF, 0x01), (0x23, 0x34), (0x42, 0x00), (0x44, 0xFF), (0x45, 0x26), (0x46, 0x05), (0x40, 0x40), (0x0E, 0x06), (0x20, 0x1A), (0x43, 0x40), (0xFF, 0x00), (0x34, 0x03), (0x35, 0x44), (0xFF, 0x01), (0x31, 0x04), (0x4B, 0x09), (0x4C, 0x05), (0x4D, 0x04), (0xFF, 0x00), (0x44, 0x00), (0x45, 0x20), (0x47, 0x08), (0x48, 0x28), (0x67, 0x00), (0x70, 0x04), (0x71, 0x01), (0x72, 0xFE), (0x76, 0x00), (0x77, 0x00), (0xFF, 0x01), (0x0D, 0x01), (0xFF, 0x00), (0x80, 0x01), (0x01, 0xF8), (0xFF, 0x01), (0x8E, 0x01), (0x00, 0x01), (0xFF, 0x00), (0x80, 0x00)]  # fmt: skip
         for reg, value in tuning_settings:
             self.write_byte(reg, value)
 
@@ -169,10 +148,10 @@ class VL53L0X:
         # Calibração de referência
         self.write_byte(0x01, 0x01)  # SYSTEM_SEQUENCE_CONFIG
         if not self.perform_single_ref_calibration(0x40):
-            raise Exception("Erro na calibração de referência VHV")
+            raise Exception('Erro na calibração de referência VHV')
         self.write_byte(0x01, 0x02)  # SYSTEM_SEQUENCE_CONFIG
         if not self.perform_single_ref_calibration(0x00):
-            raise Exception("Erro na calibração de fase")
+            raise Exception('Erro na calibração de fase')
         self.write_byte(0x01, 0xE8)  # Restaurar configuração de sequência
 
     def perform_single_ref_calibration(self, vhv_init_byte):
@@ -206,18 +185,18 @@ class VL53L0X:
         timeouts = self.get_sequence_step_timeouts(enables)
 
         if enables['tcc']:
-            budget_us += (timeouts['msrc_dss_tcc_us'] + TccOverhead)
+            budget_us += timeouts['msrc_dss_tcc_us'] + TccOverhead
 
         if enables['dss']:
             budget_us += 2 * (timeouts['msrc_dss_tcc_us'] + DssOverhead)
         elif enables['msrc']:
-            budget_us += (timeouts['msrc_dss_tcc_us'] + MsrcOverhead)
+            budget_us += timeouts['msrc_dss_tcc_us'] + MsrcOverhead
 
         if enables['pre_range']:
-            budget_us += (timeouts['pre_range_us'] + PreRangeOverhead)
+            budget_us += timeouts['pre_range_us'] + PreRangeOverhead
 
         if enables['final_range']:
-            budget_us += (timeouts['final_range_us'] + FinalRangeOverhead)
+            budget_us += timeouts['final_range_us'] + FinalRangeOverhead
 
         self.measurement_timing_budget_us = budget_us  # Armazenar para reutilização interna
         return budget_us
@@ -239,15 +218,15 @@ class VL53L0X:
         timeouts = self.get_sequence_step_timeouts(enables)
 
         if enables['tcc']:
-            used_budget_us += (timeouts['msrc_dss_tcc_us'] + TccOverhead)
+            used_budget_us += timeouts['msrc_dss_tcc_us'] + TccOverhead
 
         if enables['dss']:
             used_budget_us += 2 * (timeouts['msrc_dss_tcc_us'] + DssOverhead)
         elif enables['msrc']:
-            used_budget_us += (timeouts['msrc_dss_tcc_us'] + MsrcOverhead)
+            used_budget_us += timeouts['msrc_dss_tcc_us'] + MsrcOverhead
 
         if enables['pre_range']:
-            used_budget_us += (timeouts['pre_range_us'] + PreRangeOverhead)
+            used_budget_us += timeouts['pre_range_us'] + PreRangeOverhead
 
         if enables['final_range']:
             used_budget_us += FinalRangeOverhead
@@ -261,14 +240,17 @@ class VL53L0X:
 
             # Converter timeout final para MCLKs
             final_range_timeout_mclks = self.timeout_microseconds_to_mclks(
-                final_range_timeout_us, timeouts['final_range_vcsel_period_pclks']
+                final_range_timeout_us,
+                timeouts['final_range_vcsel_period_pclks'],
             )
 
             if enables['pre_range']:
                 final_range_timeout_mclks += timeouts['pre_range_mclks']
 
             # Configurar o timeout final
-            self.write_word(0x71, self.encode_timeout(final_range_timeout_mclks))  # FINAL_RANGE_CONFIG_TIMEOUT_MACROP_HI
+            self.write_word(
+                0x71, self.encode_timeout(final_range_timeout_mclks)
+            )  # FINAL_RANGE_CONFIG_TIMEOUT_MACROP_HI
 
         self.measurement_timing_budget_us = budget_us  # Armazenar para reutilização interna
         return True
@@ -283,7 +265,7 @@ class VL53L0X:
             'pre_range': (sequence_config >> 6) & 0x1,
             'final_range': (sequence_config >> 7) & 0x1,
         }
-    
+
     def timeout_microseconds_to_mclks(self, timeout_period_us, vcsel_period_pclks):
         # Converter timeout de microsegundos para MCLKs
         macro_period_ns = self.calc_macro_period(vcsel_period_pclks)
@@ -296,33 +278,40 @@ class VL53L0X:
 
         timeouts['msrc_dss_tcc_mclks'] = self.read_byte(0x46) + 1  # MSRC_CONFIG_TIMEOUT_MACROP
         timeouts['msrc_dss_tcc_us'] = self.timeout_mclks_to_microseconds(
-            timeouts['msrc_dss_tcc_mclks'], timeouts['pre_range_vcsel_period_pclks']
+            timeouts['msrc_dss_tcc_mclks'],
+            timeouts['pre_range_vcsel_period_pclks'],
         )
 
-        timeouts['pre_range_mclks'] = self.decode_timeout(self.read_word(0x51))  # PRE_RANGE_CONFIG_TIMEOUT_MACROP_HI
+        timeouts['pre_range_mclks'] = self.decode_timeout(
+            self.read_word(0x51)
+        )  # PRE_RANGE_CONFIG_TIMEOUT_MACROP_HI
         timeouts['pre_range_us'] = self.timeout_mclks_to_microseconds(
-            timeouts['pre_range_mclks'], timeouts['pre_range_vcsel_period_pclks']
+            timeouts['pre_range_mclks'],
+            timeouts['pre_range_vcsel_period_pclks'],
         )
 
         timeouts['final_range_vcsel_period_pclks'] = self.get_vcsel_pulse_period('final_range')
 
-        timeouts['final_range_mclks'] = self.decode_timeout(self.read_word(0x71))  # FINAL_RANGE_CONFIG_TIMEOUT_MACROP_HI
+        timeouts['final_range_mclks'] = self.decode_timeout(
+            self.read_word(0x71)
+        )  # FINAL_RANGE_CONFIG_TIMEOUT_MACROP_HI
         if enables['pre_range']:
             timeouts['final_range_mclks'] -= timeouts['pre_range_mclks']
         timeouts['final_range_us'] = self.timeout_mclks_to_microseconds(
-            timeouts['final_range_mclks'], timeouts['final_range_vcsel_period_pclks']
+            timeouts['final_range_mclks'],
+            timeouts['final_range_vcsel_period_pclks'],
         )
 
         return timeouts
 
-    def get_vcsel_pulse_period(self, type):
+    def get_vcsel_pulse_period(self, type_):
         # Obter período de pulso VCSEL
-        if type == 'pre_range':
+        if type_ == 'pre_range':
             return self.decode_vcsel_period(self.read_byte(0x50))  # PRE_RANGE_CONFIG_VCSEL_PERIOD
-        elif type == 'final_range':
+        elif type_ == 'final_range':
             return self.decode_vcsel_period(self.read_byte(0x70))  # FINAL_RANGE_CONFIG_VCSEL_PERIOD
         else:
-            raise ValueError("Tipo inválido para VCSEL pulse period")
+            raise ValueError('Tipo inválido para VCSEL pulse period')
 
     def decode_vcsel_period(self, reg_val):
         # Decodificar período VCSEL
@@ -378,6 +367,8 @@ class VL53L0X:
         self.write_byte(0xFF, 0x00)
 
     def read_range_continuous_millimeters(self):
+        self.select_channel()
+        self.select_channel()
         # Ler distância em milímetros no modo contínuo
         while (self.read_byte(0x13) & 0x07) == 0:  # RESULT_INTERRUPT_STATUS
             pass  # Esperar até que o resultado esteja pronto
@@ -406,6 +397,24 @@ class VL53L0X:
 
         return self.read_range_continuous_millimeters()
 
+    def solicita_leitura(self):
+        self.select_channel()
+        self.select_channel()
+        # Realizar uma medição única e retornar a distância em milímetros
+        self.write_byte(0x80, 0x01)
+        self.write_byte(0xFF, 0x01)
+        self.write_byte(0x00, 0x00)
+        self.write_byte(0x91, self.stop_variable)  # stop_variable
+        self.write_byte(0x00, 0x01)
+        self.write_byte(0xFF, 0x00)
+        self.write_byte(0x80, 0x00)
+
+        self.write_byte(0x00, 0x01)  # SYSRANGE_START (modo single-shot)
+
+        # Esperar até que o bit de início seja limpo
+        while self.read_byte(0x00) & 0x01:  # SYSRANGE_START
+            pass
+
     def timeout_occurred(self):
         # Verificar se ocorreu um timeout
         tmp = self.did_timeout
@@ -415,7 +424,7 @@ class VL53L0X:
     def write_word(self, reg, value):
         # Escrever um valor de 16 bits (word) em um registro
         high_byte = (value >> 8) & 0xFF  # Byte mais significativo
-        low_byte = value & 0xFF          # Byte menos significativo
+        low_byte = value & 0xFF  # Byte menos significativo
         self.write_byte(reg, high_byte)
         self.write_byte(reg + 1, low_byte)
 

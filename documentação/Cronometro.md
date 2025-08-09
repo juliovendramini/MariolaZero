@@ -15,18 +15,18 @@ A classe `Cronometro` é uma ferramenta simples para medir o tempo em milissegun
 
 ## Atributos da Classe
 
-- **`nomeArquivo`**: Nome do arquivo onde o estado do cronômetro será salvo (opcional).
+- **`nome_arquivo`**: Nome do arquivo onde o estado do cronômetro será salvo (opcional).
 - **`tempo_inicial`**: Tempo inicial do cronômetro (em segundos desde a época Unix).
 
 ---
 
 ## Métodos da Classe
 
-### `__init__(self, nomeArquivo=None)`
+### `__init__(self, nome_arquivo=None)`
 Construtor da classe. Inicializa o cronômetro.
 
 - **Parâmetros**:
-  - `nomeArquivo` (str, opcional): Nome do arquivo para salvar o estado do cronômetro. Se não for fornecido, o cronômetro será temporário e não salvará seu estado.
+  - `nome_arquivo` (str, opcional): Nome do arquivo para salvar o estado do cronômetro. Se não for fornecido, o cronômetro será temporário e não salvará seu estado.
 
 ---
 
@@ -34,7 +34,7 @@ Construtor da classe. Inicializa o cronômetro.
 Inicia o cronômetro a partir do momento atual.
 
 - **Comportamento**:
-  - Se um `nomeArquivo` foi fornecido, o estado do cronômetro será salvo no arquivo.
+  - Se um `nome_arquivo` foi fornecido, o estado do cronômetro será salvo no arquivo.
 
 ---
 
@@ -42,7 +42,7 @@ Inicia o cronômetro a partir do momento atual.
 Apaga o estado salvo do cronômetro.
 
 - **Comportamento**:
-  - Remove o arquivo especificado em `nomeArquivo`.
+  - Remove o arquivo especificado em `nome_arquivo`.
   - Reseta o atributo `tempo_inicial` para `None`.
 
 ---
@@ -52,7 +52,7 @@ Reseta o cronômetro para o momento atual.
 
 - **Comportamento**:
   - Atualiza o tempo inicial para o momento atual.
-  - Salva o estado no arquivo, se um `nomeArquivo` foi fornecido.
+  - Salva o estado no arquivo, se um `nome_arquivo` foi fornecido.
 
 ---
 
@@ -66,7 +66,7 @@ Retorna o tempo decorrido em milissegundos desde que o cronômetro foi iniciado.
 ---
 
 ### `salva(self)`
-Salva o estado atual do cronômetro no arquivo especificado em `nomeArquivo`.
+Salva o estado atual do cronômetro no arquivo especificado em `nome_arquivo`.
 
 - **Comportamento**:
   - Escreve o valor de `tempo_inicial` no arquivo.
@@ -74,7 +74,7 @@ Salva o estado atual do cronômetro no arquivo especificado em `nomeArquivo`.
 ---
 
 ### `carrega(self)`
-Carrega o estado do cronômetro a partir do arquivo especificado em `nomeArquivo`.
+Carrega o estado do cronômetro a partir do arquivo especificado em `nome_arquivo`.
 
 - **Comportamento**:
   - Lê o valor de `tempo_inicial` do arquivo.
@@ -85,7 +85,7 @@ Carrega o estado do cronômetro a partir do arquivo especificado em `nomeArquivo
 ## Exemplo de Uso
 
 ```python
-from cronometro import Cronometro
+from libs.cronometro import Cronometro
 
 # Cronômetro temporário (não salva estado em arquivo)
 cronometro_temp = Cronometro()
