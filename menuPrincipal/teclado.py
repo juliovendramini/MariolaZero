@@ -31,7 +31,7 @@ class Teclado:
         self.state = 0x0F
         self._atualizar_estado()
 
-    def leBotao(self, botao):
+    def le_botao(self, botao):
         """
         Lê o estado de um botão (índices 1 a 4).
         :param botao: Número do botão (1 a 4).
@@ -43,7 +43,7 @@ class Teclado:
         leitura = self.bus.read_byte(self.address)
         return (leitura >> pino) & 0x01
 
-    def alteraLed(self, led, valor):
+    def altera_led(self, led, valor):
         """
         Controla o estado de um LED (índices 1 a 4).
         :param led: Número do LED (1 a 4).

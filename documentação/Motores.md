@@ -1,42 +1,43 @@
 # Motores
 
-A classe `Motores` é responsável por controlar os motores e servos da placa do novo brick. Ela fornece métodos para configurar velocidades, direções, ângulos e modos de operação dos motores e servos, além de realizar a comunicação com a placa via porta serial.
+A classe `Motores` é responsável por controlar os motores e servos da placa do novo brick. Ela fornece métodos para configurar velocidades, direções, ângulos e modos de operação dos motores e servos, além de realizar a comunicação com a placa via porta serial com suporte a controle PID.
 
 ---
 
 ## Atributos da Classe
 
-- **`motorInvertido`**: Lista de 4 valores booleanos indicando se cada motor está invertido.
+- **`motor_invertido`**: Lista de 4 valores booleanos indicando se cada motor está invertido.
 - **`DEBUG`**: Flag para ativar ou desativar mensagens de depuração.
 - **`NORMAL`**: Constante para indicar a direção normal do motor.
 - **`INVERTIDO`**: Constante para indicar a direção invertida do motor.
-- **`anguloMotor1`**: Ângulo atual do motor 1.
-- **`anguloMotor2`**: Ângulo atual do motor 2.
-- **`modoFreio`**: Modo de frenagem dos motores (`BREAK` ou `HOLD`).
+- **`angulo_motor1`**: Ângulo atual do motor 1.
+- **`angulo_motor2`**: Ângulo atual do motor 2.
+- **`modo_freio`**: Modo de frenagem dos motores (`BREAK` ou `HOLD`).
 - **`BREAK`**: Constante para o modo de frenagem "break".
 - **`HOLD`**: Constante para o modo de frenagem "hold".
-- **`anguloAbsolutoMotor1`**: Ângulo absoluto do motor 1.
-- **`anguloAbsolutoMotor2`**: Ângulo absoluto do motor 2.
-- **`anguloDeltaMotor1`**: Diferença de ângulo do motor 1 desde o último reset.
-- **`anguloDeltaMotor2`**: Diferença de ângulo do motor 2 desde o último reset.
-- **`estadoMotores`**: Estado atual dos motores.
+- **`angulo_absoluto_motor1`**: Ângulo absoluto do motor 1.
+- **`angulo_absoluto_motor2`**: Ângulo absoluto do motor 2.
+- **`angulo_delta_motor1`**: Diferença de ângulo do motor 1 desde o último reset.
+- **`angulo_delta_motor2`**: Diferença de ângulo do motor 2 desde o último reset.
+- **`estado_motores`**: Estado atual dos motores.
 - **`PARADO`**: Constante para indicar que o motor está parado.
 - **`GIRANDO_NORMAL`**: Constante para indicar que o motor está girando no sentido normal.
 - **`GIRANDO_INVERTIDO`**: Constante para indicar que o motor está girando no sentido invertido.
-- **`atualizaInstantaneo`**: Flag para ativar ou desativar a atualização instantânea dos motores.
+- **`atualiza_instantaneo`**: Flag para ativar ou desativar a atualização instantânea dos motores.
 - **`ser`**: Objeto de comunicação serial.
-- **`listaServos`**: Lista de valores para controlar os servos.
-- **`listaMotores`**: Lista de valores para controlar os motores.
+- **`lista_servos`**: Lista de valores para controlar os servos.
+- **`lista_motores`**: Lista de valores para controlar os motores.
+- **`lista_pid`**: Lista de valores para configurar o controle PID dos motores.
 
 ---
 
 ## Métodos da Classe
 
-### `__init__(self, atualizaInstantaneo=False)`
+### `__init__(self, atualiza_instantaneo=False)`
 Construtor da classe. Inicializa os atributos e configura a comunicação serial com a placa.
 
 - **Parâmetros**:
-  - `atualizaInstantaneo` (bool): Define se as atualizações dos motores e servos devem ser instantâneas.
+  - `atualiza_instantaneo` (bool): Define se as atualizações dos motores e servos devem ser instantâneas.
 
 - **Exceções**:
   - Lança uma exceção se a porta serial não puder ser aberta.
@@ -48,7 +49,7 @@ Destrutor da classe. Para os motores e fecha a porta serial.
 
 ---
 
-### `moveServo(self, servo, angulo)`
+### `move_servo(self, servo, angulo)`
 Move um servo para o ângulo especificado.
 
 - **Parâmetros**:
@@ -57,7 +58,7 @@ Move um servo para o ângulo especificado.
 
 ---
 
-### `atualizaServos(self)`
+### `atualiza_servos(self)`
 Atualiza os valores dos servos na placa.
 
 - **Exceções**:
@@ -65,7 +66,7 @@ Atualiza os valores dos servos na placa.
 
 ---
 
-### `atualizaMotores(self)`
+### `atualiza_motores(self)`
 Atualiza os valores dos motores na placa.
 
 - **Exceções**:
@@ -81,7 +82,7 @@ Obtém o estado atual dos motores sem atualizar as velocidades.
 
 ---
 
-### `direcaoMotor(self, motor, direcao)`
+### `direcao_motor(self, motor, direcao)`
 Define a direção de um motor.
 
 - **Parâmetros**:
@@ -90,7 +91,7 @@ Define a direção de um motor.
 
 ---
 
-### `desativaServo(self, servo)`
+### `desativa_servo(self, servo)`
 Desativa um servo.
 
 - **Parâmetros**:
@@ -98,7 +99,7 @@ Desativa um servo.
 
 ---
 
-### `velocidadeMotor(self, motor, velocidade)`
+### `velocidade_motor(self, motor, velocidade)`
 Define a velocidade de um motor.
 
 - **Parâmetros**:
@@ -107,7 +108,7 @@ Define a velocidade de um motor.
 
 ---
 
-### `moveMotor(self, motor, velocidade, angulo)`
+### `move_motor(self, motor, velocidade, angulo)`
 Move um motor para um ângulo específico com uma velocidade definida.
 
 - **Parâmetros**:
@@ -117,7 +118,7 @@ Move um motor para um ângulo específico com uma velocidade definida.
 
 ---
 
-### `moveMotores(self, velocidade1, angulo1, velocidade2, angulo2)`
+### `move_motores(self, velocidade1, angulo1, velocidade2, angulo2)`
 Move os motores 1 e 2 simultaneamente para ângulos específicos com velocidades definidas.
 
 - **Parâmetros**:
@@ -128,7 +129,7 @@ Move os motores 1 e 2 simultaneamente para ângulos específicos com velocidades
 
 ---
 
-### `velocidadeMotores(self, velocidade1, velocidade2)`
+### `velocidade_motores(self, velocidade1, velocidade2)`
 Define as velocidades dos motores 1 e 2.
 
 - **Parâmetros**:
@@ -137,12 +138,21 @@ Define as velocidades dos motores 1 e 2.
 
 ---
 
-### `paraMotores(self)`
+### `potencia_motores(self, potencia1, potencia2)`
+Define a potência (PWM) dos motores 1 e 2.
+
+- **Parâmetros**:
+  - `potencia1` (int): Potência do motor 1 (-100 a 100).
+  - `potencia2` (int): Potência do motor 2 (-100 a 100).
+
+---
+
+### `para_motores(self)`
 Para todos os motores.
 
 ---
 
-### `modoFreio(self, modo)`
+### `set_modo_freio(self, modo)`
 Define o modo de frenagem dos motores.
 
 - **Parâmetros**:
@@ -150,7 +160,17 @@ Define o modo de frenagem dos motores.
 
 ---
 
-### `resetaAnguloMotor(self, motor)`
+### `pid_motor(self, kp, ki, kd)`
+Configura os parâmetros PID dos motores.
+
+- **Parâmetros**:
+  - `kp` (float): Constante proporcional (multiplicada por 100 internamente).
+  - `ki` (float): Constante integral (multiplicada por 100 internamente).
+  - `kd` (float): Constante derivativa (multiplicada por 100 internamente).
+
+---
+
+### `reseta_angulo_motor(self, motor)`
 Reseta o ângulo de um motor.
 
 - **Parâmetros**:
@@ -158,7 +178,7 @@ Reseta o ângulo de um motor.
 
 ---
 
-### `anguloMotor(self, motor)`
+### `angulo_motor(self, motor)`
 Obtém o ângulo atual de um motor, considerando o delta.
 
 - **Parâmetros**:
@@ -169,7 +189,7 @@ Obtém o ângulo atual de um motor, considerando o delta.
 
 ---
 
-### `estadoMotor(self, motor)`
+### `estado_motor(self, motor)`
 Obtém o estado atual de um motor.
 
 - **Parâmetros**:

@@ -5,20 +5,20 @@ import os
 class Cronometro:
     # se a criação do cronometro for sem nome de arquivo, ele não salva o tempo em arquivos
     # essa situação é utilizaza para cronometros temporarios
-    def __init__(self, nomeArquivo = None):
-        self.nomeArquivo = nomeArquivo
+    def __init__(self, nome_arquivo = None):
+        self.nome_arquivo = nome_arquivo
         self.tempo_inicial = None
 
     def inicia(self):
         self.tempo_inicial = time.time()
-        if(self.nomeArquivo != None):
+        if(self.nome_arquivo != None):
             self.salva()
 
     #so funciona se tiver salvo em arquivo
     def apaga(self):
-        if(self.nomeArquivo != None):
+        if(self.nome_arquivo != None):
             self.tempo_inicial = None
-            temp = "rm " + str(self.nomeArquivo)
+            temp = "rm " + str(self.nome_arquivo)
             os.system(str(temp))
 
     def reseta(self):
@@ -32,14 +32,14 @@ class Cronometro:
         return int(time.time()*1000 - self.tempo_inicial*1000)
 
     def salva(self):
-        if(self.nomeArquivo != None):
-            with open(self.nomeArquivo, 'w') as f:
+        if(self.nome_arquivo != None):
+            with open(self.nome_arquivo, 'w') as f:
                 f.write(str(self.tempo_inicial))
 
     def carrega(self):
-        if(self.nomeArquivo != None):
+        if(self.nome_arquivo != None):
             try:
-                with open(self.nomeArquivo, 'r') as f:
+                with open(self.nome_arquivo, 'r') as f:
                     self.tempo_inicial = float(f.read())
             except: # se não conseguir carregar o arquivo, inicia o cronometro
                 self.tempo_inicial = time.time()

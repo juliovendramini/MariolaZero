@@ -1,4 +1,4 @@
-Unit]
+[Unit]
 Description=Meu Script no Boot
 After=network.target
 

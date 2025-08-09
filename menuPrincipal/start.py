@@ -9,37 +9,37 @@ cronometroAtualizarTela = Cronometro()
 cronometroAtualizarTela.inicia()
 contadorAnaliseTelaTravada = 0
 while True:
-    if teclado.leBotao(1) == Teclado.APERTADO:
-        tela.moverParaBaixo();
+    if teclado.le_botao(1) == Teclado.APERTADO:
+        tela.mover_para_baixo()
         sleep(0.5)
-    if teclado.leBotao(2) == Teclado.APERTADO:
-        tela.moverParaCima();
+    if teclado.le_botao(2) == Teclado.APERTADO:
+        tela.mover_para_cima()
         sleep(0.5)
     if(cronometroAtualizarTela.tempo() > 1000):
-        tela.atualizarMenu()
+        tela.atualizar_menu()
         cronometroAtualizarTela.reseta()
-    if(teclado.leBotao(3) == Teclado.APERTADO):
-        tela.executarOpcaoSelecionada()
+    if(teclado.le_botao(3) == Teclado.APERTADO):
+        tela.executar_opcao_selecionada()
         sleep(0.5)
     
-    if(teclado.leBotao(4) == Teclado.APERTADO):
+    if(teclado.le_botao(4) == Teclado.APERTADO):
         cronometroAtualizarTela.reseta()
-        while(teclado.leBotao(4) == Teclado.APERTADO and cronometroAtualizarTela.tempo() < 2000):
+        while(teclado.le_botao(4) == Teclado.APERTADO and cronometroAtualizarTela.tempo() < 2000):
             pass
         if(cronometroAtualizarTela.tempo() >= 2000):
-            tela.modoMenu = tela.MENU_DESLIGAR
-            tela.opcaoSelecionada = 0
-            tela.atualizarMenu()
-            while(teclado.leBotao(4) == Teclado.APERTADO):
+            tela.modo_menu = tela.MENU_DESLIGAR
+            tela.opcao_selecionada = 0
+            tela.atualizar_menu()
+            while(teclado.le_botao(4) == Teclado.APERTADO):
                 pass
         else:
-            tela.modoMenu = tela.MENU_PRINCIPAL
-            tela.opcaoSelecionada = 0
-            tela.atualizarMenu()
+            tela.modo_menu = tela.MENU_PRINCIPAL
+            tela.opcao_selecionada = 0
+            tela.atualizar_menu()
 
     if(contadorAnaliseTelaTravada > 10):
         contadorAnaliseTelaTravada = 0
-        tela.aguardaSeTelaEmUsoPorOutroProcesso()
+        tela.aguarda_se_tela_em_uso_por_outro_processo()
     else:
         contadorAnaliseTelaTravada += 1
     sleep(0.1)
