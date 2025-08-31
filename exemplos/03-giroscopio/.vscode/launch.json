@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        
+        {
+            "name": "Executar envia.bat",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "cmd.exe",
+            "args": ["/c", "${workspaceFolder}/envia.bat"], // Substitua pelo caminho correto
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        }
+    ]
+}

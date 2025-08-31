@@ -2,7 +2,7 @@ import struct
 import threading
 import time
 
-from libs.portas import Portas
+from portas import Portas
 
 
 class PlacaMuxVl53l0x:

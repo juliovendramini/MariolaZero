@@ -25,11 +25,17 @@ class Motores:
     GIRANDO_INVERTIDO = 2
     atualiza_instantaneo = False
     ser = None
+    ENVIA_SERVOS = 0xFD #253
+    ENVIA_MOTORES = 0xFC #252
+    ATUALIZA_MOTORES = 0xFB #251
+    ENVIA_MOTORES_POTENCIA = 0xFA #250
+    ENVIA_PID = 0xF9 #249
 
     def __init__(self, atualiza_instantaneo=False):
-        self.lista_servos = [0xFD, 200, 200, 200, 200, 200, 200, 0, 0, 0]
-        self.lista_motores = [0xFC, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        self.lista_pid = [0xFE, 0, 0, 0, 0, 0, 0]
+        #qualquer lista que for enviada deve ter o mesmo tamanho sempre. Para evitar problemas de sincronismo
+        self.lista_servos = [self.ENVIA_SERVOS, 200, 200, 200, 200, 200, 200, 0, 0, 0]
+        self.lista_motores = [self.ENVIA_MOTORES, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.lista_pid = [self.ENVIA_PID, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         portas = Portas()
         self.ser = portas.abre_porta_serial(Portas._SERIAL0, 250000)
         if self.ser is None:
@@ -64,8 +70,12 @@ class Motores:
         if self.DEBUG:
             print(f'Enviando: {self.lista_servos}')
         retorno_serial = self.ser.read(1)
+        if self.DEBUG:
+            retorno_serial_lista = list(retorno_serial)
+            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
+            # print(f'retorno_serial: {retorno_serial}')
         if len(retorno_serial) == 1:
-            if retorno_serial[0] == 0xFD:
+            if retorno_serial[0] == self.ENVIA_SERVOS:
                 return True
         raise Exception('Erro ao ler o estado dos servos')
 
@@ -85,9 +95,11 @@ class Motores:
 
         retorno_serial = self.ser.read(10)
         if self.DEBUG:
-            print(f'retorno_serial: {retorno_serial}')
+            retorno_serial_lista = list(retorno_serial)
+            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
+            # print(f'retorno_serial: {retorno_serial}')
         if len(retorno_serial) == 10:  # só leio se o retorno for exatamente 10 bytes
-            if retorno_serial[0] == 0xFC:
+            if retorno_serial[0] == self.ENVIA_MOTORES:
                 self.angulo_absoluto_motor1 = struct.unpack('>i', bytes(retorno_serial[1:5]))[0]
                 self.angulo_absoluto_motor2 = struct.unpack('>i', bytes(retorno_serial[5:9]))[0]
                 self.estado_motores = retorno_serial[9]
@@ -96,16 +108,22 @@ class Motores:
 
     # funcao que envia informacao mas sem atualizar velocidades do controlador de motor
     def estado(self):
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
         temp = self.lista_motores[0]
-        self.lista_motores[0] = 0xFB
+        self.lista_motores[0] = self.ATUALIZA_MOTORES
         self.ser.write(bytes(self.lista_motores))
         if self.DEBUG:
             print(f'Enviando: {self.lista_motores}')
         self.lista_motores[0] = temp
         # leio o retorno da serial e salvo na lista
         retorno_serial = self.ser.read(10)
+        if self.DEBUG:
+            retorno_serial_lista = list(retorno_serial)
+            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
+            # print(f'retorno_serial: {retorno_serial}')
         if len(retorno_serial) == 10:  # só leio se o retorno for exatamente 10 bytes
-            if retorno_serial[0] == 0xFB:
+            if retorno_serial[0] == self.ATUALIZA_MOTORES:
                 self.angulo_absoluto_motor1 = struct.unpack('>i', bytes(retorno_serial[1:5]))[0]
                 self.angulo_absoluto_motor2 = struct.unpack('>i', bytes(retorno_serial[5:9]))[0]
                 self.estado_motores = retorno_serial[9]
@@ -232,7 +250,7 @@ class Motores:
     # Função que move para sempre os motores 1 e 2 ao mesmo tempo
     # potencia1 e potencia2 são os valores de potencia do pwm dos motores
     def potencia_motores(self, potencia1, potencia2):
-        self.lista_motores[0] = 0xFA  # comando para enviar motores como potencia
+        self.lista_motores[0] = self.ENVIA_MOTORES_POTENCIA  # comando para enviar motores como potencia
         motor = 1
         potencia1 = max(potencia1, -100)
         potencia1 = min(potencia1, 100)
@@ -277,6 +295,8 @@ class Motores:
             self.atualiza_motores()
 
     def pid_motor(self, kp, ki, kd):
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
         # Envia os valores de kp, ki e kd como inteiros de 16 bits para a placa usando lista_pid
         # kp, ki, kd devem estar no intervalo 0~65535
         kp = kp * 100  # mando os valores multiplicados por 100 para evitar problemas de precisão
@@ -294,11 +314,19 @@ class Motores:
         self.ser.write(bytes(self.lista_pid))
         if self.DEBUG:
             print(f"Enviando PID: kp={kp}, ki={ki}, kd={kd} -> {self.lista_pid}")
-        # Opcional: ler resposta da placa, se necessário
+        time.sleep(0.1)  # aguardo para confirmar as piscadas na placa de alteração
+        retorno_serial = self.ser.read(1)
+        if self.DEBUG:
+            retorno_serial_lista = list(retorno_serial)
+            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
+            # print(f'retorno_serial: {retorno_serial}')
+        time.sleep(1) #aguardo para confirmar as piscadas na placa de alteração
+        if len(retorno_serial) == 1:
+            if retorno_serial[0] == self.ENVIA_PID:
+                return True
+        raise Exception('Erro ao enviar dados do PID')
 
-    def reseta_angulo_motor(
-        self, motor
-    ):  # nao reseto o angulo diretalmente na placa, apenas crio uma diferença
+    def reseta_angulo_motor(self, motor):  # nao reseto o angulo diretalmente na placa, apenas crio uma diferença
         if motor == 1:
             self.angulo_delta_motor1 = self.angulo_absoluto_motor1
         elif motor == 2:
@@ -308,9 +336,7 @@ class Motores:
         if self.atualiza_instantaneo:
             self.atualiza_motores()
 
-    def angulo_motor(
-        self, motor
-    ):  # sempre vou retornar a subtração pelo Delta, e o angulo_absoluto real sempre será transparente para o usuario
+    def angulo_motor(self, motor):  # sempre vou retornar a subtração pelo Delta, e o angulo_absoluto real sempre será transparente para o usuario
         if motor == 1:
             if self.motor_invertido[0]:
                 return -self.angulo_absoluto_motor1 + self.angulo_delta_motor1

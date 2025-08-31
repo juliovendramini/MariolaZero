@@ -28,6 +28,12 @@ class MenuPrincipal:
     MENU_PRINCIPAL = 0
     MENU_DESLIGAR = 1
     modo_menu = MENU_PRINCIPAL
+    #["Desligar Brick", "Reiniciar Brick", "Wifi Off", "Wifi On", "Desbloquear"]
+    DESLIGAR = 0
+    REINICIAR = 1
+    WIFI_OFF = 2
+    WIFI_ON = 3
+    DESBLOQUEAR = 4
     def __init__(self, i2c_bus=0, i2c_address=0x3C):
         self.i2c_bus = i2c_bus
         self.i2c_address = i2c_address
@@ -76,7 +82,7 @@ class MenuPrincipal:
                     draw.text((0, y_pos), f"  {opcao}", font=self.font, fill="white")
 
     def menu_desligar(self):
-        self.menu_opcoes = ["Desligar Brick", "Wifi Off", "Wifi On"]
+        self.menu_opcoes = ["Desligar Brick", "Reiniciar Brick", "Wifi Off", "Wifi On", "Desbloquear"]
         with canvas(self.display) as draw:
             texto = f"Opções:"
             draw.text((0, 0), texto, font=self.font, fill="white")
@@ -140,7 +146,7 @@ class MenuPrincipal:
             self.modo_menu = self.MENU_PRINCIPAL
             self.atualizar_menu()
         elif self.modo_menu == self.MENU_DESLIGAR:
-            if self.opcao_selecionada == 0:
+            if self.opcao_selecionada == self.DESLIGAR:
                 print("Desligando o equipamento...")
                 with canvas(self.display) as draw:
                     draw.rectangle(self.display.bounding_box, outline="black", fill="black")
@@ -150,7 +156,17 @@ class MenuPrincipal:
                 self.limpa_tela()
                 subprocess.run(["sudo", "shutdown", "-h", "now"])
                 sleep(10)
-            elif self.opcao_selecionada == 1:
+            elif self.opcao_selecionada == self.REINICIAR:
+                print("Reiniciando o equipamento...")
+                with canvas(self.display) as draw:
+                    draw.rectangle(self.display.bounding_box, outline="black", fill="black")
+                    texto = f"REINICIANDO..."
+                    draw.text((0, 0), texto, font=self.font, fill="white")
+                sleep(1)
+                self.limpa_tela()
+                subprocess.run(["sudo", "reboot"])
+                sleep(10)
+            elif self.opcao_selecionada == self.WIFI_OFF:
                 print("Desligando o Wi-Fi...")
                 with canvas(self.display) as draw:
                     draw.rectangle(self.display.bounding_box, outline="black", fill="black")
@@ -159,7 +175,7 @@ class MenuPrincipal:
                 sleep(2)
                 self.limpa_tela()
                 subprocess.run(["sudo", "ifconfig", "wlan0", "down"])
-            elif self.opcao_selecionada == 2:
+            elif self.opcao_selecionada == self.WIFI_ON:
                 print("Ligando o Wi-Fi...")
                 with canvas(self.display) as draw:
                     texto = f"LIGANDO WIFI..."
@@ -168,6 +184,15 @@ class MenuPrincipal:
                 sleep(2)
                 self.limpa_tela()
                 subprocess.run(["sudo", "ifconfig", "wlan0", "up"])
+            elif self.opcao_selecionada == self.DESBLOQUEAR:
+                print("Desbloqueando o equipamento...")
+                with canvas(self.display) as draw:
+                    texto = f"Particao\nliberada"
+                    draw.rectangle(self.display.bounding_box, outline="black", fill="black")
+                    draw.text((0, 0), texto, font=self.font, fill="white")
+                    subprocess.run(["sudo", "mount", "-o", "remount,rw", "/dev/mmcblk2p1", "/"])
+                sleep(2)
+                self.limpa_tela()
             self.modo_menu = self.MENU_PRINCIPAL
             self.opcao_selecionada = 0
             self.atualizar_menu()
