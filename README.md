@@ -112,5 +112,8 @@ Reinicie a placa novamente, agora no armbian-config conecte no wifi para poder i
      sudo systemctl enable force-fsck-root.service
   ```
 
+* Instalando o servidor SAMBA para compartilhar a pasta do usuário com acesso remoto no windows:
+ * 
+
 Agora é só reiniciar. Caso queira verificar se o fsck está rodando, rode o comando journalctl -u force-fsck-root.service
 
