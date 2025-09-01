@@ -5,6 +5,10 @@ Como a versão utilizada é a de 8Gb de eMMC, devemos baixar a versão do armbia
 
 Agora devemos instalar no cartão SD, dar boot, configurar inicialmente a instação e depois instalar no eMMC usando o armbian-config.
 
+Antes de iniciar o cartão na placa, recomendo criar um partição separada para os usuários, mas para isso precisamos utilizar o Linux. Coloque o cartão no linux. Use o Gparted, altere o tamanho da primeira partição para ter algo como uns 4200MB e crie uma nova partição ext4 com uns 3000MB. Lembrando que não podemorar criar maior mesmo o cartão tendo mais espaço porque iremos colocar tudo na EMMC de 8GB dele. Caso queira rodar do cartão SD, esses tamanhos podem ser diferentes.
+
+Apoś isso, edite o arquivo /etc/fstab da partição principal do cartão, o nome dela deve ser armbi_root. Adicione a linha de montagem /home (UUID=65cca456-7f07-4d89-9ad2-33a9a64e5c59 /home  ext4  defaults,noatime  0 2) o UUID deve ser alterado. Para pegar o nome, rode o comando "blkid" e pegue.
+
 Após isso, ligue a placa já pelo eMMC (remova o cartão SD) rode o comando armbian-config (sudo armbian-config)
 Entre em System -> Kernel -> SY210 Manage device tree overlay e Ative as seguintes opções:
 
