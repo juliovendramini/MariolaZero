@@ -114,4 +114,20 @@ Reinicie a placa novamente, agora no armbian-config conecte no wifi para poder i
 Agora é só reiniciar. Caso queira verificar se o fsck está rodando, rode o comando journalctl -u force-fsck-root.service
 
 * Instalando o servidor SAMBA para compartilhar a pasta do usuário com acesso remoto no windows:
-  * sss
+  * Instale os pacotes: (sudo apt install samba smbclient cifs-utils)
+  * Edite o arquivo "sudo nano /etc/samba/smb.conf"
+     * No final dele adicione:
+       ```
+         [home]
+              path = /home/banana
+              browseable = yes
+              writable = yes
+              guest ok = yes
+              create mask = 0777
+              directory mask = 0777
+       ```
+    * Crie o usuário pro samba: (sudo smbpasswd -a banana)
+    * Reinicie o servidor: (sudo systemctl restart smbd)
+    * Agora, no windows vá em executar e digite: (\\IP_DO_BRICK)
+
+
