@@ -130,7 +130,7 @@ Agora é só reiniciar. Caso queira verificar se o fsck está rodando, rode o co
     * Reinicie o servidor: (sudo systemctl restart smbd)
     
     * Caso a partição / esteja montada como somente-leitura (altamente recomendado), alguns passos serão necessários:
-      * Ative o modo gravação da partição, inicie o samba e depois: 
+      * Ative o modo gravação da partição, inicie o samba (sudo systemctl start smbd) e depois: 
       * rode:
         ```
         sudo mkdir -p /home/samba-data/{private,cache,run,lock}
