@@ -27,7 +27,8 @@ Reinicie a placa novamente, agora no armbian-config conecte no wifi para poder i
 * Vamos ativar o debug na porta serial que usamos para o primeiro terminal.
    * Edite o arquivo /boot/armbianEnv.txt, "sudo nano /boot/armbianEnv.txt" e adicione a linha "verbosity=7". No proximo reboot, você já verá o log do kernel pela serial. Isso é só para identificar problemas.
 
-
+* Vamos desativar atualização do kernel para não termos surpresas:
+  * Entre no armbian-config, System -> Updates -> Disable Kernel updates
 * Atualize o APT (sudo apt update)
 * Instale alguns pacotes iniciais (sudo apt install net-tools i2c-tools build-essential libgl1)
 * Instale o ambiente gráfico XFCE pelo armbian-config
