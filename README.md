@@ -129,7 +129,7 @@ Agora é só reiniciar. Caso queira verificar se o fsck está rodando, rode o co
     * Crie o usuário pro samba: (sudo smbpasswd -a banana)
     * Reinicie o servidor: (sudo systemctl restart smbd)
     
-    * Caso a partição / esteja montada como somente-leitura (altamente recomendado), alguns passos serão necessários:
+    * Caso a partição / esteja montada como somente-leitura (altamente recomendado), e exista uma partição para /home editável, alguns passos serão necessários:
       * Ative o modo gravação da partição, inicie o samba (sudo systemctl start smbd) e depois: 
       * rode:
         ```
