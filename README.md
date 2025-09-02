@@ -128,6 +128,43 @@ Agora é só reiniciar. Caso queira verificar se o fsck está rodando, rode o co
        ```
     * Crie o usuário pro samba: (sudo smbpasswd -a banana)
     * Reinicie o servidor: (sudo systemctl restart smbd)
-    * Agora, no windows vá em executar e digite: (\\IP_DO_BRICK)
+    
+    * Caso a partição / esteja montada como somente-leitura (altamente recomendado), alguns passos serão necessários:
+      * Ative o modo gravação da partição, inicie o samba e depois: 
+      * rode:
+        ```
+        sudo mkdir -p /home/samba-data/{private,cache,run,lock}
+        sudo chown -R root:root /home/samba-data
+        sudo chmod -R 755 /home/samba-data
+        sudo mv /var/lib/samba/private /var/lib/samba/private.bak
+        sudo ln -s /home/samba-data/private /var/lib/samba/private
+        
+        sudo mv /var/cache/samba /var/cache/samba.bak
+        sudo ln -s /home/samba-data/cache /var/cache/samba
+        
+        sudo mv /var/run/samba /var/run/samba.bak
+        sudo ln -s /home/samba-data/run /var/run/samba
+        
+        sudo mv /var/lock/samba /var/lock/samba.bak
+        sudo ln -s /home/samba-data/lock /var/lock/samba
+
+        sudo cp /var/lib/samba/private.bak/secrets.tdb /home/samba-data/private/
+        sudo chown root:root /home/samba-data/private/secrets.tdb
+        sudo chmod 600 /home/samba-data/private/secrets.tdb
+
+        
 
 
+        sudo mv /var/lib/samba/account_policy.tdb /home/samba-data/registry/
+        sudo ln -s /home/samba-data/registry/account_policy.tdb /var/lib/samba/account_policy.tdb
+        sudo mv /var/lib/samba/group_mapping.tdb /home/samba-data/registry/
+        sudo ln -s /home/samba-data/registry/group_mapping.tdb /var/lib/samba/group_mapping.tdb
+        sudo mv /var/lib/samba/share_info.tdb /home/samba-data/registry/
+        sudo ln -s /home/samba-data/registry/share_info.tdb /var/lib/samba/share_info.tdb
+
+
+        #ative o serviço para iniciar quando o equipamento ligar
+        sudo systemctl enable smbd
+        
+        ```
+      
