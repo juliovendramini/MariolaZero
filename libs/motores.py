@@ -288,6 +288,26 @@ class Motores:
         if self.atualiza_instantaneo:
             self.atualiza_motores()
 
+    # Função que move para sempre os motores 1 e 2 ao mesmo tempo e coloca o mesmo valor nos motores 3 e 4 internamente
+    # velocidade1 e velocidade2 são os valores de velocidade dos motores
+    def velocidade_motores_4x4(self, velocidade1, velocidade2):
+        self.lista_motores[0] = self.ENVIA_MOTORES_4X4_VELOCIDADE  # comando para enviar motores como velocidade
+        motor = 1
+        velocidade1 = max(velocidade1, -100)
+        velocidade1 = min(velocidade1, 100)
+        if self.motor_invertido[motor - 1]:
+            velocidade1 = -velocidade1
+        self.lista_motores[motor] = struct.pack('b', int(velocidade1))[0]
+        motor = 2
+        velocidade2 = max(velocidade2, -100)
+        velocidade2 = min(velocidade2, 100)
+        if self.motor_invertido[motor - 1]:
+            velocidade2 = -velocidade2
+        self.lista_motores[motor] = struct.pack('b', int(velocidade2))[0]
+        if self.atualiza_instantaneo:
+            self.atualiza_motores()
+
+
     def potencia_motor(self, motor, potencia):
         self.lista_motores[0] = self.ENVIA_MOTORES_POTENCIA  # comando para enviar motores como potencia
         potencia = max(potencia, -100)
