@@ -5,12 +5,16 @@ from time import sleep
 from portas import Portas
 from vl53 import VL53L0X
 from tcs34725 import TCS34725
+from botoes import Botoes
 
 sensor1 = VL53L0X(Portas.I2C1)
 sensor1_cor = TCS34725(Portas.I2C1)
+botoes = Botoes()   
+
 try:   
     while(True):
         # velocidade = int(input("Digite a velocidade dos motores (1-100): "))
+        print(botoes.botao_pressionado(Botoes.P1))
         print(sensor1.read_range_single_millimeters())
         print(sensor1_cor.le_valores())
         #sleep(0.5)

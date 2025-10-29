@@ -15,12 +15,44 @@ class VL53L0X:  # noqa
             raise ValueError('Canal inválido (deve ser 0 a 7)')
         self.select_channel()
         self.select_channel()
+        #vou verificar se já em algum momento o dispositivo foi inicializado para 0x30
+        self.VL53L0X_I2C_ADDR = 0x30
+        configurado = False
+        try:
+            # Tenta ler qualquer registro para verificar se existe um dispositivo
+            self.read_byte(0x00)
+            print('Sensor já configurado no endereço 0x30')
+            configurado = True
+        except Exception as e:
+            print(f'Nenhum sensor encontrado no endereço 0x30, tentando agora no 0x29')
+            configurado = False
+        if not configurado:
+            self.VL53L0X_I2C_ADDR = 0x29
+            self.set_i2c_address(0x30)
+        # try:
+        #     model_id = self.read_byte(0xC0)
+        #     if current_addr == 0x29 and model_id == 0xEE:
+        #         self.set_i2c_address(0x30)
+        #         self.VL53L0X_I2C_ADDR = 0x30
+        # except Exception:
+        #     # Se não encontrar no 0x29, tenta no 0x30
+        #     self.VL53L0X_I2C_ADDR = 0x30
+        #     try:
+        #         model_id = self.read_byte(0xC0)
+        #         if model_id != 0xEE:
+        #             print('VL53L0X não encontrado no endereço 0x30')
+        #     except Exception:
+        #         print('VL53L0X não encontrado em nenhum endereço válido')
+        #self.set_i2c_address(0x30)  # Define um endereço I2C
         model_id = self.read_byte(0xC0)
         if model_id != 0xEE:
             print('Retorno do ID do sensor: ', hex(model_id))
             # raise Exception("VL53L0X não encontrado no endereço 0x29")
-            print('VL53L0X nao encontrado no endereço 0x29')
+            print('VL53L0X nao encontrado no endereço', self.VL53L0X_I2C_ADDR)
 
+        #se já configurou, nao preciso fazer tudo de novo
+        if not configurado:
+            self.set_i2c_address(0x30)
         # Configuração inicial do sensor
         self.write_byte(0x88, 0x00)
         self.write_byte(0x80, 0x01)
@@ -94,6 +126,15 @@ class VL53L0X:  # noqa
 
     def write_multi(self, reg, data, length):
         self.bus.write_i2c_block_data(self.VL53L0X_I2C_ADDR, reg, data[:length])
+
+    def set_i2c_address(self, new_address):
+        # Alterar o endereço I2C do sensor
+        if new_address < 0x08 or new_address > 0x77:
+            raise ValueError('Endereço I2C inválido (deve ser entre 0x08 e 0x77)')
+        self.select_channel()
+        self.select_channel()
+        self.write_byte(0x8A, new_address)
+        self.VL53L0X_I2C_ADDR = new_address
 
     def set_signal_rate_limit(self, limit):
         # Configurar limite de taxa de sinal
