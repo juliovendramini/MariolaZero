@@ -5,20 +5,20 @@ import serial
 
 class Portas:
     _SERIAL0 = 0
-    SERIAL1 = 1
+    SERIAL1 = 3
     SERIAL2 = 2
-    SERIAL3 = 3
+    SERIAL3 = 1
     SERIAL4 = 4
     SERIAL5 = 5
     SERIAL6 = 6
     I2C1 = 0
     I2C2 = 1
-    I2C3 = 2
-    I2C4 = 3
-    I2C5 = 4
-    I2C6 = 5
-    I2C7 = 6
-    I2C8 = 7
+    I2C3 = 7
+    I2C4 = 2
+    I2C5 = 3
+    I2C6 = 6
+    I2C7 = 5
+    I2C8 = 4
 
     def porta_serial_real(self, porta):
         if porta == self._SERIAL0:
