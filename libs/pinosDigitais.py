@@ -12,16 +12,6 @@ class PinosDigitais:
     - Configuração individual de direção para cada pino
     """
     
-    # Definição dos pinos GPIO
-    # P1 = 267
-    # P2 = 266
-    # P3 = 265
-    # P4 = 234
-    # P5 = 233  # Novo pino
-    # P6 = 232  # Novo pino
-    # P7 = 231  # Novo pino
-    # P8 = 230  # Novo pino
-    
     P1 = 259
     P2 = 260
     P3 = 71
