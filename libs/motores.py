@@ -30,7 +30,7 @@ class Motores:
     ATUALIZA_MOTORES = 0xFB #251
     ENVIA_MOTORES_POTENCIA = 0xFA #250
     ENVIA_PID = 0xF9 #249
-    ENVIA_MOTORES_4X4 = 0xF8
+    ENVIA_MOTORES_4X4_VELOCIDADE = 0xF8
     ENVIA_MOTORES_4X4_POTENCIA = 0xF7
 
     def __init__(self, atualiza_instantaneo=False):

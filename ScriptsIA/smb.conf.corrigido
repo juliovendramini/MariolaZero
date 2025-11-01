@@ -1,0 +1,39 @@
+# Configuração CORRIGIDA do Samba para /home/banana
+# Substitua a seção [home] no /etc/samba/smb.conf
+
+[home]
+   comment = Pasta Home do Usuario Banana
+   path = /home/banana
+   browseable = yes
+   writable = yes
+   guest ok = yes
+   read only = no
+   create mask = 0664
+   directory mask = 0775
+   force user = banana
+   force group = banana
+   valid users = banana
+   
+   # Opções de performance
+   vfs objects = acl_xattr
+   map acl inherit = yes
+   store dos attributes = yes
+   
+   # Seguir symlinks (se necessário)
+   follow symlinks = yes
+   wide links = yes
+   unix extensions = no
+
+# Se quiser acesso sem autenticação (público):
+[public]
+   comment = Compartilhamento Publico
+   path = /home/banana/public
+   browseable = yes
+   writable = yes
+   guest ok = yes
+   read only = no
+   create mask = 0777
+   directory mask = 0777
+   force create mode = 0777
+   force directory mode = 0777
+   public = yes
