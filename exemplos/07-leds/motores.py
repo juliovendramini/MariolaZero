@@ -32,12 +32,14 @@ class Motores:
     ENVIA_PID = 0xF9 #249
     ENVIA_MOTORES_4X4 = 0xF8
     ENVIA_MOTORES_4X4_POTENCIA = 0xF7
+    LED_RGB_ALL = 0xF6
 
     def __init__(self, atualiza_instantaneo=False):
         #qualquer lista que for enviada deve ter o mesmo tamanho sempre. Para evitar problemas de sincronismo
         self.lista_servos = [self.ENVIA_SERVOS, 200, 200, 200, 200, 200, 200, 0, 0, 0]
         self.lista_motores = [self.ENVIA_MOTORES, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        self.lista_pid = [self.ENVIA_PID, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.lista_pid = [self.ENVIA_PID, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.lista_led = [self.LED_RGB_ALL, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         portas = Portas()
         self.ser = portas.abre_porta_serial(Portas._SERIAL0, 250000)
         if self.ser is None:
@@ -444,3 +446,27 @@ class Motores:
             return (self.estado_motores >> 2) & 0b11
         else:
             return 0
+
+    def set_led_rgb_all(self, r, g, b):
+        self.lista_led[1] = r & 0xFF
+        self.lista_led[2] = g & 0xFF
+        self.lista_led[3] = b & 0xFF
+        self.lista_led[4] = 0  # reservado para futuro uso
+        self.lista_led[5] = 0  # reservado para futuro uso
+        self.lista_led[6] = 0  # reservado para futuro uso
+        self.lista_led[7] = 0  # reservado para futuro uso
+        self.lista_led[8] = 0  # reservado para futuro uso
+        self.lista_led[9] = 0  # reservado para futuro uso
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
+        self.ser.write(bytes(self.lista_led))
+        if self.DEBUG:
+            print(f'Enviando LED RGB ALL: {self.lista_led}')
+        retorno_serial = self.ser.read(1)
+        if self.DEBUG:
+            retorno_serial_lista = list(retorno_serial)
+            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
+        if len(retorno_serial) == 1:
+            if retorno_serial[0] == self.LED_RGB_ALL:
+                return True
+        raise Exception('Erro ao enviar dados do LED RGB ALL')
