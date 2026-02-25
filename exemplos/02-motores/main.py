@@ -11,19 +11,29 @@ motores.direcao_motor(3, Motores.INVERTIDO)
 motores.set_modo_freio(Motores.HOLD)
 try:   
     while(True):
-        # velocidade = int(input("Digite a velocidade dos motores (1-100): "))
+        #velocidade = int(input("Digite a velocidade dos motores (1-100): "))
         #print("enviando comando para motor 1")
-        #motores.estado()
-        # print(motores.angulo_motor(2))
+        motores.velocidade_motor(1,50);
+        motores.velocidade_motor(2,50);
+        motores.move_servo(1, 120);
+        motores.estado()
+        print(motores.angulo_motor(1))
+        sleep(1)
+        motores.velocidade_motor(1,30);
+        motores.velocidade_motor(2,30);
+        motores.move_servo(1, 60);
+        motores.estado()
+        print(motores.angulo_motor(1))
+        sleep(1)
         #motores.velocidade_motores_4x4(50,50);
-        motores.velocidade_motores_4x4(100,100)
+        #motores.velocidade_motores_4x4(100,100)
         #motores.velocidade_motor(2,50);
         #motores.velocidade_motor(3,-50)
         #motores.potencia_motor(1,-50);
         #motores.velocidade_motor(1,-50);
         #motores.move_motores_4x4(80,300,80,300)
-        sleep(2)
-        motores.para_motores_4x4();
+        #sleep(2)
+        #motores.para_motores_4x4();
         #sleep(5)
         #motores.para_motores();
         # sleep(2)

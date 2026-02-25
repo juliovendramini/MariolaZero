@@ -10,3 +10,37 @@ Verificando a partição e corrigindo erros caso o brick não queira iniciar mai
    - booti 0x42000000 0x60000000 0x47000000
    - fsck.ext4 -f -p /dev/mmcblk1p1
  * Após executar corretamente todos os comando, desligue o brick e liguei novamente. Agora, se tudo der certo, ele deve iniciar novamente.
+
+
+## Verificar e Corrigir a Partição /home (/dev/mmcblk2p2)
+
+Quando a partição /home está com problemas, use o modo rescue para poder desmontá-la com segurança e executar o fsck.
+
+### Passo a Passo:
+
+1. **Entrar em modo rescue:**
+   ```bash
+   systemctl rescue
+   ```
+   O sistema pedirá a senha de root e entrará no modo de manutenção.
+
+2. **Desmontar a partição /home:**
+   ```bash
+   umount /home
+   ```
+
+3. **Executar o fsck na partição /dev/mmcblk2p2:**
+   ```bash
+   fsck.ext4 -f -p /dev/mmcblk2p2
+   ```
+   
+   Opções:
+   - `-f`: força verificação mesmo que o sistema de arquivos pareça limpo
+   - `-p`: corrige automaticamente problemas que podem ser corrigidos com segurança
+
+4. **Remontar a partição /home:**
+   ```bash
+   reboot
+   ```
+
+5. **O sistema deve reinicar sem problemas**

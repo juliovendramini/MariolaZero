@@ -79,7 +79,7 @@ class Motores:
         if len(retorno_serial) == 1:
             if retorno_serial[0] == self.ENVIA_SERVOS:
                 return True
-        raise Exception('Erro ao ler o estado dos servos')
+        #raise Exception('Erro ao ler o estado dos servos')
 
     def atualiza_motores(self):
         self.ser.reset_input_buffer()
@@ -106,7 +106,7 @@ class Motores:
                 self.angulo_absoluto_motor2 = struct.unpack('>i', bytes(retorno_serial[5:9]))[0]
                 self.estado_motores = retorno_serial[9]
                 return True
-        raise Exception('Erro ao ler o estado dos motores')
+        #raise Exception('Erro ao ler o estado dos motores')
 
     # funcao que envia informacao mas sem atualizar velocidades do controlador de motor
     def estado(self):
@@ -132,7 +132,7 @@ class Motores:
                 if self.DEBUG:
                     print('Estado atualizado')
                 return True
-        raise Exception('Erro ao ler o estado dos motores')
+        #raise Exception('Erro ao ler o estado dos motores')
 
     def direcao_motor(self, motor, direcao):
         self.lista_motores[0] = self.ENVIA_MOTORES  # comando para enviar motores como velocidade
