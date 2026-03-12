@@ -5,9 +5,9 @@ import serial
 
 class Portas:
     _SERIAL0 = 0
-    SERIAL1 = 3
+    SERIAL1 = 1
     SERIAL2 = 2
-    SERIAL3 = 1
+    SERIAL3 = 3
     SERIAL4 = 4
     SERIAL5 = 5
     SERIAL6 = 6
@@ -35,7 +35,7 @@ class Portas:
             try:
                 result = subprocess.check_output(['ls', '-l', '/dev/serial/by-path/'], text=True)
                 for line in result.splitlines():
-                    if 'usb-0:1.2' in line:
+                    if 'usb-0:1.4' in line:
                         caminho = line.split('->')[-1].strip()
                         caminho = '/dev/' + caminho.split('/')[-1]
                         return caminho
@@ -55,7 +55,7 @@ class Portas:
             try:
                 result = subprocess.check_output(['ls', '-l', '/dev/serial/by-path/'], text=True)
                 for line in result.splitlines():
-                    if 'usb-0:1.4' in line:
+                    if 'usb-0:1.2' in line:
                         caminho = line.split('->')[-1].strip()
                         caminho = '/dev/' + caminho.split('/')[-1]
                         return caminho
