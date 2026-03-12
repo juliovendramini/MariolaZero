@@ -75,7 +75,7 @@ class Portas:
     def abre_porta_serial(self, porta, baud_rate=115200):
         porta_real = self.porta_serial_real(porta)
         try:
-            ser = serial.Serial(porta_real, baud_rate, timeout=0.01)
+            ser = serial.Serial(porta_real, baud_rate, timeout=0.10)
             print(f'Comunicação estabelecida com sucesso na porta {porta_real}.')
             return ser
         except serial.SerialException as e:

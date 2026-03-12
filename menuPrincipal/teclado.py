@@ -3,6 +3,10 @@ from smbus2 import SMBus
 class Teclado:
     LIBERADO = 1
     APERTADO = 0
+    BOTAO_VOLTAR = 1
+    BOTAO_BAIXO = 2
+    BOTAO_CIMA = 3
+    BOTAO_ENTER = 4
     def __init__(self, i2c_bus=1, i2c_address=0x38):
         """
         Inicializa o PCF8574A.

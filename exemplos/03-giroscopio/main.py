@@ -5,7 +5,7 @@ from time import sleep
 from portas import Portas
 from giroscopio import Giroscopio
 
-giroscopio = Giroscopio(Portas.SERIAL4)
+giroscopio = Giroscopio(Portas.SERIAL1)
 
 #Declaração das bibliotecas que serão usadas
 giroscopio.set_modo(giroscopio.GYRO)
@@ -17,10 +17,10 @@ try:
     # else:
     #     print("Falha na calibração do giroscópio.")
     while(True):
-        print(giroscopio.le_angulo_z())
-        print(giroscopio.le_angulo_y())
-        print(giroscopio.le_angulo_x())
-        sleep(1)
+        print( giroscopio.le_angulo_x(), giroscopio.le_angulo_y(), giroscopio.le_angulo_z())
+        # print(giroscopio.le_angulo_y())
+        # print(giroscopio.le_angulo_x())
+        sleep(0.3)
 
 #Essa parte do código é responsável por lidar com a interrupção do programa quando no terminal apertamos Ctrl+C 
 #ou interrompemos o programa pelo teclado do brick

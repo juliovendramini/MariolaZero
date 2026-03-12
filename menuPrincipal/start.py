@@ -11,33 +11,40 @@ try:
 except Exception:
     teclado_encontrado = False
 
+if(not teclado_encontrado): #vou tentar conectar na outra i2c
+    try:
+        teclado = Teclado(i2c_bus=0)
+        teclado_encontrado = True
+    except Exception:
+        teclado_encontrado = False
+
 if teclado_encontrado:
     cronometroAtualizarTela = Cronometro()
     cronometroAtualizarTela.inicia()
     contadorAnaliseTelaTravada = 0
     while True:
-        if teclado.le_botao(1) == Teclado.APERTADO:
+        if teclado.le_botao(teclado.BOTAO_BAIXO) == Teclado.APERTADO:
             tela.mover_para_baixo()
             sleep(0.5)
-        if teclado.le_botao(2) == Teclado.APERTADO:
+        if teclado.le_botao(teclado.BOTAO_CIMA) == Teclado.APERTADO:
             tela.mover_para_cima()
             sleep(0.5)
         if(cronometroAtualizarTela.tempo() > 1000):
             tela.atualizar_menu()
             cronometroAtualizarTela.reseta()
-        if(teclado.le_botao(3) == Teclado.APERTADO):
+        if(teclado.le_botao(teclado.BOTAO_ENTER) == Teclado.APERTADO):
             tela.executar_opcao_selecionada()
             sleep(0.5)
         
-        if(teclado.le_botao(4) == Teclado.APERTADO):
+        if(teclado.le_botao(teclado.BOTAO_VOLTAR) == Teclado.APERTADO):
             cronometroAtualizarTela.reseta()
-            while(teclado.le_botao(4) == Teclado.APERTADO and cronometroAtualizarTela.tempo() < 2000):
+            while(teclado.le_botao(teclado.BOTAO_VOLTAR) == Teclado.APERTADO and cronometroAtualizarTela.tempo() < 2000):
                 pass
             if(cronometroAtualizarTela.tempo() >= 2000):
                 tela.modo_menu = tela.MENU_DESLIGAR
                 tela.opcao_selecionada = 0
                 tela.atualizar_menu()
-                while(teclado.le_botao(4) == Teclado.APERTADO):
+                while(teclado.le_botao(teclado.BOTAO_VOLTAR) == Teclado.APERTADO):
                     pass
             else:
                 tela.modo_menu = tela.MENU_PRINCIPAL
