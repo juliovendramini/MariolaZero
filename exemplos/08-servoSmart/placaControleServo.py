@@ -17,7 +17,7 @@ class PlacaControleServo:
     """
     ultima_posicao = None
     TAMANHO_PACOTE = 6
-    DEBUG = False
+    DEBUG = True
 
     def __init__(self, porta_serial, id_equipamento, baud_rate=115200):
         self.id_equipamento = id_equipamento & 0xFF
@@ -151,3 +151,61 @@ class PlacaControleServo:
         if resultado is not None:
             return resultado['posicao']
         return None
+
+    @staticmethod
+    def buscar_servos(porta_serial, baud_rate=115200):
+        """Escaneia todos os 256 IDs possíveis (0-255) e retorna os que responderam.
+
+        Args:
+            porta_serial: Porta serial (ex: Portas.SERIAL1)
+            baud_rate: Baud rate da comunicação, default 115200
+
+        Returns:
+            Lista de dicts com 'id' e 'posicao' dos servos encontrados
+        """
+        portas = Portas()
+        ser = portas.abre_porta_serial(porta_serial, baud_rate)
+        if ser is None:
+            raise Exception('Erro ao abrir a porta serial para busca de servos')
+
+        encontrados = []
+        posicao = 512
+        potencia = 0
+        zona_morta = 5
+
+        try:
+            for id_equip in range(256):
+                pacote = [
+                    id_equip & 0xFF,
+                    (posicao >> 8) & 0xFF,
+                    posicao & 0xFF,
+                    potencia & 0xFF,
+                    zona_morta & 0xFF,
+                ]
+                pacote.append(PlacaControleServo._calcular_crc(pacote))
+                dados = bytes(pacote)
+
+                ser.reset_input_buffer()
+                ser.write(dados)
+                ser.flush()
+
+                # Descarta eco (half-duplex one-wire)
+                ser.read(PlacaControleServo.TAMANHO_PACOTE)
+                # Lê resposta
+                resposta = ser.read(PlacaControleServo.TAMANHO_PACOTE)
+
+                if len(resposta) == PlacaControleServo.TAMANHO_PACOTE:
+                    crc_calculado = PlacaControleServo._calcular_crc(resposta[:5])
+                    if crc_calculado == resposta[5]:
+                        pos_atual = (resposta[1] << 8) | resposta[2]
+                        encontrados.append({'id': resposta[0], 'posicao': pos_atual})
+                        print(f'Servo encontrado! ID: {resposta[0]}, Posição: {pos_atual}')
+
+                if PlacaControleServo.DEBUG:
+                    if id_equip % 32 == 0:
+                        print(f'Escaneando IDs {id_equip}-{min(id_equip + 31, 255)}...')
+        finally:
+            ser.close()
+
+        print(f'\nBusca concluída. {len(encontrados)} servo(s) encontrado(s).')
+        return encontrados
