@@ -6,6 +6,7 @@ from time import sleep
 from portas import Portas
 from motores import Motores
 from placaControleMotor import PlacaControleMotor
+import portas
 
 # servos = PlacaControleServo.buscar_servos(Portas.SERIAL1)
 # print("Servos encontrados:")
@@ -19,27 +20,33 @@ from placaControleMotor import PlacaControleMotor
 # exit()
 
 #id 67 e 71
-
-motor1 = PlacaControleMotor(Portas.SERIAL1, id_equipamento=67)
-motor2 = PlacaControleMotor(Portas.SERIAL1, id_equipamento=71)
+portas = Portas()
+portaSerialbarramento = portas.abre_porta_serial(Portas.SERIAL1, 115200, timeout=0.005)
+motor1 = PlacaControleMotor(portaSerialbarramento, id_equipamento=67)
+motor2 = PlacaControleMotor(portaSerialbarramento, id_equipamento=71)
 posicao = 0
 potencia = 0
 zona_morta = 5
 
 motores = Motores(True);
 
-# calibracao = motor1.calibrar()
+# calibracao = motor2.calibrar()
 # print(calibracao)
 #motor1.set_freio(PlacaControleMotor.FREIO_TRAVADO)
 resultado = motor1.reset()
 print(resultado)
 resultado = motor2.reset()
 print(resultado)
-sleep(20)
+
+print("-------------------------------------")
+resultado = motor1.obter_calibracao();
+print(resultado)
+resultado = motor2.obter_calibracao();
+print(resultado)
 try:   
     
-    motor1.reseta_angulo_motor()
-    resultado = motor1.move_motor(50, 2000)
+    #motor1.reseta_angulo_motor()
+    #resultado = motor1.move_motor(50, 2000)
     
     import time
     contador = 0
@@ -47,8 +54,8 @@ try:
     
     while(True):
         motores.velocidade_motores(50, 50)
-        #resultado = motor1.potencia_motor(50)
-        resultado = motor2.potencia_motor(50)
+        resultado = motor1.velocidade_motor(50)
+        resultado = motor2.velocidade_motor(50)
         tempo_atual = time.time()
         contador += 1
         

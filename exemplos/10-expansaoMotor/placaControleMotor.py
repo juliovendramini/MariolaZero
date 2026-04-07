@@ -24,7 +24,7 @@ class PlacaControleMotor:
     """
     TAMANHO_PACOTE_CMD = 6
     TAMANHO_PACOTE_RESP = 8
-    DEBUG = True
+    DEBUG = False
 
     MODO_PID = 0
     MODO_PWM = 1
@@ -34,7 +34,9 @@ class PlacaControleMotor:
     MODO_SET_KP = 5
     MODO_SET_KI = 6
     MODO_SET_KD = 7
+    MODO_SET_CALIBRACAO = 8
     MODO_ATUALIZA = 9
+    MODO_GET_CALIBRACAO = 10
 
     FREIO_BREAK = 0
     FREIO_TRAVADO = 1
@@ -46,15 +48,14 @@ class PlacaControleMotor:
     GIRANDO_NORMAL = 1
     GIRANDO_INVERTIDO = 2
 
-    def __init__(self, porta_serial, id_equipamento, baud_rate=115200):
+    def __init__(self, objeto_porta_serial, id_equipamento):
         self.id_equipamento = id_equipamento & 0xFF
         self.motor_invertido = False
         self.angulo_delta = 0
-        portas = Portas()
-        self.ser = portas.abre_porta_serial(porta_serial, baud_rate)
+        self.ser = objeto_porta_serial
         if self.ser is None:
             raise Exception('Erro ao abrir a porta serial da PlacaControleMotor')
-        self.reset()
+        #self.reset()
 
     def __del__(self):
         if self.ser is not None:
@@ -145,7 +146,7 @@ class PlacaControleMotor:
 
             if self.DEBUG:
                 print(f'Tentativa {i + 1}/{tentativas} falhou')
-            time.sleep(0.005)
+            #time.sleep(0.005)
 
         return None
 
@@ -272,6 +273,127 @@ class PlacaControleMotor:
             if self.DEBUG:
                 print(f'Tentativa {i + 1}/{tentativas} de calibração falhou')
             time.sleep(0.1)
+
+        return None
+
+    def calibracao_manual(self, giro_max_horario, giro_max_antihorario, tentativas=3):
+        """Força a calibração do motor enviando os valores máximos diretamente.
+
+        Em vez de rodar o motor para medir, define manualmente os valores
+        máximos de giro para ambas as direções.
+
+        Args:
+            giro_max_horario: Valor máximo de giro no sentido horário (int16)
+            giro_max_antihorario: Valor máximo de giro no sentido anti-horário (int16)
+            tentativas: Número de tentativas em caso de falha
+
+        Returns:
+            dict com 'giro_max_horario' e 'giro_max_antihorario' ou None se falhou
+        """
+        giro_max_horario = max(-32768, min(32767, int(giro_max_horario)))
+        giro_max_antihorario = max(-32768, min(32767, int(giro_max_antihorario)))
+
+        # Envia valor horário (direção 0)
+        resultado = self._enviar_calibracao(0, giro_max_horario, tentativas)
+        if resultado is None:
+            return None
+
+        # Envia valor anti-horário (direção 1)
+        resultado = self._enviar_calibracao(1, giro_max_antihorario, tentativas)
+        if resultado is None:
+            return None
+
+        return {
+            'giro_max_horario': resultado['giro_max_horario'],
+            'giro_max_antihorario': resultado['giro_max_antihorario'],
+        }
+
+    def _enviar_calibracao(self, direcao, valor, tentativas=3):
+        """Envia um valor de calibração para uma direção específica.
+
+        Args:
+            direcao: 0 = horário, 1 = anti-horário
+            valor: Valor int16 de giro máximo
+            tentativas: Número de tentativas
+
+        Returns:
+            dict com 'giro_max_horario' e 'giro_max_antihorario' ou None
+        """
+        valor_u16 = valor & 0xFFFF
+        pacote = [
+            self.id_equipamento,
+            self.MODO_SET_CALIBRACAO,
+            direcao & 0xFF,
+            (valor_u16 >> 8) & 0xFF,
+            valor_u16 & 0xFF,
+        ]
+        pacote.append(self._calcular_crc(pacote))
+        dados = bytes(pacote)
+
+        for i in range(tentativas):
+            self.ser.reset_input_buffer()
+            self.ser.write(dados)
+            self.ser.flush()
+
+            eco = self.ser.read(self.TAMANHO_PACOTE_CMD)
+            resposta = self.ser.read(self.TAMANHO_PACOTE_RESP)
+
+            if self.DEBUG:
+                print(f'TX:  {[f"0x{b:02x}" for b in dados]}')
+                print(f'ECO: {[f"0x{b:02x}" for b in eco]}')
+                print(f'RX:  {[f"0x{b:02x}" for b in resposta]}')
+
+            if len(resposta) == self.TAMANHO_PACOTE_RESP:
+                crc_calculado = self._calcular_crc(resposta[:7])
+                if crc_calculado == resposta[7]:
+                    giro_horario = struct.unpack('>h', bytes(resposta[3:5]))[0]
+                    giro_antihorario = struct.unpack('>h', bytes(resposta[5:7]))[0]
+                    return {
+                        'giro_max_horario': giro_horario,
+                        'giro_max_antihorario': giro_antihorario,
+                    }
+
+            if self.DEBUG:
+                print(f'Tentativa {i + 1}/{tentativas} de calibração forçada falhou')
+            time.sleep(0.005)
+
+        return None
+
+    def obter_calibracao(self, tentativas=3):
+        """Lê os valores atuais de calibração sem alterar nada.
+
+        Returns:
+            dict com 'giro_max_horario', 'giro_max_antihorario' e 'encoder_ativo' ou None se falhou
+        """
+        pacote = self._montar_pacote(self.MODO_GET_CALIBRACAO, 0)
+
+        for i in range(tentativas):
+            self.ser.reset_input_buffer()
+            self.ser.write(pacote)
+            self.ser.flush()
+
+            eco = self.ser.read(self.TAMANHO_PACOTE_CMD)
+            resposta = self.ser.read(self.TAMANHO_PACOTE_RESP)
+
+            if self.DEBUG:
+                print(f'TX:  {[f"0x{b:02x}" for b in pacote]}')
+                print(f'ECO: {[f"0x{b:02x}" for b in eco]}')
+                print(f'RX:  {[f"0x{b:02x}" for b in resposta]}')
+
+            if len(resposta) == self.TAMANHO_PACOTE_RESP:
+                crc_calculado = self._calcular_crc(resposta[:7])
+                if crc_calculado == resposta[7]:
+                    giro_horario = struct.unpack('>h', bytes(resposta[3:5]))[0]
+                    giro_antihorario = struct.unpack('>h', bytes(resposta[5:7]))[0]
+                    return {
+                        'giro_max_horario': giro_horario,
+                        'giro_max_antihorario': giro_antihorario,
+                        'encoder_ativo': resposta[2] == 1,
+                    }
+
+            if self.DEBUG:
+                print(f'Tentativa {i + 1}/{tentativas} de leitura de calibração falhou')
+            time.sleep(0.005)
 
         return None
 
