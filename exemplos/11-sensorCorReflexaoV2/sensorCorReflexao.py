@@ -175,6 +175,44 @@ class CorReflexao:
 
         return (round(h), round(s), round(v))
 
+    def le_hsv120(self, sensor, valor_maximo=255):
+        """Retorna [H, S, V] do sensor de cor (1=TCS1, 2=TCS meio, 3=TCS2).
+        H: 0-120, S: 0-120, V: 0-120 (escala estilo Paint clássico do Windows)."""
+        rgb = self.le_rgb(sensor)
+        if rgb is not None:
+            return list(self.rgb_para_hsv120(rgb[0], rgb[1], rgb[2], valor_maximo))
+        return None
+
+    @staticmethod
+    def rgb_para_hsv120(r, g, b, valor_maximo=255):
+        """Converte RGB para HSV na escala 0-120 (estilo Paint clássico do Windows).
+        H: 0-120, S: 0-120, V: 0-120.
+        valor_maximo: valor de referência para normalização (padrão 255)."""
+        r_n = min(r / valor_maximo, 1.0)
+        g_n = min(g / valor_maximo, 1.0)
+        b_n = min(b / valor_maximo, 1.0)
+
+        cmax = max(r_n, g_n, b_n)
+        cmin = min(r_n, g_n, b_n)
+        delta = cmax - cmin
+
+        if delta == 0:
+            h = 0
+        elif cmax == r_n:
+            h = int(60 * ((g_n - b_n) / delta + 6)) % 360
+        elif cmax == g_n:
+            h = int(60 * ((b_n - r_n) / delta + 2))
+        else:
+            h = int(60 * ((r_n - g_n) / delta + 4))
+
+        # Mapeia Hue de [0, 360] para [0, 120]
+        h = h * 120 // 360
+
+        s = int((delta / cmax) * 120) if cmax != 0 else 0
+        v = int(cmax * 120)
+
+        return (h, s, v)
+
     # ── Detecção de cor (portado de TCS34725::detectaCorBasica) ─────────
 
     def detecta_cor(self, sensor):
