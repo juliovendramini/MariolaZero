@@ -7,7 +7,7 @@ from portas import Portas
 
 class Motores:
     motor_invertido = [False, False, False, False]
-    DEBUG = False
+    DEBUG = True
     NORMAL = 0
     INVERTIDO = 1
     angulo_motor1 = 0
@@ -34,6 +34,8 @@ class Motores:
     ENVIA_MOTORES_4X4_POTENCIA = 0xF7
     LED_RGB_ALL = 0xF6
     LED_RGB_ONE = 0xF5
+    OBTEM_CALIBRACAO_MOTORES = 0xF4 #244
+    CALIBRA_MOTORES = 0xF3 #243
 
     def __init__(self, atualiza_instantaneo=False):
         #qualquer lista que for enviada deve ter o mesmo tamanho sempre. Para evitar problemas de sincronismo
@@ -383,8 +385,8 @@ class Motores:
         else:
             self.modo_freio = 1
         self.lista_motores[9] = self.modo_freio
-        if self.atualiza_instantaneo:
-            self.atualiza_motores()
+        # if self.atualiza_instantaneo:
+        #     self.atualiza_motores()
 
     def pid_motor(self, kp, ki, kd):
         self.ser.reset_input_buffer()
@@ -501,3 +503,42 @@ class Motores:
             if retorno_serial[0] == self.LED_RGB_ONE:
                 return True
         raise Exception('Erro ao enviar dados do LED RGB ONE')
+    
+    def obtem_calibracao_motores(self):
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
+        self.lista_motores[0] = self.OBTEM_CALIBRACAO_MOTORES  # comando para obter calibração dos motores
+        self.ser.write(bytes(self.lista_motores))
+        if self.DEBUG:
+            print(f'Enviando: {self.lista_motores}')
+        # leio o retorno da serial e salvo na lista
+        retorno_serial = self.ser.read(10)
+        if self.DEBUG:
+            retorno_serial_lista = list(retorno_serial)
+            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
+            # print(f'retorno_serial: {retorno_serial}')
+        if len(retorno_serial) == 10:  # só leio se o retorno for exatamente 10 bytes
+            if retorno_serial[0] == self.OBTEM_CALIBRACAO_MOTORES:
+                calibracao_motor1 = struct.unpack('>i', bytes(retorno_serial[1:5]))[0]
+                calibracao_motor2 = struct.unpack('>i', bytes(retorno_serial[5:9]))[0]
+                return calibracao_motor1, calibracao_motor2
+        raise Exception('Erro ao ler a calibração dos motores')
+    
+    def calibra_motores(self):
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
+        self.lista_motores[0] = self.CALIBRA_MOTORES  # comando para calibrar os motores
+        self.ser.write(bytes(self.lista_motores))
+        if self.DEBUG:
+            print(f'Enviando: {self.lista_motores}')
+        # leio o retorno da serial e salvo na lista
+        retorno_serial = self.ser.read(1)
+        if self.DEBUG:
+            retorno_serial_lista = list(retorno_serial)
+            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
+            # print(f'retorno_serial: {retorno_serial}')
+        if len(retorno_serial) == 1:
+            if retorno_serial[0] == self.CALIBRA_MOTORES:
+                print('Calibração dos motores iniciada, aguarde...')
+                return True
+        raise Exception('Erro ao calibrar os motores')

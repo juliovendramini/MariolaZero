@@ -33,6 +33,9 @@ class Motores:
     ENVIA_MOTORES_4X4 = 0xF8
     ENVIA_MOTORES_4X4_POTENCIA = 0xF7
     LED_RGB_ALL = 0xF6
+    LED_RGB_ONE = 0xF5
+    OBTEM_CALIBRACAO_MOTORES = 0xF4 #244
+    CALIBRA_MOTORES = 0xF3 #243
 
     def __init__(self, atualiza_instantaneo=False):
         #qualquer lista que for enviada deve ter o mesmo tamanho sempre. Para evitar problemas de sincronismo
@@ -382,8 +385,8 @@ class Motores:
         else:
             self.modo_freio = 1
         self.lista_motores[9] = self.modo_freio
-        if self.atualiza_instantaneo:
-            self.atualiza_motores()
+        # if self.atualiza_instantaneo:
+        #     self.atualiza_motores()
 
     def pid_motor(self, kp, ki, kd):
         self.ser.reset_input_buffer()
@@ -448,6 +451,7 @@ class Motores:
             return 0
 
     def set_led_rgb_all(self, r, g, b):
+        self.lista_led[0] = self.LED_RGB_ALL
         self.lista_led[1] = r & 0xFF
         self.lista_led[2] = g & 0xFF
         self.lista_led[3] = b & 0xFF
@@ -470,3 +474,71 @@ class Motores:
             if retorno_serial[0] == self.LED_RGB_ALL:
                 return True
         raise Exception('Erro ao enviar dados do LED RGB ALL')
+    
+    def set_led_rgb_one(self, index, r, g, b):
+        self.lista_led[0] = self.LED_RGB_ONE
+        self.lista_led[1] = r & 0xFF
+        self.lista_led[2] = g & 0xFF
+        self.lista_led[3] = b & 0xFF
+        if(index > 10):
+            index = 10
+        elif(index < 0):
+            index = 0
+        self.lista_led[4] = index
+        self.lista_led[5] = 0  # reservado para futuro uso
+        self.lista_led[6] = 0  # reservado para futuro uso
+        self.lista_led[7] = 0  # reservado para futuro uso
+        self.lista_led[8] = 0  # reservado para futuro uso
+        self.lista_led[9] = 0  # reservado para futuro uso
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
+        self.ser.write(bytes(self.lista_led))
+        if self.DEBUG:
+            print(f'Enviando LED RGB ONE: {self.lista_led}')
+        retorno_serial = self.ser.read(1)
+        if self.DEBUG:
+            retorno_serial_lista = list(retorno_serial)
+            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
+        if len(retorno_serial) == 1:
+            if retorno_serial[0] == self.LED_RGB_ONE:
+                return True
+        raise Exception('Erro ao enviar dados do LED RGB ONE')
+    
+    def obtem_calibracao_motores(self):
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
+        self.lista_motores[0] = self.OBTEM_CALIBRACAO_MOTORES  # comando para obter calibração dos motores
+        self.ser.write(bytes(self.lista_motores))
+        if self.DEBUG:
+            print(f'Enviando: {self.lista_motores}')
+        # leio o retorno da serial e salvo na lista
+        retorno_serial = self.ser.read(10)
+        if self.DEBUG:
+            retorno_serial_lista = list(retorno_serial)
+            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
+            # print(f'retorno_serial: {retorno_serial}')
+        if len(retorno_serial) == 10:  # só leio se o retorno for exatamente 10 bytes
+            if retorno_serial[0] == self.OBTEM_CALIBRACAO_MOTORES:
+                calibracao_motor1 = struct.unpack('>i', bytes(retorno_serial[1:5]))[0]
+                calibracao_motor2 = struct.unpack('>i', bytes(retorno_serial[5:9]))[0]
+                return calibracao_motor1, calibracao_motor2
+        raise Exception('Erro ao ler a calibração dos motores')
+    
+    def calibra_motores(self):
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
+        self.lista_motores[0] = self.CALIBRA_MOTORES  # comando para calibrar os motores
+        self.ser.write(bytes(self.lista_motores))
+        if self.DEBUG:
+            print(f'Enviando: {self.lista_motores}')
+        # leio o retorno da serial e salvo na lista
+        retorno_serial = self.ser.read(1)
+        if self.DEBUG:
+            retorno_serial_lista = list(retorno_serial)
+            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
+            # print(f'retorno_serial: {retorno_serial}')
+        if len(retorno_serial) == 1:
+            if retorno_serial[0] == self.CALIBRA_MOTORES:
+                print('Calibração dos motores iniciada, aguarde...')
+                return True
+        raise Exception('Erro ao calibrar os motores')

@@ -60,50 +60,52 @@ Write-Host ""
 # ---------------------------------------------------------------
 # 4. Garante que a pasta remota existe (funciona no primeiro envio)
 # ---------------------------------------------------------------
-Write-Host "Verificando pasta remota ~/$PROJETO ..."
-ssh "${USUARIO}@${IP}" "mkdir -p ~/$PROJETO"
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Falha ao criar pasta remota. Verifique a conexão SSH."
-    exit 1
-}
+# Write-Host "Verificando pasta remota ~/$PROJETO ..."
+# ssh "${USUARIO}@${IP}" "mkdir -p ~/$PROJETO"
+# if ($LASTEXITCODE -ne 0) {
+#     Write-Error "Falha ao criar pasta remota. Verifique a conexão SSH."
+#     exit 1
+# }
 
 # ---------------------------------------------------------------
-# 5. Empacota apenas os arquivos modificados (um único .tar.gz)
+# 5/6/7. Envia os arquivos (direto se for 1, empacotado se forem vários)
 # ---------------------------------------------------------------
-Write-Host "Empacotando arquivos..."
-& tar -czf $TEMP_TAR $modificados
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Falha ao criar o arquivo tar."
-    Remove-Item -Force $TEMP_TAR -ErrorAction SilentlyContinue
-    exit 1
-}
+if ($modificados.Count -eq 1) {
+    # --- envio direto, sem compactação ---
+    Write-Host "Enviando $($modificados[0]) diretamente para ${USUARIO}@${IP}:~/${PROJETO}/ ..."
+    scp $modificados[0] "${USUARIO}@${IP}:~/${PROJETO}/"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Falha no envio SCP."
+        exit 1
+    }
+} else {
+    # --- empacota e envia em uma única transferência ---
+    Write-Host "Empacotando $($modificados.Count) arquivos..."
+    & tar -czf $TEMP_TAR $modificados
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Falha ao criar o arquivo tar."
+        Remove-Item -Force $TEMP_TAR -ErrorAction SilentlyContinue
+        exit 1
+    }
 
-# ---------------------------------------------------------------
-# 6. Transfere o pacote em uma única chamada scp
-# ---------------------------------------------------------------
-Write-Host "Enviando pacote para ${USUARIO}@${IP}:~/${PROJETO}/ ..."
-scp $TEMP_TAR "${USUARIO}@${IP}:~/${PROJETO}/"
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Falha no envio SCP."
-    Remove-Item -Force $TEMP_TAR -ErrorAction SilentlyContinue
-    exit 1
-}
+    Write-Host "Enviando pacote para ${USUARIO}@${IP}:~/${PROJETO}/ ..."
+    scp $TEMP_TAR "${USUARIO}@${IP}:~/${PROJETO}/"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Falha no envio SCP."
+        Remove-Item -Force $TEMP_TAR -ErrorAction SilentlyContinue
+        exit 1
+    }
 
-# ---------------------------------------------------------------
-# 7. Extrai no remoto e remove o tar temporário
-# ---------------------------------------------------------------
-Write-Host "Extraindo arquivos no dispositivo remoto..."
-ssh "${USUARIO}@${IP}" "cd ~/$PROJETO && tar -xzf $TEMP_TAR && rm $TEMP_TAR"
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Falha ao extrair os arquivos no dispositivo remoto."
-    Remove-Item -Force $TEMP_TAR -ErrorAction SilentlyContinue
-    exit 1
-}
+    Write-Host "Extraindo arquivos no dispositivo remoto..."
+    ssh "${USUARIO}@${IP}" "cd ~/$PROJETO && tar -xzf $TEMP_TAR && rm $TEMP_TAR"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Falha ao extrair os arquivos no dispositivo remoto."
+        Remove-Item -Force $TEMP_TAR -ErrorAction SilentlyContinue
+        exit 1
+    }
 
-# ---------------------------------------------------------------
-# 8. Remove o tar temporário local
-# ---------------------------------------------------------------
-Remove-Item -Force $TEMP_TAR
+    Remove-Item -Force $TEMP_TAR
+}
 
 # ---------------------------------------------------------------
 # 9. Atualiza o manifesto com os timestamps atuais de TODOS os arquivos

@@ -6,43 +6,74 @@ from time import sleep
 from portas import Portas
 from motores import Motores
 from placaControleMotor import PlacaControleMotor
+from placaControleServo import PlacaControleServo
 import portas
 
+# print("Buscando Motores:")
+# motores = PlacaControleMotor.buscar_motores(Portas.SERIAL1)
+# print("Motores encontrados:")
+# for motor in motores:
+#     print(f"ID: {motor['id']}")
+
+
+# print("\nBuscando Servos:")
 # servos = PlacaControleServo.buscar_servos(Portas.SERIAL1)
 # print("Servos encontrados:")
 # for servo in servos:
 #     print(f"ID: {servo['id']}, Posição: {servo['posicao']}")
 
-# motores = PlacaControleMotor.buscar_motores(Portas.SERIAL1)
-# print("Motores encontrados:")
-# for motor in motores:
-#     print(f"ID: {motor['id']}, Posição: {motor['posicao']}")
+
 # exit()
 
 #id 67 e 71
 portas = Portas()
 portaSerialbarramento = portas.abre_porta_serial(Portas.SERIAL1, 115200, timeout=0.005)
-motor1 = PlacaControleMotor(portaSerialbarramento, id_equipamento=67)
-motor2 = PlacaControleMotor(portaSerialbarramento, id_equipamento=71)
+motor1 = PlacaControleMotor(portaSerialbarramento, id_equipamento=11)
+motor2 = PlacaControleMotor(portaSerialbarramento, id_equipamento=65)
 posicao = 0
 potencia = 0
 zona_morta = 5
 
 motores = Motores(True);
-
+motores.direcao_motor(2, Motores.INVERTIDO)
+# calibracao = motor1.calibrar()
+# print(calibracao)
 # calibracao = motor2.calibrar()
 # print(calibracao)
 #motor1.set_freio(PlacaControleMotor.FREIO_TRAVADO)
+
+
 resultado = motor1.reset()
 print(resultado)
 resultado = motor2.reset()
 print(resultado)
+
+motor1.direcao_motor(Motores.INVERTIDO)
 
 print("-------------------------------------")
 resultado = motor1.obter_calibracao();
 print(resultado)
 resultado = motor2.obter_calibracao();
 print(resultado)
+
+
+# print("alterando calibração do motor 1")
+# motor1.calibracao_manual(32,-32)
+
+resultado = motores.obtem_calibracao_motores()
+print(resultado)
+# motores.calibra_motores();
+# exit()
+sleep(0.5)
+motores.set_modo_freio(Motores.HOLD)
+motor1.set_freio(PlacaControleMotor.FREIO_TRAVADO)
+motor2.set_freio(PlacaControleMotor.FREIO_TRAVADO)
+motor1.set_kp_freio(3)
+motor1.set_kd_freio(10)
+motor2.set_kp_freio(3)
+motor2.set_kd_freio(10)
+motor1.set_delta_freio(20)
+motor2.set_delta_freio(20)
 try:   
     
     #motor1.reseta_angulo_motor()
@@ -58,7 +89,13 @@ try:
         resultado = motor2.velocidade_motor(50)
         tempo_atual = time.time()
         contador += 1
-        
+        sleep(2)
+        print(motores.angulo_motor(1))
+        print(motores.angulo_motor(2))
+        motores.velocidade_motores(0, 0)
+        resultado = motor1.velocidade_motor(0)
+        resultado = motor2.velocidade_motor(0)
+        sleep(2)
         if tempo_atual - tempo_inicio >= 1.0:
             print(f"Loops por segundo: {contador}")
             contador = 0
@@ -73,7 +110,7 @@ try:
         # potencia = int(input("Digite a potência desejada (0-255): "))
         # zona_morta = int(input("Digite a zona morta desejada (0-255): "))
         potencia = 100
-        zona_morta =8
+        zona_morta = 8
         posicao1 = 100
         posicao2 = 900
         resultado = servo1.move_servo(posicao1, potencia, zona_morta)
@@ -96,6 +133,8 @@ try:
 #ou interrompemos o programa pelo teclado do brick
 except KeyboardInterrupt as e:
     motores.para_motores()
+    motor1.para_motor()
+    motor2.para_motor()
     print("\nInterrupção detectada! Parando os motores e encerrando...")
     print("Programa encerrado com segurança.")
 
