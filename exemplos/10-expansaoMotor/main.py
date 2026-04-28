@@ -27,9 +27,9 @@ import portas
 
 #id 67 e 71
 portas = Portas()
-portaSerialbarramento = portas.abre_porta_serial(Portas.SERIAL1, 115200, timeout=0.005)
-motor1 = PlacaControleMotor(portaSerialbarramento, id_equipamento=11)
-motor2 = PlacaControleMotor(portaSerialbarramento, id_equipamento=65)
+portaSerialbarramento = portas.abre_porta_serial(Portas.SERIAL1, 250000, timeout=0.005)
+motor1 = PlacaControleMotor(portaSerialbarramento, id_equipamento=0)
+motor2 = PlacaControleMotor(portaSerialbarramento, id_equipamento=7)
 posicao = 0
 potencia = 0
 zona_morta = 5
@@ -50,11 +50,11 @@ print(resultado)
 
 motor1.direcao_motor(Motores.INVERTIDO)
 
-print("-------------------------------------")
-resultado = motor1.obter_calibracao();
-print(resultado)
-resultado = motor2.obter_calibracao();
-print(resultado)
+# print("-------------------------------------")
+# resultado = motor1.obter_calibracao();
+# print(resultado)
+# resultado = motor2.obter_calibracao();
+# print(resultado)
 
 
 # print("alterando calibração do motor 1")
@@ -80,22 +80,19 @@ try:
     #resultado = motor1.move_motor(50, 2000)
     
     import time
+    import threading
     contador = 0
     tempo_inicio = time.time()
     
     while(True):
-        motores.velocidade_motores(50, 50)
-        resultado = motor1.velocidade_motor(50)
-        resultado = motor2.velocidade_motor(50)
+        contador+=1
+        t = threading.Thread(target=motores.potencia_motores, args=(50, 50))
+        t.start()
+        resultado = motor1.potencia_motor(50)
+        t.join()
+        resultado = motor2.potencia_motor(50)
+        # print("----------")
         tempo_atual = time.time()
-        contador += 1
-        sleep(2)
-        print(motores.angulo_motor(1))
-        print(motores.angulo_motor(2))
-        motores.velocidade_motores(0, 0)
-        resultado = motor1.velocidade_motor(0)
-        resultado = motor2.velocidade_motor(0)
-        sleep(2)
         if tempo_atual - tempo_inicio >= 1.0:
             print(f"Loops por segundo: {contador}")
             contador = 0

@@ -72,7 +72,7 @@ class Portas:
         else:
             raise ValueError('Porta serial inválida.')
 
-    def abre_porta_serial(self, porta, baud_rate=115200, timeout=0.10):
+    def abre_porta_serial(self, porta, baud_rate=250000, timeout=0.010):
         porta_real = self.porta_serial_real(porta)
         try:
             ser = serial.Serial(porta_real, baud_rate, timeout=timeout)
