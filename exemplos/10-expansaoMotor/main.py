@@ -83,7 +83,10 @@ try:
     import threading
     contador = 0
     tempo_inicio = time.time()
-    
+    while True:
+        resultado1 = motor1.move_motor(0, 0)
+        resultado2 = motor2.move_motor(0, 0)
+        print(resultado1, resultado2)    
     while(True):
         contador+=1
         t = threading.Thread(target=motores.potencia_motores, args=(50, 50))

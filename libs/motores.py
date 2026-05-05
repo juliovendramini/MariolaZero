@@ -7,7 +7,7 @@ from portas import Portas
 
 class Motores:
     motor_invertido = [False, False, False, False]
-    DEBUG = True
+    DEBUG = False
     NORMAL = 0
     INVERTIDO = 1
     angulo_motor1 = 0
@@ -360,9 +360,10 @@ class Motores:
 
     # para todos os 4 motores
     def para_motores(self):
-        self.lista_motores[3] = 0
-        self.lista_motores[4] = 0
-        self.move_motores(0, 1, 0, 1)
+        self.velocidade_motores_4x4(0,0)
+        #self.lista_motores[3] = 0
+        #self.lista_motores[4] = 0
+        #self.move_motores(0, 1, 0, 1)
         return
         self.lista_motores[0] = 0xFC
         self.lista_motores[1] = 0
