@@ -174,8 +174,11 @@ Agora é só reiniciar. Caso queira verificar se o fsck está rodando, rode o co
   1. Criar/editar o arquivo de regras udev:
 Rode o seguinte comando para criar/editar o arquivo de regras:
 
+  ```
   sudo nano /etc/udev/rules.d/99-cameras.rules
+  ```
   2. Colar as regras:
+  ```
   SUBSYSTEM=="video4linux", \
   KERNEL=="video*", \
   ENV{ID_V4L_CAPABILITIES}=="*:capture:*", \
@@ -217,7 +220,10 @@ Rode o seguinte comando para criar/editar o arquivo de regras:
   ATTR{index}=="0", \
   DEVPATH=="*5200400.usb*", \
   SYMLINK+="video_usb3"
+  ```
   3. Resetar o udev:
+  ```
   sudo udevadm control --reload
   sudo udevadm trigger
+  ```
 
