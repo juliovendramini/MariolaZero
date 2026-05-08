@@ -5,6 +5,57 @@ Como a versão utilizada é a de 8Gb de eMMC, devemos baixar a versão do armbia
 
 Agora devemos instalar no cartão SD, dar boot, configurar inicialmente a instação e depois instalar no eMMC usando o armbian-config.
 
+
+Opcional:
+
+* Antes de iniciar o cartão na placa, recomendo criar uma partição separada para os usuários. Para isso, precisamos de um computador Linux com o cartão inserido. Abra o GParted, reduza o tamanho da primeira partição para aproximadamente 4200 MB e crie uma nova partição ext4 com cerca de 3000 MB no espaço livre restante. Lembrando que não devemos criar partições maiores que isso, mesmo que o cartão tenha mais espaço, porque iremos mover tudo para a eMMC de 8 GB da placa. Caso queira rodar permanentemente pelo cartão SD, esses tamanhos podem ser diferentes.
+Após isso, ainda no linux que diminuiu a partição, monte a partição principal do cartão (cujo rótulo deve ser armbian_root) e edite o arquivo /etc/fstab dela. Adicione a seguinte linha para montar a nova partição como /home:
+'''
+  UUID=65cca456-7f07-4d89-9ad2-33a9a64e5c59 /home ext4 defaults,noatime 0 2
+  Lembre-se de trocar esse UUID de exemplo
+'''
+Atenção: o UUID acima é apenas um exemplo e deve ser substituído pelo UUID real da sua partição. Para descobri-lo, execute no terminal:
+'''
+bash  sudo blkid
+'''
+
+Procure pelo dispositivo correspondente à nova partição (ex: /dev/sdb2) e copie o valor do campo UUID=. substitua esse UUID copiado no exemplo acima e cole no arquivo fstab.
+
+Agora, antes de desmontar o cartão, copie os arquivos da /home original para a nova partição, preservando permissões, donos e links simbólicos. Monte a nova partição temporariamente e use o rsync:
+
+'''
+bash  sudo mkdir /mnt/nova_home
+sudo mount /dev/sdX2 /mnt/nova_home
+sudo rsync -aAX /media/seu_usuario/armbian_root/home/ /mnt/nova_home/
+'''
+
+Substitua /dev/sdX2 pelo dispositivo da nova partição e ajuste o caminho de origem conforme onde o GParted/sistema montou a partição principal. A opção -aAX garante que permissões, ACLs, atributos estendidos e a propriedade dos arquivos sejam preservados corretamente — sem isso, os usuários podem ter problemas de acesso ao fazer login.
+
+Verifique se a cópia ficou correta antes de desmontar:
+
+'''
+bash  ls -la /mnt/nova_home/
+'''
+Confirme que as pastas dos usuários estão presentes com os donos corretos.
+
+Agora apague tudo da pasta /home da partição princial
+
+'''
+sudo rm -r /media/seu_usuario/armbian_root/home/*
+'''
+
+
+* Partição principal somente leitura: para aumentar a durabilidade do cartão SD e reduzir o risco de corrupção em quedas de energia, você pode configurar a partição principal (armbian_root) como somente leitura. No mesmo /etc/fstab, altere as opções da linha que monta / (a partição principal), trocando defaults por defaults,ro:
+
+UUID=<uuid-da-raiz> / ext4 defaults,ro,noatime 0 1
+
+Como o sistema não poderá mais escrever em /, é necessário garantir que os diretórios que precisam de escrita estejam em outras partições ou em tmpfs. No mínimo, adicione ao fstab:
+  tmpfs /tmp     tmpfs defaults,nosuid,nodev 0 0
+  tmpfs /var/log tmpfs defaults,nosuid,nodev 0 0
+  tmpfs /var/tmp tmpfs defaults,nosuid,nodev 0 0
+Caso o sistema precise escrever em outros lugares (como /var/lib), avalie mover esses diretórios para a partição /home ou criar partições adicionais conforme sua necessidade.
+
+
 Opcional:
 * Antes de iniciar o cartão na placa, recomendo criar um partição separada para os usuários, mas para isso precisamos utilizar o Linux. Coloque o cartão no linux. Use o Gparted, altere o tamanho da primeira partição para ter algo como uns 4200MB e crie uma nova partição ext4 com uns 3000MB. Lembrando que não podemorar criar maior mesmo o cartão tendo mais espaço porque iremos colocar tudo na EMMC de 8GB dele. Caso queira rodar do cartão SD, esses tamanhos podem ser diferentes.
 
@@ -29,17 +80,37 @@ Reinicie a placa novamente, agora no armbian-config conecte no wifi para poder i
 
 * Vamos desativar atualização do kernel para não termos surpresas:
   * Entre no armbian-config, System -> Updates -> Disable Kernel updates
-* Atualize o APT (sudo apt update)
-* Instale alguns pacotes iniciais (sudo apt install net-tools i2c-tools build-essential libgl1)
-* Instale o ambiente gráfico XFCE pelo armbian-config
-* Instale o python3-full (sudo apt install python3-full)
-* Instale o python3-pip e o pipx (sudo apt install python3-pip pipx)
+* Atualize o APT
+'''
+  sudo apt update
+'''
+* Instale alguns pacotes iniciais 
+'''
+sudo apt install net-tools i2c-tools build-essential libgl1
+'''
+* Instale o ambiente gráfico XFCE pelo armbian-config (opcinal)
+
+* Instale o python3-full 
+'''
+sudo apt install python3-full
+'''
+* Instale o python3-pip e o pipx 
+'''
+sudo apt install python3-pip pipx
+'''
 * Instale o ultralytics usando um ambiente virtual personalizado:
-    * python3 -m venv meu_venv
-    * source meu_venv/bin/activate  
-    * pip install ultralytics
-    * python3 meu_script.py (como rodar o script)
-* Para utilizar as seriais no python é necessário instalar a biblioteca serial (pip install pyserial), ATENÇÂO, sempre que for usar o PIP, você deve usar o comando "source meu_venv/bin/activate" antes (caso ainda nao esteja com o ambiente personalizado já aberto)
+'''
+    python3 -m venv meu_venv
+    source meu_venv/bin/activate  
+    pip install ultralytics
+    python3 meu_script.py #(exemplo de como rodar o script)
+'''
+* Para utilizar as seriais no python é necessário instalar a biblioteca serial 
+'''
+pip install pyserial
+'''
+ATENÇÂO, sempre que for usar o PIP, você deve usar o comando "source meu_venv/bin/activate" antes (caso ainda nao esteja com o ambiente personalizado já aberto)
+
 * Para acessar os pinos GPIO do BananaPI é necessário instalar a biblioteca (python3-libgpiod)
      * Instale o que é necessário (sudo apt install python3-libgpiod libgpiod-dev python3-dev)
      * Crie o grupo (sudo groupadd gpio)
