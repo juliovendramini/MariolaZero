@@ -171,57 +171,53 @@ Agora é só reiniciar. Caso queira verificar se o fsck está rodando, rode o co
       
  
 * Configurar câmeras USB com links simbólicos fixos via udev:
-  * Criar/editar o arquivo de regras udev:
-    ```
-    sudo nano /etc/udev/rules.d/99-cameras.rules
-    ```
-  * Colar as regras dentro do arquivo:
-    ```
-    SUBSYSTEM=="video4linux", \
-    KERNEL=="video*", \
-    ENV{ID_V4L_CAPABILITIES}==":capture:", \
-    ATTR{index}=="0", \
-    DEVPATH=="5101000.usb", \
-    SYMLINK+="video_usb1"
+  1. Criar/editar o arquivo de regras udev:
+Rode o seguinte comando para criar/editar o arquivo de regras:
 
-    SUBSYSTEM=="video4linux", \
-    KERNEL=="video*", \
-    ENV{ID_V4L_CAPABILITIES}==":capture:", \
-    ATTR{index}=="0", \
-    DEVPATH=="5100400.usb", \
-    SYMLINK+="video_usb1"
+  sudo nano /etc/udev/rules.d/99-cameras.rules
+  2. Colar as regras:
+  SUBSYSTEM=="video4linux", \
+  KERNEL=="video*", \
+  ENV{ID_V4L_CAPABILITIES}=="*:capture:*", \
+  ATTR{index}=="0", \
+  DEVPATH=="*5101000.usb*", \
+  SYMLINK+="video_usb1"
 
-    SUBSYSTEM=="video4linux", \
-    KERNEL=="video*", \
-    ENV{ID_V4L_CAPABILITIES}==":capture:", \
-    ATTR{index}=="0", \
-    DEVPATH=="5311000.usb", \
-    SYMLINK+="video_usb2"
+  SUBSYSTEM=="video4linux", \
+  KERNEL=="video*", \
+  ENV{ID_V4L_CAPABILITIES}=="*:capture:*", \
+  ATTR{index}=="0", \
+  DEVPATH=="*5100400.usb*", \
+  SYMLINK+="video_usb1"
 
-    SUBSYSTEM=="video4linux", \
-    KERNEL=="video*", \
-    ENV{ID_V4L_CAPABILITIES}==":capture:", \
-    ATTR{index}=="0", \
-    DEVPATH=="5311400.usb", \
-    SYMLINK+="video_usb2"
+  SUBSYSTEM=="video4linux", \
+  KERNEL=="video*", \
+  ENV{ID_V4L_CAPABILITIES}=="*:capture:*", \
+  ATTR{index}=="0", \
+  DEVPATH=="*5311000.usb*", \
+  SYMLINK+="video_usb2"
 
-    SUBSYSTEM=="video4linux", \
-    KERNEL=="video*", \
-    ENV{ID_V4L_CAPABILITIES}==":capture:", \
-    ATTR{index}=="0", \
-    DEVPATH=="5200000.usb", \
-    SYMLINK+="video_usb3"
+  SUBSYSTEM=="video4linux", \
+  KERNEL=="video*", \
+  ENV{ID_V4L_CAPABILITIES}=="*:capture:*", \
+  ATTR{index}=="0", \
+  DEVPATH=="*5311400.usb*", \
+  SYMLINK+="video_usb2"
 
-    SUBSYSTEM=="video4linux", \
-    KERNEL=="video*", \
-    ENV{ID_V4L_CAPABILITIES}==":capture:", \
-    ATTR{index}=="0", \
-    DEVPATH=="5200400.usb", \
-    SYMLINK+="video_usb3"
-    ```
-  * Recarregar as regras do udev:
-    ```
-    sudo udevadm control --reload
-    sudo udevadm trigger
-    ```
+  SUBSYSTEM=="video4linux", \
+  KERNEL=="video*", \
+  ENV{ID_V4L_CAPABILITIES}=="*:capture:*", \
+  ATTR{index}=="0", \
+  DEVPATH=="*5200000.usb*", \
+  SYMLINK+="video_usb3"
+
+  SUBSYSTEM=="video4linux", \
+  KERNEL=="video*", \
+  ENV{ID_V4L_CAPABILITIES}=="*:capture:*", \
+  ATTR{index}=="0", \
+  DEVPATH=="*5200400.usb*", \
+  SYMLINK+="video_usb3"
+  3. Resetar o udev:
+  sudo udevadm control --reload
+  sudo udevadm trigger
 
