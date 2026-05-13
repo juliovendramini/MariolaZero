@@ -16,10 +16,11 @@ try:
         #velocidade = int(input("Digite a velocidade dos motores (1-100): "))
         #print("enviando comando para motor 1")
         motores.velocidade_motor(1,15);
-        motores.velocidade_motor(2,5);
+        motores.velocidade_motor(2,15);
         # motores.move_servo(1, 120);
         motores.estado()
         print(motores.angulo_motor(1))
+        print(motores.angulo_motor(2))
         sleep(1)
         # motores.velocidade_motor(1,30);
         # motores.velocidade_motor(2,30);

@@ -1,10 +1,9 @@
 # MariolaZero
-Tutorial de como instalar o Armbian no BananaPi M4 Zero (Base do MariolaZero) e configurar o que for necessário para usar na placa de robótica.
+Devido a dificuldade de achar memórias NAND principalmente, não estamos conseguindo comprar placas BANANAPI M4 ZERO, então estou fazendo algumas adaptações em algumas outras placas para conseguir utilizar a Placa pro MariolaZero. Essa aqui é a configuração para o ORANGEPI ZERO LTS com processador H3 ou H2+
 
-Como a versão utilizada é a de 8Gb de eMMC, devemos baixar a versão do armbian baseada em debian 12, versão Minimal(IoT) (https://www.armbian.com/bananapi-m4-zero/). A atual no momento da criação do manual é a Armbian 25.2.2 Bookworm Minimal.
+Tutorial de como instalar o Armbian no ORANGEPI ZERO LTS e configurar o que for necessário para usar na placa de robótica.
 
-Agora devemos instalar no cartão SD, dar boot, configurar inicialmente a instação e depois instalar no eMMC usando o armbian-config.
-
+Baixe a versão 25.5.5 do ARMBIAN para o ORANGEPI ZERO LTS. Esse modelo não possui EMMC. Então vamos ter que usar cartão SD
 
 Opcional:
 
@@ -16,7 +15,7 @@ Após isso, ainda no linux que diminuiu a partição, monte a partição princip
 ```
 Atenção: o UUID acima é apenas um exemplo e deve ser substituído pelo UUID real da sua partição. Para descobri-lo, execute no terminal:
 ```
-bash  sudo blkid
+sudo blkid
 ```
 
 Procure pelo dispositivo correspondente à nova partição (ex: /dev/sdb2) e copie o valor do campo UUID=. substitua esse UUID copiado no exemplo acima e cole no arquivo fstab.
@@ -24,7 +23,7 @@ Procure pelo dispositivo correspondente à nova partição (ex: /dev/sdb2) e cop
 Agora, antes de desmontar o cartão, copie os arquivos da /home original para a nova partição, preservando permissões, donos e links simbólicos. Monte a nova partição temporariamente e use o rsync:
 
 ```
-bash  sudo mkdir /mnt/nova_home
+sudo mkdir /mnt/nova_home
 sudo mount /dev/sdX2 /mnt/nova_home
 sudo rsync -aAX /media/seu_usuario/armbian_root/home/ /mnt/nova_home/
 ```
@@ -34,7 +33,7 @@ Substitua /dev/sdX2 pelo dispositivo da nova partição e ajuste o caminho de or
 Verifique se a cópia ficou correta antes de desmontar:
 
 ```
-bash  ls -la /mnt/nova_home/
+ls -la /mnt/nova_home/
 ```
 Confirme que as pastas dos usuários estão presentes com os donos corretos.
 
@@ -49,46 +48,50 @@ sudo rm -r /media/seu_usuario/armbian_root/home/*
 
 UUID=<uuid-da-raiz> / ext4 defaults,ro,noatime 0 1
 
-Para poder executar qualquer alteração após isso, é necessário remontar a partição temporariamente com o comando, (pode realizar esse passo após todo o resto estar concluído)
+Como o sistema não poderá mais escrever em /, é necessário garantir que os diretórios que precisam de escrita estejam em outras partições ou em tmpfs. No mínimo, adicione ao fstab:
+  tmpfs /tmp     tmpfs defaults,nosuid,nodev 0 0
+  tmpfs /var/log tmpfs defaults,nosuid,nodev 0 0
+  tmpfs /var/tmp tmpfs defaults,nosuid,nodev 0 0
+Caso o sistema precise escrever em outros lugares (como /var/lib), avalie mover esses diretórios para a partição /home ou criar partições adicionais conforme sua necessidade.
+
+* Vamos ativar o debug na porta serial que usamos para o primeiro terminal.
+   * Edite o arquivo /boot/armbianEnv.txt, "sudo nano /boot/armbianEnv.txt" e adicione a linha "verbosity=7". No proximo reboot, você já verá o log do kernel pela serial. Isso é só para identificar problemas.
+
+
+* ETAPA OPCIONAL: Vamos configurar a MEMORIA SPI para ter o UBOOT e dar boot por ela. (Isso Pode facilitar a recuperação de partições corrompidas), para essa etapa, sua placa tem q ter essa MEMORIA.
+  * Edite o arquivo /boot/armbianEnv.txt, "sudo nano /boot/armbianEnv.txt" e adicione  na linha overlays a opção sun8i-h3-spi-jedec-nor
+  ```
+    overlays=usbhost2 usbhost3 tve sun8i-h3-spi-jedec-nor
+  ```
+  e também adicione uma nova linha no final:
+  ```
+    param_spinor_spi_bus=0
+  ``` 
+Reinicie para a memoria flash ser detectada.
+Agora, vamos instalar o Uboot
 ```
-#!/bin/bash
-sudo mount -o remount,rw /dev/mmcblk2p1 /
+# Apaga a flash inteira
+sudo flash_erase /dev/mtd0 0 0
+
+# Grava o bootloader
+sudo dd if=/usr/lib/linux-u-boot-current-orangepizero/u-boot-sunxi-with-spl.bin of=/dev/mtd0
 ```
-Recomendo criar um script com o nome remonta.sh na pasta do usuario com esse comando e chamar ela quando for necessario, ou pela opção do menu da tela i2c
+
+A partir desse momento o boot começa pela memoria flash.
 
 
-Opcional:
-* Antes de iniciar o cartão na placa, recomendo criar um partição separada para os usuários, mas para isso precisamos utilizar o Linux. Coloque o cartão no linux. Use o Gparted, altere o tamanho da primeira partição para ter algo como uns 4200MB e crie uma nova partição ext4 com uns 3000MB. Lembrando que não podemorar criar maior mesmo o cartão tendo mais espaço porque iremos colocar tudo na EMMC de 8GB dele. Caso queira rodar do cartão SD, esses tamanhos podem ser diferentes.
-
-* Apoś isso, edite o arquivo /etc/fstab da partição principal do cartão, o nome dela deve ser armbi_root. Adicione a linha de montagem /home (UUID=65cca456-7f07-4d89-9ad2-33a9a64e5c59 /home  ext4  defaults,noatime  0 2) o UUID deve ser alterado. Para pegar o nome, rode o comando "blkid" e pegue.
-
-Após isso, ligue a placa já pelo eMMC (remova o cartão SD) rode o comando armbian-config (sudo armbian-config)
-Entre em System -> Kernel -> SY210 Manage device tree overlay e Ative as seguintes opções:
-
-![image](https://github.com/user-attachments/assets/ad89cdf0-6a23-4261-a717-17d71dca6672)
-
-Reinicie a placa novamente, agora no armbian-config conecte no wifi para poder instalar e atualizar os demais itens.
 
 * Precisamos agora ativar alguns dispositivos como portas Seriais e USBs. Para isso temos que alterar o arquivo DTB
   * Baixe o arquivo Dtb que está neste repositório para seu computador. 
   * Acesse pelo terminal, entre no local onde está o DTB e copie o arquivo DTB para a pasta do usuario:
-    ```
-    scp sun50i-h618-bananapi-m4-zero.dtb banana@192.168.2.208:~
-    ```
-    - Agora dentro do equipamento mova o arquivo para a pasta:
-    ```
-    sudo cp sun50i-h618-bananapi-m4-zero.dtb /boot/dtb-6.6.75-current-sunxi64/allwinner/
-    ```
+    - scp sun50i-h618-bananapi-m4-zero.dtb banana@192.168.2.208:~
+    - Agora dentro do equipamento mova o arquivo para a pasta (sudo cp sun8i-h2-plus-orangepi-zero.dtb /boot/dtb/)
     - Reinicie a placa
 
-* Vamos ativar o debug na porta serial que usamos para o primeiro terminal.
-   * Edite o arquivo /boot/armbianEnv.txt e adicione a linha `verbosity=7`. No proximo reboot, você já verá o log do kernel pela serial. Isso é só para identificar problemas.
-   ```
-   sudo nano /boot/armbianEnv.txt
-   ```
 
 * Vamos desativar atualização do kernel para não termos surpresas:
   * Entre no armbian-config, System -> Updates -> Disable Kernel updates
+
 * Atualize o APT
 ```
   sudo apt update
@@ -97,7 +100,6 @@ Reinicie a placa novamente, agora no armbian-config conecte no wifi para poder i
 ```
 sudo apt install net-tools i2c-tools build-essential libgl1
 ```
-* Instale o ambiente gráfico XFCE pelo armbian-config (opcinal)
 
 * Instale o python3-full 
 ```
@@ -107,135 +109,96 @@ sudo apt install python3-full
 ```
 sudo apt install python3-pip pipx
 ```
-* Instale o ultralytics usando um ambiente virtual personalizado:
+
+* Nessa placa não da para instalar o ultralytics ele é pesado demais para ela. Mas existe a opção de rodar onnx pelo openCV, vamos fazer assim...
 ```
-python3 -m venv meu_venv
-source meu_venv/bin/activate  
-pip install ultralytics
-python3 meu_script.py #(exemplo de como rodar o script)
+sudo apt update
+sudo apt install python3-opencv -y
+```
+
+Essa placa tem sérios problemas de espaço de ram. Então tudo tem q ser instalado via apt-get e depois criar o env copiando as coisas de lá.
+
 ```
 * Para utilizar as seriais no python é necessário instalar a biblioteca serial 
 ```
-pip install pyserial
+sudo apt install python3-serial python3-psutil
 ```
+
+* Para a tela oled funcionar temos que instalar as seguintes libs: 
+```
+sudo apt-get install python3-luma.oled
+```
+
+Agora vamos criar o env pegando os pacotes do sistema local já instalados, antes vamos remover algum env que já existir nessa pasta
+```
+rm -rf ~/meu_venv
+python3 -m venv meu_venv --system-site-packages
+
+python3 meu_script.py #(exemplo de como rodar o script)
+
+#exemplo para teste se funcionou a instalação
+python3 -c "import cv2; print(cv2.__version__)"
+
+```
+
 ATENÇÂO, sempre que for usar o PIP, você deve usar o comando "source meu_venv/bin/activate" antes (caso ainda nao esteja com o ambiente personalizado já aberto)
 
 * Para acessar os pinos GPIO do BananaPI é necessário instalar a biblioteca (python3-libgpiod)
-     * Instale o que é necessário
-     ```
-     sudo apt install python3-libgpiod libgpiod-dev python3-dev
-     ```
-     * Crie o grupo 
-     ```
-     sudo groupadd gpio
-     ```
-     * Adicione o usuario ao grupo de GPIO 
-     ```
-     sudo usermod -aG gpio $USER
-     ```
-     * Crie o arquivo gipo-rules 
-     ```
-     sudo nano /etc/udev/rules.d/99-gpio.rules
-     ```
+     * Instale o que é necessário (sudo apt install python3-libgpiod libgpiod-dev python3-dev)
+     * Crie o grupo (sudo groupadd gpio)
+     * Adicione o usuario ao grupo de GPIO (sudo usermod -aG gpio $USER)
+     * Crie o arquivo gipo-rules "sudo nano /etc/udev/rules.d/99-gpio.rules"
           * Dentro do arquivo adicione as duas linhas:
-          ```
-          SUBSYSTEM=="gpio", KERNEL=="gpiochip[0-9]*", GROUP="gpio", MODE="0660"
-          SUBSYSTEM=="gpio", KERNEL=="gpio[0-9]*", GROUP="gpio", MODE="0660"
-          ```
+             - SUBSYSTEM=="gpio", KERNEL=="gpiochip[0-9]*", GROUP="gpio", MODE="0660"
+             - SUBSYSTEM=="gpio", KERNEL=="gpio[0-9]*", GROUP="gpio", MODE="0660"
       * Recarregue as regras do udev
-         ```
-         sudo udevadm control --reload-rules
-         ```
-         ```
-         sudo udevadm trigger
-         ```
+         * sudo udevadm control --reload-rules
+         * sudo udevadm trigger
       * Reinicie a placa
-* Para acessar os sensores i2c é necessário instalar o modulo smbus2 e algumas bibliotecas:
-   ```
-   pip install smbus2 gpiod netifaces
-   ```
+
+* Para acessar os sensores i2c é necessário instalar o modulo smbus2 e algumas bibliotecas  (pip install smbus2 gpiod netifaces)
    * Agora temos que dar permissão de acesso as portas i2c
-   * Crie um arquivo de regra udev:
-   ```
-   sudo nano /etc/udev/rules.d/99-i2c.rules
-   ```
-      * Coloque dentro do arquivo:
-      ```
-      KERNEL=="i2c-[0-9]*", GROUP="i2c", MODE="0660"
-      ```
-   * Crie o grupo i2c:
-   ```
-   sudo groupadd i2c
-   ```
-   * Adicione seu usuário ao grupo i2c:
-   ```
-   sudo usermod -aG i2c $USER
-   ```
+   * Crie um arquivo de regra udev (sudo nano /etc/udev/rules.d/99-i2c.rules)
+      * Coloque dentro do arquivo (KERNEL=="i2c-[0-9]*", GROUP="i2c", MODE="0660")
+   * Crie o grupo i2c (sudo groupadd i2c) 
+   * Adicione seu usuário ao grupo i2c (sudo usermod -aG i2c $USER)
    * Agora reinicie a placa
+
 * A porta i2c utilizada para acesso aos sensores é a i2c-1 através do multiplexador TCA9548A
-* Para a tela oled funcionar temos que instalar as seguintes libs:
-   ```
-   pip install luma.oled psutil
-   ```
+* Para a tela oled funcionar temos que instalar as seguintes libs: (pip install luma.oled)
+
 * Possibilitar acessar via ssh sem ficar pedindo senha:
-  * Gera uma chave publica no seu computador, se já fez isso antes, nao é necessário refazer:
-  ```
-  ssh-keygen -t rsa -b 4096
-  ```
-  * No Linux execute (substituia o usuario e o IP pelo correto):
-  ```
-  ssh-copy-id USUARIO@IP
-  ```
+  * Gera uma chave publica no seu computador, se já fez isso antes, nao é necessário refazer (ssh-keygen -t rsa -b 4096)
+  * ssh-copy-id USUARIO@IP (substituia o usuario e o IP pelo correto) (no linux)
   * No windows não tem como ser feito com comando, abra o arquivo id_rsa.pub, na pasta .ssh dentro da pasta seu usuario, copie a linha
-  * Logue na placa por ssh e rode os comandos:
-  ```
-  mkdir -p ~/.ssh
-  nano ~/.ssh/authorized_keys
-  ```
-  * Agora, copie o valor do arquivo id_rsa.pub e cole dentro desse arquivo, salve e saia
-  * Agora, qualquer login por ssh não pedirá mais senha.
+  * Logue na placa por ssh e rode os comandos
+    * mkdir -p ~/.ssh
+    * nano ~/.ssh/authorized_keys
+    * Agora, copie o valor do arquivo id_rsa.pub e cole dentro desse arquivo, salve e saia
+    * Agora, qualquer login por ssh não pedirá mais senha.
 
 * Copie a pasta do projeto menuPrincipal para a pasta do usuario
-  * Dentro da placa, coloque o arquivo start.sh para ser executável 
-  ```chmod +x ./start.sh
-  ```
-    * Crie um serviço para iniciar o script toda vez que a placa ligar:
-    ```
-    sudo nano /etc/systemd/system/menuPrincipal.service
-    ```
+  * Dentro da placa, coloque o arquivo start.sh para ser executável
+    * Crie um serviço para iniciar o script toda vez que a placa ligar (sudo nano /etc/systemd/system/menuPrincipal.service)
       * O código do que colocar no serviço está no arquivo exemplo.service na pasta do projeto
-    ```
-    sudo systemctl daemon-reexec
-    sudo systemctl enable menuPrincipal.service
-    ```
+    * Rode agora sudo systemctl daemon-reexec
+    * Depois, sudo systemctl enable menuPrincipal.service
 * De permissão para o shutdown e outros comandos necessários sejam executados sem precisar de senha
-  * Digite:
-  ```
-  sudo visudo
-  ```
-  * Dentro do arquivo, no final dele, coloque as seguintes linhas (troque banana pelo usuario escolhido):
-  ```
-banana ALL=(ALL) NOPASSWD: /usr/bin/psd-overlay-helper
-banana ALL=(ALL) NOPASSWD: /sbin/shutdown
-banana ALL=(ALL) NOPASSWD: /sbin/ifconfig
-  ```
+  * Digite sudo visudo
+  * Dentro do arquivo, no final dele, coloque as seguintes linhas:
+     - banana ALL=(ALL) NOPASSWD: /usr/bin/psd-overlay-helper
+     - banana ALL=(ALL) NOPASSWD: /sbin/shutdown
+     - banana ALL=(ALL) NOPASSWD: /sbin/ifconfig
+       (troque banana pelo usuario escolhido)
   * Reinicie a placa e veja se a tela exibirá o menu automaticamente (lembre-se a tela e o teclado devem estar encaixados para isso funcionar)
+
 * Inserir no script de login do usuario a opção já iniciar o terminal com o ambiente python do usuario
-  * Abra o arquivo .bashrc:
-  ```
-  nano ~/.bashrc
-  ```
-  * No final do arquivo adicione:
-  ```
-  source ~/meu_venv/bin/activate
-  ```
+  * abra o arquivo .nashrc (nano ~/.bashrc)
+  * no final do arquivo adicione (source ~/meu_venv/bin/activate)
   * Agora sempre que logar com o usuario no ssh, o ambiente python já será selecionado. (Um comando a menos para esquecer :D )
 
 * Vamos inserir um script para verificar a partição toda vez que o brick iniciar, isso pode impedir falhar de inicialização e de partição corrompida
-  * Rode o comando:
-  ```
-  sudo nano /etc/systemd/system/force-fsck-root.service
-  ```
+  * Rode o comando: sudo nano /etc/systemd/system/force-fsck-root.service
   * Agora crie adicione as linhas no arquivo:
   ```
   [Unit]
@@ -257,10 +220,7 @@ banana ALL=(ALL) NOPASSWD: /sbin/ifconfig
      sudo systemctl daemon-reexec
      sudo systemctl enable force-fsck-root.service
   ```
-Agora é só reiniciar. Caso queira verificar se o fsck está rodando, rode o comando:
-```
-journalctl -u force-fsck-root.service
-```
+Agora é só reiniciar. Caso queira verificar se o fsck está rodando, rode o comando journalctl -u force-fsck-root.service
 
 * Instalando o servidor SAMBA para compartilhar a pasta do usuário com acesso remoto no windows:
   * Instale os pacotes: (sudo apt install samba smbclient cifs-utils)

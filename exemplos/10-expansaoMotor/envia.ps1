@@ -1,5 +1,5 @@
 # Configurações
-$IP          = "192.168.2.104"
+$IP          = "192.168.2.200"
 $USUARIO     = "banana"
 $MANIFEST    = ".manifest"
 $TEMP_TAR    = "upload_temp.tar.gz"

@@ -51,11 +51,14 @@ class PlacaControleMotor:
     GIRANDO_NORMAL = 1
     GIRANDO_INVERTIDO = 2
 
+    ignorar_retorno = False
+
     def __init__(self, objeto_porta_serial, id_equipamento):
         self.id_equipamento = id_equipamento & 0xFF
         self.motor_invertido = False
         self.angulo_delta = 0
         self.ser = objeto_porta_serial
+        self.ignorar_retorno = False
         if self.ser is None:
             raise Exception('Erro ao abrir a porta serial da PlacaControleMotor')
         #self.reset()
@@ -135,21 +138,24 @@ class PlacaControleMotor:
             # Descarta o eco do próprio envio (one-wire: HOST ouve o que envia)
             eco = self.ser.read(self.TAMANHO_PACOTE_CMD)
 
+            # time.sleep(0.001)
             # Lê a resposta do equipamento
             resposta = self.ser.read(self.TAMANHO_PACOTE_RESP)
-
             if self.DEBUG:
                 print(f'TX:  {[f"0x{b:02x}" for b in pacote]}')
                 print(f'ECO: {[f"0x{b:02x}" for b in eco]}')
                 print(f'RX:  {[f"0x{b:02x}" for b in resposta]}')
 
-            resultado = self._processar_resposta(resposta)
-            if resultado is not None:
-                return resultado
-
+            if(not self.ignorar_retorno):
+                resultado = self._processar_resposta(resposta)
+                if resultado is not None:
+                    return resultado
+            else:
+                return None
+            # print("falhou")
             if self.DEBUG:
                 print(f'Tentativa {i + 1}/{tentativas} falhou')
-            time.sleep(0.005)
+            time.sleep(0.002)
 
         return None
 
@@ -685,12 +691,12 @@ class PlacaControleMotor:
         return self.PARADO
 
     @staticmethod
-    def buscar_motores(porta_serial, baud_rate=115200):
+    def buscar_motores(porta_serial, baud_rate=250000):
         """Escaneia todos os 256 IDs possíveis (0-255) e retorna os que responderam.
 
         Args:
             porta_serial: Porta serial (ex: Portas.SERIAL1)
-            baud_rate: Baud rate da comunicação, default 115200
+            baud_rate: Baud rate da comunicação, default 250000
 
         Returns:
             Lista de dicts com 'id', 'estado' e 'pulsos' dos motores encontrados
@@ -742,3 +748,14 @@ class PlacaControleMotor:
 
         print(f'\nBusca concluída. {len(encontrados)} motor(es) encontrado(s).')
         return encontrados
+
+    def set_ignorar_retorno(self, ignorar):
+        """Configura se as funções de controle devem ignorar a resposta do equipamento.
+
+        Útil para casos onde o retorno não é necessário e se quer evitar atrasos
+        causados por leituras da resposta.
+
+        Args:
+            ignorar: True para ignorar respostas, False para ler normalmente
+        """
+        self.ignorar_retorno = ignorar  

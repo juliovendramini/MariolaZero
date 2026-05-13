@@ -19,7 +19,7 @@ class PlacaControleServo:
     TAMANHO_PACOTE = 6
     DEBUG = True
 
-    def __init__(self, porta_serial, id_equipamento, baud_rate=115200):
+    def __init__(self, porta_serial, id_equipamento, baud_rate=250000):
         self.id_equipamento = id_equipamento & 0xFF
         portas = Portas()
         self.ser = portas.abre_porta_serial(porta_serial, baud_rate)
@@ -108,7 +108,7 @@ class PlacaControleServo:
 
             if self.DEBUG:
                 print(f'Tentativa {i + 1}/{tentativas} falhou')
-            time.sleep(0.005)
+            time.sleep(0.002)
 
         return None
 
@@ -153,12 +153,12 @@ class PlacaControleServo:
         return None
 
     @staticmethod
-    def buscar_servos(porta_serial, baud_rate=115200):
+    def buscar_servos(porta_serial, baud_rate=250000):
         """Escaneia todos os 256 IDs possíveis (0-255) e retorna os que responderam.
 
         Args:
             porta_serial: Porta serial (ex: Portas.SERIAL1)
-            baud_rate: Baud rate da comunicação, default 115200
+            baud_rate: Baud rate da comunicação, default 250000
 
         Returns:
             Lista de dicts com 'id' e 'posicao' dos servos encontrados
