@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        
+        {
+            "name": "Enviar projeto",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "powershell.exe",
+            "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/envia.ps1"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        }
+    ]
+}
