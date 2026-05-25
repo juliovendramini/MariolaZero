@@ -1,4 +1,4 @@
-# Melhoria dos exemplos anteriores, agora detectando objetos e marcando a posição deles na tela, além de exibir posição e área
+﻿# Melhoria dos exemplos anteriores, agora detectando objetos e marcando a posição deles na tela, além de exibir posição e área
 # As classes também são identificadas e exibidas
 from ultralytics import YOLO
 import cv2
@@ -11,10 +11,10 @@ torch.set_num_threads(4)  # ou quantos núcleos quiser usar
 device = 'cpu'
 print(f"Usando dispositivo: {device}")
 # Carrega a rede treinada
-model = YOLO("yolov8n.pt")
+model = YOLO("best.onnx")
 
 app = Flask(__name__)
-camera = cv2.VideoCapture(0)
+camera = cv2.VideoCapture(1)
 camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Define o buffer para 1 frame, assim nao atraso nenhuma transmissão
 camera.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
 camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
@@ -120,7 +120,7 @@ while True:
     frameAtual = annotated_frame.copy() 
     
     # Mostra o frame com detecções
-    cv2.imshow("YOLOv8 - Webcam 320x320", frameAtual)
+    #cv2.imshow("YOLOv8 - Webcam 320x320", frameAtual)
 
     time.sleep(0.1)
     # Pressione 'q' para sair
