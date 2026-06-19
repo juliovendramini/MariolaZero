@@ -456,6 +456,18 @@ class VL53L0X:  # noqa
         while self.read_byte(0x00) & 0x01:  # SYSRANGE_START
             pass
 
+    def leitura_mm(self):
+        self.select_channel()
+        self.select_channel()
+        # Ler distância em milímetros no modo contínuo
+        while (self.read_byte(0x13) & 0x07) == 0:  # RESULT_INTERRUPT_STATUS
+            pass  # Esperar até que o resultado esteja pronto
+
+        range_mm = self.read_word(0x14 + 10)  # RESULT_RANGE_STATUS + 10
+        self.write_byte(0x0B, 0x01)  # SYSTEM_INTERRUPT_CLEAR
+        return range_mm
+
+
     def timeout_occurred(self):
         # Verificar se ocorreu um timeout
         tmp = self.did_timeout

@@ -21,16 +21,26 @@ class PinosDigitais:
     # P6 = 232  # Novo pino
     # P7 = 231  # Novo pino
     # P8 = 230  # Novo pino
-    
-    P1 = 259
-    P2 = 260
-    P3 = 71
-    P4 = 234
-    P5 = 228
-    P6 = 265
-    P7 = 266
-    P8 = 267
+ #bananapi m4 zero   
+    # P1 = 259
+    # P2 = 260
+    # P3 = 71
+    # P4 = 234
+    # P5 = 228
+    # P6 = 265
+    # P7 = 266
+    # P8 = 267
 
+#raxda rick s0
+    P1 = 72
+    P2 = 70
+    P3 = 71
+    P4 = 19
+    P5 = 139
+    P6 = 75
+    P7 = 81
+    P8 = 18
+    
     # Valores lógicos
     ALTO = Value.ACTIVE
     BAIXO = Value.INACTIVE

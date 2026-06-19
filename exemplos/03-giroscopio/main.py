@@ -9,6 +9,7 @@ giroscopio = Giroscopio(Portas.SERIAL1)
 
 #Declaração das bibliotecas que serão usadas
 giroscopio.set_modo(giroscopio.GYRO)
+giroscopio.calibra() #Calibra o giroscópio para obter leituras mais precisas
 
 try:   
     #o código de calibração não precisa ser executado todas as vezes... Uma vez o giroscópio no lugar e calibrado, não é necessário repetir

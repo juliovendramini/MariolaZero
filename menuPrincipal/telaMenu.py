@@ -114,14 +114,30 @@ class MenuPrincipal:
         return self.menu_opcoes[self.opcao_selecionada]
     
     def ip_equipamento(self):
-        try:
-            interfaces = netifaces.ifaddresses('wlan0')
-            ip = interfaces[netifaces.AF_INET][0]['addr']
+        def _ip_de(nome_iface):
+            try:
+                addrs = netifaces.ifaddresses(nome_iface)
+                return addrs[netifaces.AF_INET][0]['addr']
+            except (KeyError, ValueError):
+                return None
+
+        # Procura primeira interface com prefixo "wlx"
+        for iface in netifaces.interfaces():
+            if iface.startswith("wlx"):
+                ip = _ip_de(iface)
+                if ip:
+                    return ip
+            if iface.startswith("enx"):
+                ip = _ip_de(iface)
+                if ip:
+                    return ip
+
+        # Fallback para wlan0
+        ip = _ip_de('wlan0')
+        if ip:
             return ip
-        except KeyError:
-            return "Sem IP"
-        except Exception as e:
-            return "Sem IP"
+
+        return "Sem IP"
         
     def obter_temperatura_cpu(self):
         try:
@@ -174,7 +190,11 @@ class MenuPrincipal:
                     draw.text((0, 0), texto, font=self.font, fill="white")
                 sleep(2)
                 self.limpa_tela()
-                subprocess.run(["sudo", "ifconfig", "wlan0", "down"])
+                # subprocess.run(["sudo", "ifconfig", "wlan0", "down"])
+                for iface in netifaces.interfaces():
+                    if iface.startswith("wlx") or iface.startswith("wlan0") or iface.startswith("enx"):
+                        subprocess.run(["sudo", "ifconfig", iface, "down"])
+                        
             elif self.opcao_selecionada == self.WIFI_ON:
                 print("Ligando o Wi-Fi...")
                 with canvas(self.display) as draw:
@@ -183,7 +203,10 @@ class MenuPrincipal:
                     draw.text((0, 0), texto, font=self.font, fill="white")
                 sleep(2)
                 self.limpa_tela()
-                subprocess.run(["sudo", "ifconfig", "wlan0", "up"])
+                # subprocess.run(["sudo", "ifconfig", "wlan0", "up"])
+                for iface in netifaces.interfaces():
+                    if iface.startswith("wlx") or iface.startswith("wlan0") or iface.startswith("enx"):
+                        subprocess.run(["sudo", "ifconfig", iface, "up"])
             elif self.opcao_selecionada == self.DESBLOQUEAR:
                 print("Desbloqueando o equipamento...")
                 with canvas(self.display) as draw:

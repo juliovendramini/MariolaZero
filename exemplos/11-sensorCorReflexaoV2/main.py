@@ -5,10 +5,10 @@ from time import sleep
 from portas import Portas
 from sensorCorReflexao import CorReflexao
 
-SensorCorReflexao = CorReflexao(Portas.SERIAL1)
+SensorCorReflexao = CorReflexao(Portas.SERIAL6)
 #Declaração das bibliotecas que serão usadas
-SensorCorReflexao.calibra_branco()
-#SensorCorReflexao.calibra_preto()
+#SensorCorReflexao.calibra_branco()
+SensorCorReflexao.calibra_preto()
 try:   
     #o código de calibração não precisa ser executado todas as vezes... Uma vez o giroscópio no lugar e calibrado, não é necessário repetir
     # if(giroscopio.calibra()):
