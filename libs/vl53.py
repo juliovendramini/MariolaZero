@@ -53,64 +53,66 @@ class VL53L0X:  # noqa
         #se já configurou, nao preciso fazer tudo de novo
         if not configurado:
             self.set_i2c_address(0x30)
-        # Configuração inicial do sensor
-        self.write_byte(0x88, 0x00)
-        self.write_byte(0x80, 0x01)
-        self.write_byte(0xFF, 0x01)
-        self.write_byte(0x00, 0x00)
-        self.stop_variable = self.read_byte(0x91)
-        self.write_byte(0x00, 0x01)
-        self.write_byte(0xFF, 0x00)
-        self.write_byte(0x80, 0x00)
+            # Configuração inicial do sensor
+            self.write_byte(0x88, 0x00)
+            self.write_byte(0x80, 0x01)
+            self.write_byte(0xFF, 0x01)
+            self.write_byte(0x00, 0x00)
+            self.stop_variable = self.read_byte(0x91)
+            self.write_byte(0x00, 0x01)
+            self.write_byte(0xFF, 0x00)
+            self.write_byte(0x80, 0x00)
 
-        # Desabilitar verificações de limite de sinal
-        msrc_config_control = self.read_byte(0x60)
-        self.write_byte(0x60, msrc_config_control | 0x12)
+            # Desabilitar verificações de limite de sinal
+            msrc_config_control = self.read_byte(0x60)
+            self.write_byte(0x60, msrc_config_control | 0x12)
 
-        # Configurar limite de taxa de sinal final para 0.25 MCPS
-        self.set_signal_rate_limit(0.25)
+            # Configurar limite de taxa de sinal final para 0.25 MCPS
+            self.set_signal_rate_limit(0.25)
 
-        self.write_byte(0x01, 0xFF)  # SYSTEM_SEQUENCE_CONFIG
+            self.write_byte(0x01, 0xFF)  # SYSTEM_SEQUENCE_CONFIG
 
-        # Inicialização estática
-        spad_count, spad_type_is_aperture = self.get_spad_info()
-        ref_spad_map = self.read_multi(0xB0, 6)  # GLOBAL_CONFIG_SPAD_ENABLES_REF_0
+            # Inicialização estática
+            spad_count, spad_type_is_aperture = self.get_spad_info()
+            ref_spad_map = self.read_multi(0xB0, 6)  # GLOBAL_CONFIG_SPAD_ENABLES_REF_0
 
-        self.write_byte(0xFF, 0x01)
-        self.write_byte(0x4F, 0x00)  # DYNAMIC_SPAD_REF_EN_START_OFFSET
-        self.write_byte(0x4E, 0x2C)  # DYNAMIC_SPAD_NUM_REQUESTED_REF_SPAD
-        self.write_byte(0xFF, 0x00)
-        self.write_byte(0xB6, 0xB4)  # GLOBAL_CONFIG_REF_EN_START_SELECT
+            self.write_byte(0xFF, 0x01)
+            self.write_byte(0x4F, 0x00)  # DYNAMIC_SPAD_REF_EN_START_OFFSET
+            self.write_byte(0x4E, 0x2C)  # DYNAMIC_SPAD_NUM_REQUESTED_REF_SPAD
+            self.write_byte(0xFF, 0x00)
+            self.write_byte(0xB6, 0xB4)  # GLOBAL_CONFIG_REF_EN_START_SELECT
 
-        first_spad_to_enable = 12 if spad_type_is_aperture else 0
-        spads_enabled = 0
+            first_spad_to_enable = 12 if spad_type_is_aperture else 0
+            spads_enabled = 0
 
-        for i in range(48):
-            if i < first_spad_to_enable or spads_enabled == spad_count:
-                ref_spad_map[i // 8] &= ~(1 << (i % 8))
-            elif (ref_spad_map[i // 8] >> (i % 8)) & 0x1:
-                spads_enabled += 1
+            for i in range(48):
+                if i < first_spad_to_enable or spads_enabled == spad_count:
+                    ref_spad_map[i // 8] &= ~(1 << (i % 8))
+                elif (ref_spad_map[i // 8] >> (i % 8)) & 0x1:
+                    spads_enabled += 1
 
-        self.write_multi(0xB0, ref_spad_map, 6)  # GLOBAL_CONFIG_SPAD_ENABLES_REF_0
+            self.write_multi(0xB0, ref_spad_map, 6)  # GLOBAL_CONFIG_SPAD_ENABLES_REF_0
 
-        # Carregar configurações de ajuste padrão
-        self.load_tuning_settings()
+            # Carregar configurações de ajuste padrão
+            self.load_tuning_settings()
 
-        # Configurar interrupção para "novo amostra pronta"
-        self.write_byte(0x0A, 0x04)  # SYSTEM_INTERRUPT_CONFIG_GPIO
-        gpio_hv_mux_active_high = self.read_byte(0x84)
-        self.write_byte(0x84, gpio_hv_mux_active_high & ~0x10)  # GPIO_HV_MUX_ACTIVE_HIGH
-        self.write_byte(0x0B, 0x01)  # SYSTEM_INTERRUPT_CLEAR
+            # Configurar interrupção para "novo amostra pronta"
+            self.write_byte(0x0A, 0x04)  # SYSTEM_INTERRUPT_CONFIG_GPIO
+            gpio_hv_mux_active_high = self.read_byte(0x84)
+            self.write_byte(0x84, gpio_hv_mux_active_high & ~0x10)  # GPIO_HV_MUX_ACTIVE_HIGH
+            self.write_byte(0x0B, 0x01)  # SYSTEM_INTERRUPT_CLEAR
 
-        # Configurar sequência e orçamento de tempo
-        measurement_timing_budget_us = self.get_measurement_timing_budget()
+            # Configurar sequência e orçamento de tempo
+            measurement_timing_budget_us = self.get_measurement_timing_budget()
 
-        self.write_byte(0x01, 0xE8)  # SYSTEM_SEQUENCE_CONFIG
+            self.write_byte(0x01, 0xE8)  # SYSTEM_SEQUENCE_CONFIG
 
-        self.set_measurement_timing_budget(measurement_timing_budget_us)
+            self.set_measurement_timing_budget(measurement_timing_budget_us)
 
-        # Calibração de referência
-        self.perform_ref_calibration()
+            # Calibração de referência
+            self.perform_ref_calibration()
+        else:
+            print('Sensor já configurado, pulando configuração inicial.')
 
     def select_channel(self):
         self.bus.write_byte(self.MUX_ADDR, 1 << self.porta_mux)
