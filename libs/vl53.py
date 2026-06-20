@@ -44,78 +44,74 @@ class VL53L0X:  # noqa
         #     except Exception:
         #         print('VL53L0X não encontrado em nenhum endereço válido')
         #self.set_i2c_address(0x30)  # Define um endereço I2C
-        model_id = self.read_byte(0xC0)
-        if model_id != 0xEE:
-            print('Retorno do ID do sensor: ', hex(model_id))
-            # raise Exception("VL53L0X não encontrado no endereço 0x29")
-            print('VL53L0X nao encontrado no endereço', self.VL53L0X_I2C_ADDR)
+        
+        # model_id = self.read_byte(0xC0)
+        # if model_id != 0xEE:
+        #     print('Retorno do ID do sensor: ', hex(model_id))
+        #     # raise Exception("VL53L0X não encontrado no endereço 0x29")
+        #     print('VL53L0X nao encontrado no endereço', self.VL53L0X_I2C_ADDR)
 
-        #se já configurou, nao preciso fazer tudo de novo
         if not configurado:
-            #2026-06-19 - vou aplicar a configuração toda e só no final mudar o endereço alternativo. Isso é importante pois se algo acontecer no meio do processo de inicialização, eu sei que devo reiniciar ele
-            # Configuração inicial do sensor
-            self.write_byte(0x88, 0x00)
-            self.write_byte(0x80, 0x01)
-            self.write_byte(0xFF, 0x01)
-            self.write_byte(0x00, 0x00)
-            self.stop_variable = self.read_byte(0x91)
-            self.write_byte(0x00, 0x01)
-            self.write_byte(0xFF, 0x00)
-            self.write_byte(0x80, 0x00)
-
-            # Desabilitar verificações de limite de sinal
-            msrc_config_control = self.read_byte(0x60)
-            self.write_byte(0x60, msrc_config_control | 0x12)
-
-            # Configurar limite de taxa de sinal final para 0.25 MCPS
-            self.set_signal_rate_limit(0.25)
-
-            self.write_byte(0x01, 0xFF)  # SYSTEM_SEQUENCE_CONFIG
-
-            # Inicialização estática
-            spad_count, spad_type_is_aperture = self.get_spad_info()
-            ref_spad_map = self.read_multi(0xB0, 6)  # GLOBAL_CONFIG_SPAD_ENABLES_REF_0
-
-            self.write_byte(0xFF, 0x01)
-            self.write_byte(0x4F, 0x00)  # DYNAMIC_SPAD_REF_EN_START_OFFSET
-            self.write_byte(0x4E, 0x2C)  # DYNAMIC_SPAD_NUM_REQUESTED_REF_SPAD
-            self.write_byte(0xFF, 0x00)
-            self.write_byte(0xB6, 0xB4)  # GLOBAL_CONFIG_REF_EN_START_SELECT
-
-            first_spad_to_enable = 12 if spad_type_is_aperture else 0
-            spads_enabled = 0
-
-            for i in range(48):
-                if i < first_spad_to_enable or spads_enabled == spad_count:
-                    ref_spad_map[i // 8] &= ~(1 << (i % 8))
-                elif (ref_spad_map[i // 8] >> (i % 8)) & 0x1:
-                    spads_enabled += 1
-
-            self.write_multi(0xB0, ref_spad_map, 6)  # GLOBAL_CONFIG_SPAD_ENABLES_REF_0
-
-            # Carregar configurações de ajuste padrão
-            self.load_tuning_settings()
-
-            # Configurar interrupção para "novo amostra pronta"
-            self.write_byte(0x0A, 0x04)  # SYSTEM_INTERRUPT_CONFIG_GPIO
-            gpio_hv_mux_active_high = self.read_byte(0x84)
-            self.write_byte(0x84, gpio_hv_mux_active_high & ~0x10)  # GPIO_HV_MUX_ACTIVE_HIGH
-            self.write_byte(0x0B, 0x01)  # SYSTEM_INTERRUPT_CLEAR
-
-            # Configurar sequência e orçamento de tempo
-            measurement_timing_budget_us = self.get_measurement_timing_budget()
-
-            self.write_byte(0x01, 0xE8)  # SYSTEM_SEQUENCE_CONFIG
-
-            self.set_measurement_timing_budget(measurement_timing_budget_us)
-
-            # Calibração de referência
-            self.perform_ref_calibration()
-
-            #altero no final o id do sensor
             self.set_i2c_address(0x30)
-        else:
-            print('Sensor já configurado, pulando configuração inicial.')
+
+        # Configuração inicial do sensor
+        self.write_byte(0x88, 0x00)
+        self.write_byte(0x80, 0x01)
+        self.write_byte(0xFF, 0x01)
+        self.write_byte(0x00, 0x00)
+        self.stop_variable = self.read_byte(0x91)
+        self.write_byte(0x00, 0x01)
+        self.write_byte(0xFF, 0x00)
+        self.write_byte(0x80, 0x00)
+
+        # Desabilitar verificações de limite de sinal
+        msrc_config_control = self.read_byte(0x60)
+        self.write_byte(0x60, msrc_config_control | 0x12)
+
+        # Configurar limite de taxa de sinal final para 0.25 MCPS
+        self.set_signal_rate_limit(0.25)
+
+        self.write_byte(0x01, 0xFF)  # SYSTEM_SEQUENCE_CONFIG
+
+        # Inicialização estática
+        spad_count, spad_type_is_aperture = self.get_spad_info()
+        ref_spad_map = self.read_multi(0xB0, 6)  # GLOBAL_CONFIG_SPAD_ENABLES_REF_0
+
+        self.write_byte(0xFF, 0x01)
+        self.write_byte(0x4F, 0x00)  # DYNAMIC_SPAD_REF_EN_START_OFFSET
+        self.write_byte(0x4E, 0x2C)  # DYNAMIC_SPAD_NUM_REQUESTED_REF_SPAD
+        self.write_byte(0xFF, 0x00)
+        self.write_byte(0xB6, 0xB4)  # GLOBAL_CONFIG_REF_EN_START_SELECT
+
+        first_spad_to_enable = 12 if spad_type_is_aperture else 0
+        spads_enabled = 0
+
+        for i in range(48):
+            if i < first_spad_to_enable or spads_enabled == spad_count:
+                ref_spad_map[i // 8] &= ~(1 << (i % 8))
+            elif (ref_spad_map[i // 8] >> (i % 8)) & 0x1:
+                spads_enabled += 1
+
+        self.write_multi(0xB0, ref_spad_map, 6)  # GLOBAL_CONFIG_SPAD_ENABLES_REF_0
+
+        # Carregar configurações de ajuste padrão
+        self.load_tuning_settings()
+
+        # Configurar interrupção para "novo amostra pronta"
+        self.write_byte(0x0A, 0x04)  # SYSTEM_INTERRUPT_CONFIG_GPIO
+        gpio_hv_mux_active_high = self.read_byte(0x84)
+        self.write_byte(0x84, gpio_hv_mux_active_high & ~0x10)  # GPIO_HV_MUX_ACTIVE_HIGH
+        self.write_byte(0x0B, 0x01)  # SYSTEM_INTERRUPT_CLEAR
+
+        # Configurar sequência e orçamento de tempo
+        measurement_timing_budget_us = self.get_measurement_timing_budget()
+
+        self.write_byte(0x01, 0xE8)  # SYSTEM_SEQUENCE_CONFIG
+
+        self.set_measurement_timing_budget(measurement_timing_budget_us)
+
+        # Calibração de referência
+        self.perform_ref_calibration()
 
     def select_channel(self):
         self.bus.write_byte(self.MUX_ADDR, 1 << self.porta_mux)
