@@ -28,7 +28,7 @@ class VL53L0X:  # noqa
             configurado = False
         if not configurado:
             self.VL53L0X_I2C_ADDR = 0x29
-            self.set_i2c_address(0x30)
+            #self.set_i2c_address(0x30)
         # try:
         #     model_id = self.read_byte(0xC0)
         #     if current_addr == 0x29 and model_id == 0xEE:
@@ -52,7 +52,7 @@ class VL53L0X:  # noqa
 
         #se já configurou, nao preciso fazer tudo de novo
         if not configurado:
-            self.set_i2c_address(0x30)
+            #2026-06-19 - vou aplicar a configuração toda e só no final mudar o endereço alternativo. Isso é importante pois se algo acontecer no meio do processo de inicialização, eu sei que devo reiniciar ele
             # Configuração inicial do sensor
             self.write_byte(0x88, 0x00)
             self.write_byte(0x80, 0x01)
@@ -111,6 +111,9 @@ class VL53L0X:  # noqa
 
             # Calibração de referência
             self.perform_ref_calibration()
+
+            #altero no final o id do sensor
+            self.set_i2c_address(0x30)
         else:
             print('Sensor já configurado, pulando configuração inicial.')
 
