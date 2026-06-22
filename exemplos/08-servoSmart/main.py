@@ -12,25 +12,25 @@ print("Servos encontrados:")
 for servo in servos:
     print(f"ID: {servo['id']}, Posição: {servo['posicao']}")
 
-exit()
-servo1 = PlacaControleServo(Portas.SERIAL1, id_equipamento=60)
-servo2 = PlacaControleServo(Portas.SERIAL1, id_equipamento=14)
-servo3 = PlacaControleServo(Portas.SERIAL1, id_equipamento=52)
+# exit()
+servo1 = PlacaControleServo(Portas.SERIAL1, id_equipamento=47)
+servo2 = PlacaControleServo(Portas.SERIAL1, id_equipamento=66)
+servo3 = PlacaControleServo(Portas.SERIAL1, id_equipamento=73)
 posicao = 0
-potencia = 100
+potencia = 50
 zona_morta = 5
 
 try:   
     while(True):
-        resultado = servo1.move_servo(posicao, potencia, zona_morta)
-        # print(resultado)
+        resultado = servo2.move_servo(posicao, potencia, zona_morta)
+        print(resultado)
         # resultado = servo2.move_servo(posicao, potencia, zona_morta)
         # print(resultado)
         # resultado = servo3.move_servo(posicao, potencia, zona_morta)
+        # print(resultado)
         posicao += 5
         if posicao > 1023:
             posicao = 0
-        print(resultado)
         sleep(0.3)
     while(True):
         # resultado = servo1.move_servo(512, 0, 5)
