@@ -1,5 +1,5 @@
 @echo off
-set IP=192.168.2.130
+set IP=10.78.235.208
 @REM pego como padrao o nome da pasta atual para ser o nome do projeto
 for %%i in ("%CD%") do set NOMEPROJETO=%%~ni
 scp -r * banana@%IP%:~\%NOMEPROJETO%

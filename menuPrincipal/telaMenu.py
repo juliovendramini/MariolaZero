@@ -156,8 +156,27 @@ class MenuPrincipal:
             print(f"Executando comando para: {opcao}")
             self.desenha_inicio_execucao()
             sleep(1)
-            script_path = os.path.join("/home/banana", opcao, "main.py")
-            resultado = subprocess.run(["python3", script_path], check=True)
+            main_py_path = os.path.join("/home/banana", opcao, "main.py")
+            main_sh_path = os.path.join("/home/banana", opcao, "main.sh")
+            log_dir = "/home/banana/logs"
+            sequencial = self._proximo_id_log(log_dir)
+            log_path = f"{log_dir}/{sequencial:06d}.log"
+            log_erro = f"{log_dir}/{sequencial:06d}_erro.log"
+            os.makedirs(os.path.dirname(log_path), exist_ok=True)
+            if os.path.isfile(main_sh_path):
+                comando_execucao = ["bash", main_sh_path]
+                script_path = main_sh_path
+            else:
+                comando_execucao = ["python3", main_py_path]
+                script_path = main_py_path
+            print(f"Executando script: {script_path}, log em {log_path}")
+            with open(log_path, "a") as log_file:
+                resultado = subprocess.run(
+                    comando_execucao,
+                    stdout=log_file,
+                    stderr=open(log_erro, "a"),
+                    check=True,
+                )
             self._ajustes_iniciais()
             self.modo_menu = self.MENU_PRINCIPAL
             self.atualizar_menu()
@@ -242,6 +261,24 @@ class MenuPrincipal:
         with canvas(self.display) as draw:
             self.limpa_tela()
             draw.text((0, 0), "Iniciando...", font=self.font, fill="white")
+
+    def _proximo_id_log(self, log_dir):
+        sequencia_path = os.path.join(log_dir, "sequencia.txt")
+        os.makedirs(log_dir, exist_ok=True)
+        proximo = 1
+
+        try:
+            with open(sequencia_path, "r") as arquivo:
+                conteudo = arquivo.read().strip()
+                if conteudo:
+                    proximo = int(conteudo) + 1
+        except (FileNotFoundError, ValueError):
+            proximo = 1
+
+        with open(sequencia_path, "w") as arquivo:
+            arquivo.write(str(proximo))
+
+        return proximo
 
     def _processo_rodando(self):
         for proc in psutil.process_iter(['cmdline']):
