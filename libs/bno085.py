@@ -67,6 +67,12 @@ class BNO085:
     TIMEOUT_RESET_MS = 1000
     TIMEOUT_LEITURA_MS = 200
 
+    # Intervalo padrão entre amostras de cada relatório habilitado (µs).
+    # 20000 µs = 50 Hz — valor mais seguro dado o custo de troca de canal
+    # do mux a cada pacote lido. Se quiser mais frequência, aumente o valor
+    # de TIMEOUT_LEITURA_MS/timeout_ms de le_valores() na mesma proporção.
+    INTERVALO_PADRAO_US = 20000
+
     def __init__(self, porta_mux=None, endereco=None):
         if porta_mux is None or porta_mux > 7 or porta_mux < 0:
             raise ValueError('Canal inválido (deve ser 0 a 7)')
@@ -130,9 +136,11 @@ class BNO085:
     # ------------------------------------------------------------------
 
     def _envia_pacote(self, canal, dados):
-        """Monta o cabeçalho SHTP (tamanho + canal + sequência) e envia."""
-        self.select_channel()
-
+        """
+        Monta o cabeçalho SHTP (tamanho + canal + sequência) e envia.
+        Não seleciona o canal do mux — quem chama é responsável por isso,
+        já que este método costuma ser usado várias vezes em sequência.
+        """
         tamanho_total = len(dados) + 4
         cabecalho = [
             tamanho_total & 0xFF,
@@ -151,8 +159,10 @@ class BNO085:
         Lê um pacote SHTP completo (cabeçalho + payload), respeitando um
         timeout — se nada estiver disponível o sensor devolve tamanho 0.
         Retorna (canal, payload) ou (None, None) se der timeout.
+
+        Não seleciona o canal do mux (custaria 5 ms por pacote) — quem
+        chama (método de nível superior) já deve ter selecionado antes.
         """
-        self.select_channel()
         timeout_ms = timeout_ms or self.TIMEOUT_LEITURA_MS
         deadline = time.monotonic() + timeout_ms / 1000
 
@@ -184,6 +194,7 @@ class BNO085:
 
     def _reset_sensor(self):
         """Envia o comando de reset pelo canal executável e descarta o boot."""
+        self.select_channel()
         self._envia_pacote(self.CHANNEL_EXECUTABLE, [0x01])
         time.sleep(0.5)
 
@@ -196,6 +207,7 @@ class BNO085:
 
     def _verifica_id(self):
         """Solicita e confere o Product ID do sensor (relatório 0xF8)."""
+        self.select_channel()
         self._envia_pacote(self.CHANNEL_CONTROL, [self._PRODUCT_ID_REQUEST, 0x00])
 
         deadline = time.monotonic() + self.TIMEOUT_RESET_MS / 1000
@@ -213,13 +225,18 @@ class BNO085:
             self.REPORT_GIROSCOPIO,
             self.REPORT_MAGNETOMETRO,
         ):
-            self.habilita_relatorio(id_relatorio, intervalo_us=10000)
+            self.habilita_relatorio(id_relatorio, intervalo_us=self.INTERVALO_PADRAO_US)
 
-    def habilita_relatorio(self, id_relatorio, intervalo_us=10000):
+    def habilita_relatorio(self, id_relatorio, intervalo_us=None):
         """
         Habilita um relatório de sensor (ex.: REPORT_ACELEROMETRO) informando
-        o intervalo entre leituras em microssegundos (padrão 10000 us = 100 Hz).
+        o intervalo entre leituras em microssegundos. Evite valores muito
+        baixos (alta frequência) — a troca de canal do mux antes de cada
+        pacote lido custa alguns milissegundos, então gerar dados mais rápido
+        do que conseguimos ler só faz o buffer do sensor acumular atraso.
         """
+        intervalo_us = intervalo_us or self.INTERVALO_PADRAO_US
+        self.select_channel()
         dados = [
             self._SET_FEATURE_COMMAND,
             id_relatorio,
@@ -293,14 +310,28 @@ class BNO085:
                 # Relatório desconhecido — aborta o processamento deste pacote
                 break
 
-    def le_valores(self):
+    def le_valores(self, timeout_ms=50, max_pacotes=20):
         """
         Processa os pacotes pendentes do sensor e retorna um dicionário com
         os valores mais recentes: aceleração, giroscópio, magnetômetro,
         aceleração linear, gravidade, quaternion e ângulos de Euler.
+
+        `timeout_ms` limita o tempo TOTAL gasto nesta chamada (não apenas a
+        espera por um pacote individual) e `max_pacotes` limita quantos
+        pacotes são processados por chamada. Isso evita que a função fique
+        presa caso o sensor esteja gerando dados mais rápido do que
+        conseguimos drenar (ex.: vários relatórios habilitados em alta
+        frequência) — nesse caso simplesmente retornamos os valores mais
+        recentes já decodificados e o restante fica pendente para a
+        próxima chamada.
         """
-        while True:
-            canal, payload = self._le_pacote(timeout_ms=10)
+        self.select_channel()
+        deadline = time.monotonic() + timeout_ms / 1000
+
+        for _ in range(max_pacotes):
+            if time.monotonic() > deadline:
+                break
+            canal, payload = self._le_pacote(timeout_ms=5)
             if canal is None:
                 break
             if canal in (self.CHANNEL_INPUT_REPORTS, self.CHANNEL_WAKE_INPUT_REPORTS):
