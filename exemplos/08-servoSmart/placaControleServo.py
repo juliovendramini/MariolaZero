@@ -19,6 +19,13 @@ class PlacaControleServo:
     TAMANHO_PACOTE = 6
     DEBUG = True
 
+    # Comando especial de calibração: um valor de "posição" fora da faixa
+    # válida (0-1023) sinaliza à placa que os bytes [3]/[4] não são
+    # potência/zona morta, e sim o novo valor (16 bits) a calibrar.
+    COMANDO_CALIBRACAO = 65000
+    TEMPO_DETECTA_TRAVA_MIN = 1000  # ms - limite mínimo aceito pela placa
+    TEMPO_DETECTA_TRAVA_MAX = 5000  # ms - limite máximo aceito pela placa
+
     def __init__(self, porta_serial, id_equipamento, baud_rate=250000):
         self.id_equipamento = id_equipamento & 0xFF
         portas = Portas()
@@ -49,6 +56,26 @@ class PlacaControleServo:
             posicao & 0xFF,
             potencia & 0xFF,
             zona_morta & 0xFF,
+        ]
+        pacote.append(self._calcular_crc(pacote))
+        return bytes(pacote)
+
+    def _montar_pacote_comando(self, comando, valor):
+        """Monta um pacote de comando especial (ex.: calibração).
+
+        Diferente de _montar_pacote, o campo de "posição" não é limitado a
+        0-1023, pois carrega o código do comando (ex.: COMANDO_CALIBRACAO).
+        O campo valor (16 bits) ocupa os bytes normalmente usados por
+        potência e zona morta.
+        """
+        comando = max(0, min(0xFFFF, comando))
+        valor = max(0, min(0xFFFF, valor))
+        pacote = [
+            self.id_equipamento,
+            (comando >> 8) & 0xFF,
+            comando & 0xFF,
+            (valor >> 8) & 0xFF,
+            valor & 0xFF,
         ]
         pacote.append(self._calcular_crc(pacote))
         return bytes(pacote)
@@ -111,6 +138,51 @@ class PlacaControleServo:
             time.sleep(0.002)
 
         return None
+
+    def calibrar_tempo_detecta_trava(self, tempo_ms, tentativas=3):
+        """Calibra o tempo (ms) sem movimento para o motor ser considerado travado.
+
+        Envia um comando especial (posição = COMANDO_CALIBRACAO) informando os
+        bytes de potência/zona morta como o novo valor (16 bits) a gravar. A
+        placa grava o valor na EEPROM, limitando-o entre TEMPO_DETECTA_TRAVA_MIN
+        e TEMPO_DETECTA_TRAVA_MAX, e confirma ecoando COMANDO_CALIBRACAO na
+        resposta.
+
+        Args:
+            tempo_ms: Novo tempo em ms (será limitado pela placa entre
+                TEMPO_DETECTA_TRAVA_MIN e TEMPO_DETECTA_TRAVA_MAX)
+            tentativas: Número de tentativas em caso de falha
+
+        Returns:
+            True se a placa confirmou o comando, False caso contrário
+        """
+        pacote = self._montar_pacote_comando(self.COMANDO_CALIBRACAO, tempo_ms)
+
+        for i in range(tentativas):
+            self.ser.reset_input_buffer()
+            self.ser.write(pacote)
+            self.ser.flush()
+
+            # Descarta o eco do próprio envio (one-wire: HOST ouve o que envia)
+            eco = self.ser.read(self.TAMANHO_PACOTE)
+
+            # Lê a resposta do equipamento
+            resposta = self.ser.read(self.TAMANHO_PACOTE)
+
+            if self.DEBUG:
+                print(f'TX:  {[f"0x{b:02x}" for b in pacote]}')
+                print(f'ECO: {[f"0x{b:02x}" for b in eco]}')
+                print(f'RX:  {[f"0x{b:02x}" for b in resposta]}')
+
+            resultado = self._parsear_resposta(resposta)
+            if resultado is not None and resultado['posicao'] == self.COMANDO_CALIBRACAO:
+                return True
+
+            if self.DEBUG:
+                print(f'Tentativa {i + 1}/{tentativas} falhou')
+            time.sleep(0.002)
+
+        return False
 
     def move_servo(self, posicao, potencia=255, zona_morta=5):
         """Move o servo para a posição desejada.
