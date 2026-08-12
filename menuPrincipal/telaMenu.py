@@ -162,7 +162,10 @@ class MenuPrincipal:
             sequencial = self._proximo_id_log(log_dir)
             log_path = f"{log_dir}/{sequencial:06d}.log"
             log_erro = f"{log_dir}/{sequencial:06d}_erro.log"
-            os.makedirs(os.path.dirname(log_path), exist_ok=True)
+            try:
+                os.makedirs(os.path.dirname(log_path), exist_ok=True)
+            except OSError as e:
+                print(f"Aviso: não foi possível criar o diretório de logs '{log_dir}': {e}")
             if os.path.isfile(main_sh_path):
                 comando_execucao = ["bash", main_sh_path]
                 script_path = main_sh_path
@@ -170,13 +173,29 @@ class MenuPrincipal:
                 comando_execucao = ["python3", main_py_path]
                 script_path = main_py_path
             print(f"Executando script: {script_path}, log em {log_path}")
-            with open(log_path, "a") as log_file:
+            # Se o arquivo de log não puder ser criado, usa DEVNULL para não impedir a execução
+            try:
+                log_file = open(log_path, "a")
+            except OSError as e:
+                print(f"Aviso: não foi possível criar o arquivo de log '{log_path}': {e}")
+                log_file = subprocess.DEVNULL
+            try:
+                log_erro_file = open(log_erro, "a")
+            except OSError as e:
+                print(f"Aviso: não foi possível criar o arquivo de erro '{log_erro}': {e}")
+                log_erro_file = subprocess.DEVNULL
+            try:
                 resultado = subprocess.run(
                     comando_execucao,
                     stdout=log_file,
-                    stderr=open(log_erro, "a"),
+                    stderr=log_erro_file,
                     check=True,
                 )
+            finally:
+                if log_file is not subprocess.DEVNULL:
+                    log_file.close()
+                if log_erro_file is not subprocess.DEVNULL:
+                    log_erro_file.close()
             self._ajustes_iniciais()
             self.modo_menu = self.MENU_PRINCIPAL
             self.atualizar_menu()
