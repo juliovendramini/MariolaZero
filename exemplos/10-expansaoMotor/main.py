@@ -9,27 +9,27 @@ from placaControleMotor import PlacaControleMotor
 from placaControleServo import PlacaControleServo
 import portas
 
-print("Buscando Motores:")
-motores = PlacaControleMotor.buscar_motores(Portas.SERIAL1)
-print("Motores encontrados:")
-for motor in motores:
-    print(f"ID: {motor['id']}")
-#exit()
+# print("Buscando Motores:")
+# motores = PlacaControleMotor.buscar_motores(Portas.SERIAL1)
+# print("Motores encontrados:")
+# for motor in motores:
+#     print(f"ID: {motor['id']}")
+# exit()
 
-print("\nBuscando Servos:")
-servos = PlacaControleServo.buscar_servos(Portas.SERIAL1)
-print("Servos encontrados:")
-for servo in servos:
-    print(f"ID: {servo['id']}, Posição: {servo['posicao']}")
-exit()
+# print("\nBuscando Servos:")
+# servos = PlacaControleServo.buscar_servos(Portas.SERIAL1)
+# print("Servos encontrados:")
+# for servo in servos:
+#     print(f"ID: {servo['id']}, Posição: {servo['posicao']}")
+# exit()
 
 
 
 #id 67 e 71
 portas = Portas()
 portaSerialbarramento = portas.abre_porta_serial(Portas.SERIAL1, 250000, timeout=0.005)
-motor1 = PlacaControleMotor(portaSerialbarramento, id_equipamento=5)
-motor2 = PlacaControleMotor(portaSerialbarramento, id_equipamento=72)
+motor1 = PlacaControleMotor(portaSerialbarramento, id_equipamento=0)
+motor2 = PlacaControleMotor(portaSerialbarramento, id_equipamento=7)
 posicao = 0
 potencia = 0
 zona_morta = 5
@@ -75,7 +75,9 @@ motor2.set_kd_freio(10)
 motor1.set_delta_freio(20)
 motor2.set_delta_freio(20)
 motor1.pid_motor(2,2,2)
-motor1.calibrar();
+motor1.calibracao_manual(80,-80)
+motor2.calibracao_manual(80,-80)
+# motor1.calibrar();
 try:   
     
     #motor1.reseta_angulo_motor()
@@ -84,24 +86,24 @@ try:
     import time
     import threading
 
-    while True:
-        resultado1 = motor1.velocidade_motor(15)
-        print(resultado1)
-        sleep(0.5)
+    # while True:
+    #     resultado1 = motor1.velocidade_motor(15)
+    #     print(resultado1)
+    #     sleep(0.5)
 
     contador = 0
     tempo_inicio = time.time()
-    while True:
-        resultado1 = motor1.move_motor(0, 0)
-        resultado2 = motor2.move_motor(0, 0)
-        print(resultado1, resultado2)    
+    # while True:
+    #     resultado1 = motor1.move_motor(0, 0)
+    #     resultado2 = motor2.move_motor(0, 0)
+    #     print(resultado1, resultado2)    
     while(True):
         contador+=1
-        t = threading.Thread(target=motores.potencia_motores, args=(50, 50))
+        t = threading.Thread(target=motores.potencia_motores, args=(100,100))
         t.start()
-        resultado = motor1.potencia_motor(50)
+        resultado = motor1.potencia_motor(100)
         t.join()
-        resultado = motor2.potencia_motor(50)
+        resultado = motor2.potencia_motor(100)
         # print("----------")
         tempo_atual = time.time()
         if tempo_atual - tempo_inicio >= 1.0:

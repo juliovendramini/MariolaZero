@@ -3,7 +3,13 @@ from cronometro import Cronometro
 from telaMenu import MenuPrincipal
 from teclado import Teclado
 
-tela = MenuPrincipal()
+while True:
+    try:
+        tela = MenuPrincipal()
+        break
+    except Exception as e:
+        print(f"Tela nao detectada, coloque a tela e aguarde: {e}")
+        sleep(2)
 
 try:
     teclado = Teclado()

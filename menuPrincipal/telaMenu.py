@@ -121,9 +121,17 @@ class MenuPrincipal:
             except (KeyError, ValueError):
                 return None
 
-        # Procura primeira interface com prefixo "wlx"
+        # Procura primeira interface com prefixo "ordem de prioridade nos ips"
         for iface in netifaces.interfaces():
+            if iface.startswith("wlan1"):
+                ip = _ip_de(iface)
+                if ip:
+                    return ip
             if iface.startswith("wlx"):
+                ip = _ip_de(iface)
+                if ip:
+                    return ip
+            if iface.startswith("eth0"):
                 ip = _ip_de(iface)
                 if ip:
                     return ip
@@ -141,7 +149,7 @@ class MenuPrincipal:
         
     def obter_temperatura_cpu(self):
         try:
-            with open("/sys/class/thermal/thermal_zone0/temp", "r") as file:
+            with open("/sys/class/thermal/thermal_zone2/temp", "r") as file:
                 temp_millicelsius = int(file.read().strip())
                 temp_celsius = temp_millicelsius / 1000.0
                 return int(temp_celsius)
@@ -230,7 +238,7 @@ class MenuPrincipal:
                 self.limpa_tela()
                 # subprocess.run(["sudo", "ifconfig", "wlan0", "down"])
                 for iface in netifaces.interfaces():
-                    if iface.startswith("wlx") or iface.startswith("wlan0") or iface.startswith("enx"):
+                    if iface.startswith("wlx") or iface.startswith("wlan") or iface.startswith("enx") or iface.startswith("eth"):
                         subprocess.run(["sudo", "ifconfig", iface, "down"])
                         
             elif self.opcao_selecionada == self.WIFI_ON:
@@ -243,7 +251,7 @@ class MenuPrincipal:
                 self.limpa_tela()
                 # subprocess.run(["sudo", "ifconfig", "wlan0", "up"])
                 for iface in netifaces.interfaces():
-                    if iface.startswith("wlx") or iface.startswith("wlan0") or iface.startswith("enx"):
+                    if iface.startswith("wlx") or iface.startswith("wlan") or iface.startswith("enx") or iface.startswith("eth"):
                         subprocess.run(["sudo", "ifconfig", iface, "up"])
             elif self.opcao_selecionada == self.DESBLOQUEAR:
                 print("Desbloqueando o equipamento...")

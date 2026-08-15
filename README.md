@@ -368,10 +368,68 @@ Rode o seguinte comando para criar/editar o arquivo de regras:
   ATTR{index}=="0", \
   DEVPATH=="*5200400.usb*", \
   SYMLINK+="video_usb3"
-  ```
+
   3. Resetar o udev:
   ```
   sudo udevadm control --reload
   sudo udevadm trigger
   ```
+
+* Evitar atraso de boot devido a falta de wifi ou conexão com roteador
+edite o arquivo netplan e adicione no wlan0 "optional: true"
+
+```wifis:
+    wlan0:
+      dhcp4: true
+      dhcp6: true
+      optional: true
+```
+
+desative o serviço wait-online
+``` sudo systemctl mask systemd-networkd-wait-online.service
+```
+
+Para poder usar placas de rede wifi, precisamos configurar alguns arquivos para poder ativar as placas apenas quando estão conectadas (para evitar a lentidão de inicio)
+Rode o comando abaixo depois que souber o nome da interface (substitua corretamente os valores no comando)
+```
+sudo bash -c 'wpa_passphrase "REDE" "senhawifi" > /etc/wpa_supplicant/wlxd0aeec3e321a.conf'
+```
+
+Crie o arquivo /etc/systemd/network/30-usb-wlan.network e coloque o conteúdo dentro
+```
+[Match]
+Name=wlxd0aeec3e321a
+
+[Network]
+DHCP=yes
+
+[Link]
+RequiredForOnline=no
+```
+
+agora crie um script (rede_usb.sh) na pasta do usuario:
+```
+#!/bin/bash
+# ativa-wifi-usb.sh
+IFACE=wlxd0aeec3e321a
+ip link show "$IFACE" &>/dev/null || { echo "Placa USB não plugada"; exit 1; }
+ip link set "$IFACE" up
+wpa_supplicant -B -i "$IFACE" -c /etc/wpa_supplicant/"$IFACE".conf
+echo "Associando... o networkd cuida do DHCP."
+sudo systemctl restart systemd-networkd
+```
+
+agora faça também para a placa usb-ethernet cabeada..
+Crie o arquivo /etc/systemd/network/31-usb-eth.network
+
+```
+[Match]
+Name=enx00606e2100d0
+
+[Network]
+DHCP=yes
+
+[Link]
+RequiredForOnline=no
+```
 
