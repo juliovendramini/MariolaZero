@@ -5,6 +5,7 @@ import sys
 import os
 import netifaces
 import subprocess
+from pathlib import Path
 from time import sleep
 from luma.core.interface.serial import i2c
 from luma.core.render import canvas
@@ -28,12 +29,13 @@ class MenuPrincipal:
     MENU_PRINCIPAL = 0
     MENU_DESLIGAR = 1
     modo_menu = MENU_PRINCIPAL
-    #["Desligar Brick", "Reiniciar Brick", "Wifi Off", "Wifi On", "Desbloquear"]
+    #["Desligar Brick", "Reiniciar Brick", "Wifi Off", "Wifi On", "Desbloquear", "Iniciar X"]
     DESLIGAR = 0
     REINICIAR = 1
     WIFI_OFF = 2
     WIFI_ON = 3
     DESBLOQUEAR = 4
+    INICIAR_X = 5
     def __init__(self, i2c_bus=0, i2c_address=0x3C):
         self.i2c_bus = i2c_bus
         self.i2c_address = i2c_address
@@ -82,7 +84,7 @@ class MenuPrincipal:
                     draw.text((0, y_pos), f"  {opcao}", font=self.font, fill="white")
 
     def menu_desligar(self):
-        self.menu_opcoes = ["Desligar Brick", "Reiniciar Brick", "Wifi Off", "Wifi On", "Desbloquear"]
+        self.menu_opcoes = ["Desligar Brick", "Reiniciar Brick", "Wifi Off", "Wifi On", "Desbloquear", "Iniciar X"]
         with canvas(self.display) as draw:
             texto = f"Opções:"
             draw.text((0, 0), texto, font=self.font, fill="white")
@@ -114,36 +116,29 @@ class MenuPrincipal:
         return self.menu_opcoes[self.opcao_selecionada]
     
     def ip_equipamento(self):
+        def _esta_ativa(nome_iface):
+            try:
+                estado = Path(f"/sys/class/net/{nome_iface}/operstate").read_text().strip()
+                return estado == "up"
+            except OSError:
+                return False
+
         def _ip_de(nome_iface):
+            if not _esta_ativa(nome_iface):
+                return None
             try:
                 addrs = netifaces.ifaddresses(nome_iface)
                 return addrs[netifaces.AF_INET][0]['addr']
-            except (KeyError, ValueError):
+            except (KeyError, ValueError, IndexError):
                 return None
 
         # Procura primeira interface com prefixo "ordem de prioridade nos ips"
-        for iface in netifaces.interfaces():
-            if iface.startswith("wlan1"):
-                ip = _ip_de(iface)
-                if ip:
-                    return ip
-            if iface.startswith("wlx"):
-                ip = _ip_de(iface)
-                if ip:
-                    return ip
-            if iface.startswith("eth0"):
-                ip = _ip_de(iface)
-                if ip:
-                    return ip
-            if iface.startswith("enx"):
-                ip = _ip_de(iface)
-                if ip:
-                    return ip
-
-        # Fallback para wlan0
-        ip = _ip_de('wlan0')
-        if ip:
-            return ip
+        for prefixo in ("wlan1", "wlx", "eth0", "end0", "enx", 'eth1', 'end1', 'wlan0'):
+            for iface in netifaces.interfaces():
+                if iface.startswith(prefixo):
+                    ip = _ip_de(iface)
+                    if ip:
+                        return ip
 
         return "Sem IP"
         
@@ -238,7 +233,7 @@ class MenuPrincipal:
                 self.limpa_tela()
                 # subprocess.run(["sudo", "ifconfig", "wlan0", "down"])
                 for iface in netifaces.interfaces():
-                    if iface.startswith("wlx") or iface.startswith("wlan") or iface.startswith("enx") or iface.startswith("eth"):
+                    if iface.startswith("wlx") or iface.startswith("wlan") or iface.startswith("enx") or iface.startswith("eth") or iface.startswith("end"):
                         subprocess.run(["sudo", "ifconfig", iface, "down"])
                         
             elif self.opcao_selecionada == self.WIFI_ON:
@@ -251,7 +246,7 @@ class MenuPrincipal:
                 self.limpa_tela()
                 # subprocess.run(["sudo", "ifconfig", "wlan0", "up"])
                 for iface in netifaces.interfaces():
-                    if iface.startswith("wlx") or iface.startswith("wlan") or iface.startswith("enx") or iface.startswith("eth"):
+                    if iface.startswith("wlx") or iface.startswith("wlan") or iface.startswith("enx") or iface.startswith("eth") or iface.startswith("end"):
                         subprocess.run(["sudo", "ifconfig", iface, "up"])
             elif self.opcao_selecionada == self.DESBLOQUEAR:
                 print("Desbloqueando o equipamento...")
@@ -262,6 +257,15 @@ class MenuPrincipal:
                     subprocess.run(["sudo", "mount", "-o", "remount,rw", "/dev/mmcblk2p1", "/"])
                 sleep(2)
                 self.limpa_tela()
+            elif self.opcao_selecionada == self.INICIAR_X:
+                print("Iniciando X...")
+                with canvas(self.display) as draw:
+                    texto = f"INICIANDO X..."
+                    draw.rectangle(self.display.bounding_box, outline="black", fill="black")
+                    draw.text((0, 0), texto, font=self.font, fill="white")
+                sleep(1)
+                self.limpa_tela()
+                subprocess.run(["sudo", "systemctl", "start", "lightdm"])
             self.modo_menu = self.MENU_PRINCIPAL
             self.opcao_selecionada = 0
             self.atualizar_menu()

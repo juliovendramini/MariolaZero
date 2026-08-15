@@ -1,11 +1,16 @@
 import serial
-from lidar import LidarData
-porta_serial = 'COM7'  # Altere para a porta serial correta do seu sistema
+# from lidar import LidarData
+from pinosDigitais import PinosDigitais
+from portas import Portas
+from time import sleep
+#porta_serial = 'COM7'  # Altere para a porta serial correta do seu sistema
 
 # Constantes
 HEAD_BYTE = 0xFA  # Defina o valor do cabeçalho do pacote (exemplo)
 PACKET_SIZE = 22  # Defina o tamanho do pacote conforme seu sensor
 DATA_SIZE = 7    # Defina o tamanho dos dados conforme necessário
+
+portas = Portas()  # Instancia a classe Portas para acessar os métodos de porta serial
 
 # Variáveis globais
 wait_packet = True
@@ -13,7 +18,7 @@ packet_index = 0
 packet = [0] * PACKET_SIZE
 data = [0] * DATA_SIZE
 current_speed = 0  # Variável para suavizar leituras de velocidade
-lidar = LidarData()
+#lidar = LidarData()
 def abre_porta_serial(porta, baud_rate=115200):
         try:
             ser = serial.Serial(porta, baud_rate, timeout=0.01)
@@ -138,7 +143,15 @@ def process_lidar_data(lidar_sensor):
                     decode_packet(packet, PACKET_SIZE)  # process the packet
                     send_data(data, DATA_SIZE)
 
-ser = abre_porta_serial(porta_serial, 115200)
+
+pinosDigitais = PinosDigitais(PWM=True)  # Inicializa com PWM ativado para o pino 8
+
+ser = portas.abre_porta_serial(Portas.SERIAL1, 115200)
+print("ligando rele")
+pinosDigitais.configura_pino(pinosDigitais.P7, pinosDigitais.SAIDA)
+pinosDigitais.escreve_pino(pinosDigitais.P7, pinosDigitais.BAIXO)  # Liga o relé (logica invertida)
+sleep(2)
+pinosDigitais.escreve_pino(pinosDigitais.P7, pinosDigitais.ALTO)  # Liga o relé (logica invertida)
 
 # Loop principal para processar dados do LIDAR
 if ser:
@@ -147,7 +160,9 @@ if ser:
         print("Pressione Ctrl+C para parar")
         
         while True:
-            process_lidar_data(ser)
+            # process_lidar_data(ser)
+            sleep(2)
+            pass    
             
     except KeyboardInterrupt:
         print("\nParando a leitura...")
