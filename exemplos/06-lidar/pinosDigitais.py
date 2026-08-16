@@ -1,6 +1,6 @@
 import gpiod
 from gpiod.line import Direction, Value
-# 2026-08-15 - Parametro para não permitir usar o pino 8. pois em alguns casos ele será usado no driver pwm para controlar a velocidade da ventoinha.
+# 2026-08-15 - Pino 8 é detectado automaticamente: se a linha já estiver em uso (ex.: driver pwm da ventoinha), o pino 8 fica indisponível para uso digital.
 
 class PinosDigitais:
     """
@@ -47,12 +47,24 @@ class PinosDigitais:
     # Dicionário para mapear direções dos pinos
     _direcoes = {}
 
-    def __init__(self , PWM = False):
+    # Instância única (padrão singleton) — todas as chamadas a PinosDigitais(...)
+    # retornam o mesmo objeto, evitando requisitar as mesmas linhas gpiod duas vezes.
+    _instancia = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instancia is None:
+            cls._instancia = super().__new__(cls)
+            cls._instancia._inicializado = False
+        return cls._instancia
+
+    def __init__(self):
         """
         Inicializa todos os 8 pinos como ENTRADA por padrão.
         Use configura_pino() para mudar para saída.
         """
-        self.PWM = PWM # Armazena se o pino 8 será usado para PWM
+        if self._inicializado:  # já inicializado (singleton) — ignora novas chamadas
+            return
+        self._inicializado = True
         chip_name = '/dev/gpiochip1'
         self.chip = gpiod.Chip(chip_name)
         
@@ -127,7 +139,7 @@ class PinosDigitais:
         )
         self._direcoes[self.P7] = Direction.INPUT
 
-        if not PWM:  # Se não for usar PWM, inicializa o pino 8 como entrada
+        try:  # tenta alocar o pino 8; se já estiver em uso (ex.: pwm da ventoinha), fica indisponível
             self.PINO8 = gpiod.request_lines(
                 chip_name,
                 config={
@@ -137,6 +149,10 @@ class PinosDigitais:
                 },
             )
             self._direcoes[self.P8] = Direction.INPUT
+            self.PWM = False
+        except Exception:
+            self.PINO8 = None
+            self.PWM = True
 
     def _get_pino_obj(self, pin):
         """Retorna o objeto do pino correspondente."""
@@ -319,3 +335,4 @@ class PinosDigitais:
                     pino.release()
                 except:
                     pass
+
