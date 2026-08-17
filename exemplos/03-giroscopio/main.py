@@ -5,7 +5,7 @@ from time import sleep
 from portas import Portas
 from giroscopio import Giroscopio
 
-giroscopio = Giroscopio(Portas.SERIAL1)
+giroscopio = Giroscopio(Portas.SERIAL5)
 
 #Declaração das bibliotecas que serão usadas
 giroscopio.set_modo(giroscopio.GYRO)
