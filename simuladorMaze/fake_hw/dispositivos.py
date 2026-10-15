@@ -27,111 +27,45 @@ def _xor(buf):
 
 # =========================================================================== serial
 class Mariola:
-    """ATmega328PB do brick Mariola (lib motores.py). Pacotes de 10 bytes a 250000 bps."""
-    CMDS = {0xFC: 'pid', 0xF8: 'pid4x4', 0xFA: 'pwm', 0xF7: 'pwm4x4', 0xFB: 'estado'}
+    """ATmega328PB do brick Mariola (placaBrickVendra.ino): pacotes de 10 bytes a 250000 bps.
+    A lógica do firmware fica no simulador (sim/firmware.py); aqui só se junta o pacote."""
 
     def __init__(self, nome):
         self.buf = bytearray()
-        self.leds = [(0, 0, 0)] * 11
-        cal = int(cliente.config['motor_padrao'].get('calibracao', 208))
-        self.cal = [cal, cal]
 
     def recebe(self, dados):
         self.buf += dados
         out = []
         while len(self.buf) >= 10:
-            if self.buf[0] < 0xF3 or self.buf[0] > 0xFD:
-                del self.buf[0]          # perdeu o sincronismo: descarta byte
+            if self.buf[0] < 0xF2 or self.buf[0] > 0xFD:
+                del self.buf[0]          # firmware: byte desconhecido é descartado um a um
                 continue
             f = bytes(self.buf[:10])
-            del self.buf[:10]
-            out.extend(self._quadro(f))
+            self.buf.clear()             # firmware: depois de tratar, descarta o resto do buffer
+            r = cliente.conexao.chamar('mariola_quadro', f=list(f))
+            if r['r'] is not None:
+                out.append((bytes(r['r']), r['d']))
         return out
-
-    def _quadro(self, f):
-        cmd = f[0]
-        con = cliente.conexao
-        if cmd in self.CMDS:
-            r = con.chamar('mariola', tipo=self.CMDS[cmd], vals=[_s8(x) for x in f[1:5]],
-                           alvos=[(f[5] << 8) | f[6], (f[7] << 8) | f[8]], freio=f[9])
-            est = (r['e'][0] & 0b11) | ((r['e'][1] & 0b11) << 2)
-            hdr = 0xFB if cmd == 0xFB else 0xFC
-            return [(bytes([hdr]) + struct.pack('>ii', r['c'][0], r['c'][1]) + bytes([est]), 0.0004)]
-        if cmd == 0xFD:   # servos
-            con.chamar('servo', v={str(i): f[i] for i in range(1, 7)})
-            return [(b'\xFD', 0.0002)]
-        if cmd == 0xF9:   # PID
-            return [(b'\xF9', 0.02)]
-        if cmd in (0xF6, 0xF5):   # LEDs RGB
-            cor = (f[1], f[2], f[3])
-            if cmd == 0xF6:
-                self.leds = [cor] * 11
-            else:
-                self.leds[min(max(f[4], 0), 10)] = cor
-            con.chamar('led', leds=[list(c) for c in self.leds])
-            return [(bytes([cmd]), 0.0002)]
-        if cmd == 0xF4:
-            return [(b'\xF4' + struct.pack('>ii', self.cal[0], self.cal[1]) + b'\x00', 0.0004)]
-        if cmd == 0xF3:
-            return [(b'\xF3', 0.0002)]
-        return []
 
 
 class BarramentoMotores:
-    """Barramento one-wire half-duplex das placas de controle de motor (placaControleMotor.py).
-    O host ouve o eco do que envia (6 bytes) e depois a resposta de 8 bytes."""
+    """Barramento one-wire half-duplex das placas de controle de motor (placaControleMotor.ino).
+    O host ouve o eco do que envia (6 bytes) e depois a resposta de 8 bytes da placa com aquele ID."""
 
     def __init__(self, nome):
         self.nome = nome
         self.buf = bytearray()
-        cal = int(cliente.config['motor_padrao'].get('calibracao', 208))
-        self.cal = {}
-        self.cal_padrao = cal
 
     def recebe(self, dados):
+        out = [(bytes(dados), 0.0)]       # eco: o TX e o RX estão no mesmo fio
         self.buf += dados
-        out = []
         while len(self.buf) >= 6:
             f = bytes(self.buf[:6])
-            if _xor(f[:5]) != f[5]:
-                out.append((bytes(self.buf[:1]), 0.0))   # eco do lixo
-                del self.buf[0]
-                continue
             del self.buf[:6]
-            out.append((f, 0.0001))                       # eco
-            r = self._trata(f)
-            if r:
-                out.append(r)
+            r = cliente.conexao.chamar('placa_quadro', porta=self.nome, f=list(f))
+            if r['r'] is not None:
+                out.append((bytes(r['r']), r['d']))
         return out
-
-    def _resp(self, idm, modo, b2, payload4):
-        p = bytes([idm, modo, b2 & 0xFF]) + payload4
-        return p + bytes([_xor(p)])
-
-    def _trata(self, f):
-        idm, modo, b2, b3, b4 = f[0], f[1], f[2], f[3], f[4]
-        con = cliente.conexao
-        cal = self.cal.setdefault(idm, [self.cal_padrao, -self.cal_padrao])
-        if modo == 0:
-            r = con.chamar('placa', porta=self.nome, id=idm, modo='pid', valor=_s8(b2), giro=(b3 << 8) | b4)
-        elif modo == 1:
-            r = con.chamar('placa', porta=self.nome, id=idm, modo='pwm', valor=_s8(b2))
-        elif modo == 2:
-            r = con.chamar('placa', porta=self.nome, id=idm, modo='freio', valor=b2)
-        elif modo == 3:
-            r = con.chamar('placa', porta=self.nome, id=idm, modo='reset')
-        else:
-            r = con.chamar('placa', porta=self.nome, id=idm, modo='atualiza')
-        if r.get('ausente'):
-            return None
-        if modo == 4:          # calibração automática (bloqueante no firmware)
-            return (self._resp(idm, modo, 0, struct.pack('>hh', cal[0], cal[1])), 2.0)
-        if modo == 8:
-            cal[b2 & 1] = _i16((b3 << 8) | b4)
-            return (self._resp(idm, modo, 0, struct.pack('>hh', cal[0], cal[1])), 0.0008)
-        if modo == 10:
-            return (self._resp(idm, modo, 1, struct.pack('>hh', cal[0], cal[1])), 0.0008)
-        return (self._resp(idm, modo, r['e'], struct.pack('>i', r['c'])), 0.0008)
 
 
 class Giroscopio:
@@ -160,21 +94,23 @@ class Giroscopio:
 
 
 class CorReflexaoV2:
-    """Sensor de linha Pro1616 (ATtiny1616): 0x61 -> 16 bytes; 0x62/0x63 calibram e respondem 0x01."""
+    """Sensor de linha Pro1616 (sensorLinhaPro1616.ino): lê todos os bytes que chegaram e usa o
+    último. 0x61 -> 16 bytes; 0x62 calibra o branco (~7 s) e 0x63 o preto (~2 s), respondendo 1."""
 
     def __init__(self, nome):
         pass
 
     def recebe(self, dados):
-        out = []
-        for b in dados:
-            if b == 0x61:
-                v = cliente.conexao.chamar('cor')['v']
-                out.append((bytes(v), 0.0012))
-            elif b in (0x62, 0x63):
-                t = float(cliente.config['cor_reflexao'].get('tempo_calibracao_s', 1.5))
-                out.append((b'\x01', t))
-        return out
+        validos = [b for b in dados if 0x61 <= b <= 0x63]
+        if not validos:
+            return []
+        b = validos[-1]
+        if b == 0x61:
+            v = cliente.conexao.chamar('cor')['v']
+            return [(bytes(v), 0.0005)]
+        cc = cliente.config['cor_reflexao']
+        t = float(cc.get('tempo_calibra_branco_s', 7.0) if b == 0x62 else cc.get('tempo_calibra_preto_s', 2.2))
+        return [(b'\x01', t)]
 
 
 class MuxVl53Serial:

@@ -23,14 +23,14 @@
   ],
 
   "motor_padrao": {
-    "_comentario": "contagens por volta da roda = pulsos_encoder_motor x reducao x multiplicador (x1/x2/x4 conforme a placa conta as bordas). Se preferir, ponha 'contagens_por_volta' direto. rpm_max: rotação da roda com comando 100.",
+    "_comentario": "contagens por volta da roda = pulsos_encoder_motor x reducao x multiplicador. O Mariola conta as duas bordas de um canal (x2); a placa de motor decodifica quadratura (x4). rpm_livre: rotação da roda com PWM 100%. No modo PID o comando 100 = 80% disso (calibração do firmware), em pulsos a cada 25 ms.",
     "pulsos_encoder_motor": 17,
     "reducao": 34,
-    "multiplicador": 1,
-    "rpm_max": 130,
+    "multiplicador_mariola": 2,
+    "multiplicador_placa": 4,
+    "rpm_livre": 130,
     "tau_s": 0.06,
-    "forca_max_N": 6.0,
-    "calibracao": 208
+    "forca_max_N": 6.0
   },
 
   "portas_serial": {
@@ -80,16 +80,17 @@
   "cor_reflexao": {
     "tcs": [ {"x": 75, "y": 40}, {"x": 75, "y": 0}, {"x": 75, "y": -40} ],
     "ir":  [ {"x": 80, "y": 45}, {"x": 80, "y": 15}, {"x": 80, "y": -15}, {"x": 80, "y": -45} ],
-    "ruido": 4,
-    "tempo_calibracao_s": 1.5
+    "ruido": 3,
+    "tempo_calibra_branco_s": 7.0,
+    "tempo_calibra_preto_s": 2.2
   },
   "cores_piso": {
-    "_comentario": "RGBC calibrado (0-255) do TCS e IR (0 = branco, 255 = preto) para cada piso",
-    "branco":   {"rgbc": [235, 238, 236, 245], "ir": 20},
-    "preto":    {"rgbc": [8, 8, 9, 12],        "ir": 245},
-    "prata":    {"rgbc": [250, 252, 255, 255], "ir": 3},
-    "azul":     {"rgbc": [35, 80, 210, 120],   "ir": 140},
-    "vermelho": {"rgbc": [210, 45, 40, 110],   "ir": 110}
+    "_comentario": "Escala do firmware: o TCS é calibrado no branco e manda METADE (branco ~127, folga até 255). IR: 0 = preto, ~100 = branco calibrado, >100 = mais refletivo que o branco (prata). Valores estimados: troque pelos lidos no robô.",
+    "branco":   {"rgbc": [127, 128, 126, 127], "ir": 100},
+    "preto":    {"rgbc": [3, 3, 4, 5],         "ir": 2},
+    "prata":    {"rgbc": [190, 195, 200, 205], "ir": 190},
+    "azul":     {"rgbc": [20, 45, 115, 66],    "ir": 70},
+    "vermelho": {"rgbc": [115, 25, 22, 58],    "ir": 85}
   },
 
   "leds": {

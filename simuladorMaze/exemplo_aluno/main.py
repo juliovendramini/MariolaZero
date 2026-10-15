@@ -149,7 +149,7 @@ class Explorador:
         if piso == 'azul':
             print('Azul: parado 5 s')
             self.r.para()
-            time.sleep(5.3)
+            self.r.espera(5.3)      # não use time.sleep longo: o Mariola desliga após 5 s sem comando
         self.procura_vitimas()
         self.debug(f'pos {self.pos} dir {self.dir} t={self.tempo():.0f}s')
 
@@ -196,8 +196,10 @@ class Explorador:
 def main():
     robo = Robo()
     robo.led(False)
-    robo.ilumina_cameras(True)      # sem luz as câmeras não enxergam as vítimas
     robo.espera_botao()
+    # acende a iluminação DEPOIS do botão: enquanto espera, o Mariola fica sem comando e,
+    # após 5 s, o firmware apaga todos os LEDs
+    robo.ilumina_cameras(True)      # sem luz as câmeras não enxergam as vítimas
     robo.giro.reseta_z()
     time.sleep(0.1)
     ex = Explorador(robo)

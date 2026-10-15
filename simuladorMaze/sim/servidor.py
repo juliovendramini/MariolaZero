@@ -9,6 +9,7 @@ import math
 import socket
 import threading
 
+from . import firmware as FW
 from . import mapa as M
 from .protocolo import envia, recebe
 
@@ -53,9 +54,8 @@ class Servidor:
         finally:
             self.clientes -= 1
             c.close()
-            if self.clientes <= 0:
-                with self.sim.mundo.lock:
-                    self.sim.mundo.para_tudo()   # programa morreu: corta os motores
+            # programa morreu: como no robô, os motores seguem o último comando até o
+            # timeout de 5 s do firmware (Mariola e placas de motor)
 
     # ------------------------------------------------------------------ operações
     def trata(self, r):
@@ -67,17 +67,19 @@ class Servidor:
         if op == 'ola':
             return {'cfg': w.cfg, 't': w.t, 'f': sim.fator_efetivo(), 'epoca': sim.epoca}
         with w.lock:
-            if op == 'mariola':
-                return self._mariola(w, r)
-            if op == 'placa':
-                return self._placa(w, r)
+            if op == 'mariola_quadro':
+                res = w.fw_mariola.quadro(bytes(r['f']), w.t)
+                return {'r': list(res[0]), 'd': res[1]} if res else {'r': None}
+            if op == 'placa_quadro':
+                res = FW.placa_pacote(w.fw_placas.get(r['porta'], {}), bytes(r['f']), w.t)
+                return {'r': list(res[0]), 'd': res[1]} if res else {'r': None}
             if op == 'giro':
                 return {'v': w.giro()}
             if op == 'giro_reset':
                 w.giro_reset_z()
                 return {}
             if op == 'cor':
-                return {'v': w.cor_bytes()}
+                return {'v': w.cor_firmware()}
             if op == 'vl53':
                 idx = r.get('idx')
                 if idx is None:
@@ -93,9 +95,6 @@ class Servidor:
                     w.gpio_saida.pop(p, None)
                 else:
                     w.gpio_saida[p] = 1 if r['v'] else 0
-                return {}
-            if op == 'led':
-                w.leds = [tuple(int(x) for x in c) for c in r['leds']]
                 return {}
             if op == 'servo':
                 w.servos = r.get('v', {})
@@ -115,43 +114,6 @@ class Servidor:
                 self._debug(w, r)
                 return {}
         return {'erro': f'operação desconhecida {op}'}
-
-    def _mariola(self, w, r):
-        tipo = r['tipo']
-        if tipo != 'estado':
-            vals = r['vals']
-            alvos = r['alvos']
-            travado = r.get('freio', 0) == 1
-            modo = 'pwm' if tipo.startswith('pwm') else 'pid'
-            for canal, m in w.por_mariola.items():
-                m.travado = travado
-                if tipo.endswith('4x4'):
-                    src = canal if canal <= 2 else canal - 2
-                    m.comando(modo, vals[src - 1], alvos[src - 1])
-                else:
-                    m.comando(modo, vals[canal - 1], alvos[canal - 1] if canal <= 2 else 0)
-        c = []
-        e = []
-        for canal in (1, 2):
-            m = w.por_mariola.get(canal)
-            c.append(m.contagem_int() if m else 0)
-            e.append(m.estado() if m else 0)
-        return {'c': c, 'e': e}
-
-    def _placa(self, w, r):
-        m = w.por_placa.get((r['porta'], int(r['id'])))
-        if m is None:
-            return {'ausente': True}
-        modo = r['modo']
-        if modo == 'pid':
-            m.comando('pid', r['valor'], r.get('giro', 0))
-        elif modo == 'pwm':
-            m.comando('pwm', r['valor'], 0)
-        elif modo == 'freio':
-            m.travado = r['valor'] == 1
-        elif modo == 'reset':
-            m.reset()
-        return {'c': m.contagem_int(), 'e': m.estado()}
 
     def _vitimas(self, w, camera):
         dc = w.cfg.get('deteccao', {})

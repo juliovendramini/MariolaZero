@@ -11,6 +11,7 @@ import threading
 import pymunk
 from pymunk import Vec2d
 
+from . import firmware as FW
 from . import mapa as M
 
 G = 9810.0  # mm/s²
@@ -35,54 +36,70 @@ def canal_mux(m):
 
 
 # --------------------------------------------------------------------------- motor
+FREQ_PID = 40.0     # Hz do PID nos firmwares (TEMPO_PID = 25 ms)
+
+
 class Motor:
-    """Modelo de um motor DC com encoder + controlador da placa (PID de velocidade)."""
+    """Motor DC com encoder. O estado de controle (setpoint em pulsos por período do PID,
+    alvo de giro, freio) é mexido pelo firmware emulado em sim/firmware.py."""
 
     def __init__(self, cfg, padrao, diametro):
         p = dict(padrao)
         p.update(cfg)
         self.cfg = p
         self.nome = p['nome']
+        self.tipo = p['controlador']          # 'mariola' ou 'placa'
         self.x = float(p['x'])
         self.y = float(p['y'])
         self.sentido = 1 if p.get('sentido', 1) >= 0 else -1
         if 'contagens_por_volta' in p:
             self.cpr = float(p['contagens_por_volta'])
         else:
-            self.cpr = float(p['pulsos_encoder_motor']) * float(p['reducao']) * float(p.get('multiplicador', 1))
-        self.rpm_max = float(p['rpm_max'])
+            mult = p.get('multiplicador_' + self.tipo, p.get('multiplicador', 1))
+            self.cpr = float(p['pulsos_encoder_motor']) * float(p['reducao']) * float(mult)
+        self.rpm_livre = float(p.get('rpm_livre', p.get('rpm_max', 130)))
+        self.vlivre = self.rpm_livre / 60.0 * self.cpr          # contagens/s com PWM 100%
         self.tau = float(p['tau_s'])
-        self.forca_max = float(p['forca_max_N']) * 1000.0   # kg·mm/s²
+        self.forca_max = float(p['forca_max_N']) * 1000.0     # kg·mm/s²
         self.diametro = diametro
-        self.calibracao = [int(p.get('calibracao', 208)), -int(p.get('calibracao', 208))]
+        # calibração gravada na EEPROM: 80% da velocidade máxima, em pulsos por período do PID
+        c = int(p.get('calibracao_horario', int(0.8 * self.vlivre / FREQ_PID)))
+        self.cal = [c, -c]
         self.reset()
 
     def reset(self):
+        """Estado de quando a placa liga (a EEPROM/calibração não muda)."""
         self.modo = 'pid'
-        self.cmd = 0.0
-        self.alvo = 0
-        self.inicio = 0.0
+        self.setpoint = 0          # pulsos por período do PID
+        self.pwm = 0               # -100..100 no modo potência
+        self.alvo = None           # contagem absoluta onde o giro por ângulo para
         self.travado = False
-        self.vel = 0.0          # contagens/s, sinal do motor
+        self.desligado = False     # timeout de comunicação: PWM zerado, motor solto
+        self.vel = 0.0             # contagens/s
         self.contagem = 0.0
-        self.parou_alvo = False
+        self.leitura = 0
+        self.t_leitura = -1.0
 
-    @property
-    def vmax(self):
-        return self.rpm_max / 60.0 * self.cpr
-
-    def comando(self, modo, valor, alvo=0):
-        self.modo = modo
-        self.cmd = float(valor)
-        self.alvo = int(abs(alvo))
-        self.inicio = self.contagem
-        self.parou_alvo = False
+    def mapa(self, v):
+        """map() do Arduino com divisão inteira (trunca para zero)."""
+        v = int(v)
+        if v >= 0:
+            return int(v * self.cal[0] / 100)
+        return int(v * self.cal[1] / -100)
 
     def alvo_vel(self):
-        return max(-1.2, min(1.2, self.cmd / 100.0)) * self.vmax
+        if self.desligado:
+            return None
+        if self.modo == 'pwm':
+            return max(-1.0, min(1.0, self.pwm / 100.0)) * self.vlivre
+        if self.setpoint == 0:
+            return 0.0
+        return max(-self.vlivre, min(self.vlivre, self.setpoint * FREQ_PID))
 
     def atualiza_controle(self, dt):
         t = self.alvo_vel()
+        if t is None:
+            return
         if t == 0 and self.travado:
             self.vel = 0.0
             return
@@ -90,7 +107,9 @@ class Motor:
         self.vel += (t - self.vel) * k
 
     def livre(self):
-        return self.cmd == 0 and not self.travado and abs(self.vel) < 0.03 * self.vmax
+        if self.desligado:
+            return True
+        return self.alvo_vel() == 0 and not self.travado and abs(self.vel) < 0.03 * self.vlivre
 
     def vel_superficie(self):
         """mm/s da superfície da roda no sentido 'para frente' do robô."""
@@ -101,20 +120,43 @@ class Motor:
 
     def integra(self, dt):
         self.contagem += self.vel * dt
-        if self.alvo > 0 and abs(self.contagem - self.inicio) >= self.alvo:
-            self.cmd = 0.0
-            self.alvo = 0
-            self.parou_alvo = True
-            if self.travado:
-                self.vel = 0.0
+        if self.alvo is not None and self.modo == 'pid' and self.setpoint != 0:
+            if (self.setpoint > 0 and self.contagem >= self.alvo) or \
+               (self.setpoint < 0 and self.contagem <= self.alvo):
+                self.setpoint = 0
+                self.alvo = None
+                if self.travado:
+                    self.vel = 0.0
 
     def estado(self):
-        if abs(self.vel) < 0.02 * self.vmax and self.cmd == 0:
+        if self.desligado:
             return 0
-        return 1 if self.vel > 0 else 2
+        if self.modo == 'pwm':
+            return 0 if self.pwm == 0 else (1 if self.pwm > 0 else 2)
+        if self.setpoint == 0:
+            return 0
+        return 1 if self.setpoint > 0 else 2
+
+    def le_contagem(self, t):
+        """Contagem que a placa devolve: com o PID rodando ela só é atualizada a cada 25 ms."""
+        if self.modo == 'pid' and self.setpoint != 0 and not self.desligado:
+            if t - self.t_leitura >= 1.0 / FREQ_PID:
+                self.leitura = int(math.floor(self.contagem))
+                self.t_leitura = t
+        else:
+            self.leitura = int(math.floor(self.contagem))
+            self.t_leitura = t
+        return self.leitura
 
     def contagem_int(self):
         return int(math.floor(self.contagem))
+
+    def para(self):
+        self.setpoint = 0
+        self.pwm = 0
+        self.modo = 'pid'
+        self.alvo = None
+        self.vel = 0.0
 
 
 # --------------------------------------------------------------------------- mundo
@@ -149,6 +191,13 @@ class Mundo:
                 self.por_mariola[int(m.cfg['canal'])] = m
             else:
                 self.por_placa[(m.cfg['porta'], int(m.cfg['id']))] = m
+        self.fw_mariola = FW.FirmwareMariola(self)
+        self.fw_placas = {}       # porta -> {id: FirmwarePlaca}
+        for (porta, idp), m in self.por_placa.items():
+            self.fw_placas.setdefault(porta, {})[idp] = FW.FirmwarePlaca(self, m, idp)
+        self.cor_cache = None     # firmware do sensor de cor lê a 50 Hz
+        self.cor_t = -1.0
+        self.cor_pedido = 0.0
         self.ordem = 0
         # estados auxiliares
         self.yaw_ref = 0.0
@@ -157,7 +206,7 @@ class Mundo:
         self.no_ar = [0.0] * len(self.motores)
         self.pos_ant_rodas = None
         self.detritos = {}
-        self.leds = [(0, 0, 0)] * 11
+        self.leds = [(0, 0, 0)] * 10
         self.gpio_saida = {}
         self.botoes_gui = set()    # pinos "apertados" pela interface
         self.teclas_teclado = set()
@@ -235,15 +284,13 @@ class Mundo:
 
     def para_tudo(self):
         for m in self.motores:
-            m.cmd = 0.0
-            m.alvo = 0
-            m.vel = 0.0
-        self.leds = [(0, 0, 0)] * 11
+            m.para()
+        self.leds = [(0, 0, 0)] * 10
 
     def reset_rodada(self):
         for m in self.motores:
             m.reset()
-        self.leds = [(0, 0, 0)] * 11
+        self.leds = [(0, 0, 0)] * 10
         self.kits = []
         self.kits_restantes = int(self.cfg['kits']['capacidade'])
         self.deriva = 0.0
@@ -376,6 +423,10 @@ class Mundo:
         self.space.step(dt)
         for m in self.motores:
             m.integra(dt)
+        self.fw_mariola.passo(self.t)
+        for fws in self.fw_placas.values():
+            for fw in fws.values():
+                fw.passo(self.t)
         self._terreno()
         self.deriva += float(self.cfg['giroscopio']['deriva_graus_min']) / 60.0 * dt
         self.t += dt
@@ -479,6 +530,16 @@ class Mundo:
                 acc[k] += c['rgbc'][k]
             acc[4] += c['ir']
         return [a / len(pts) for a in acc]
+
+    def cor_firmware(self):
+        """O sensor de cor atualiza a ~50 Hz e devolve o último valor lido. Se ficar 30 s sem
+        pedido ele para de ler: o primeiro pedido depois disso devolve valores velhos."""
+        ocioso = self.t - self.cor_pedido
+        self.cor_pedido = self.t
+        if self.cor_cache is None or (ocioso < 30.0 and self.t - self.cor_t >= 0.02):
+            self.cor_cache = self.cor_bytes()
+            self.cor_t = self.t
+        return list(self.cor_cache)
 
     def cor_bytes(self):
         cc = self.cfg['cor_reflexao']

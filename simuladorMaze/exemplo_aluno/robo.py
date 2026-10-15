@@ -23,7 +23,9 @@ from vl53 import VL53L0X
 DIAMETRO_RODA = 65.0          # mm
 PULSOS_ENCODER_MOTOR = 17     # pulsos por volta do eixo do motor
 REDUCAO = 34                  # caixa de redução (CONFIRMAR)
-CONTAGENS_POR_VOLTA = PULSOS_ENCODER_MOTOR * REDUCAO   # por volta da roda
+# o Mariola conta as duas bordas de um canal do encoder (x2); a placa de motor, quadratura (x4)
+CONTAGENS_POR_VOLTA = PULSOS_ENCODER_MOTOR * REDUCAO * 2         # motores do Mariola
+CONTAGENS_POR_VOLTA_PLACA = PULSOS_ENCODER_MOTOR * REDUCAO * 4   # placas de motor
 GIRO_HORARIO_POSITIVO = True  # o Z do giroscópio cresce girando no sentido horário
 
 # LEDs do Mariola (set_led_rgb_one): iluminação das câmeras e indicação de vítima
@@ -112,26 +114,39 @@ class Robo:
         return (self.botoes.botao_pressionado(PARA_CHOQUE_ESQ),
                 self.botoes.botao_pressionado(PARA_CHOQUE_DIR))
 
+    # Escala do firmware do sensor (sensorLinhaPro1616.ino):
+    #   IR: 0 = preto, ~100 = branco calibrado, > 100 = mais refletivo que o branco (prata)
+    #   TCS: calibrado no branco e enviado pela METADE (branco ~127)
+    # Obs.: CorReflexao.detecta_cor() ainda espera branco perto de 255, por isso não é usado aqui.
+    IR_PRETO = 25
+    IR_PRATA = 140
+
     def piso(self):
-        """'preto', 'prata', 'azul', 'vermelho' ou 'branco' olhando o sensor do meio + IR."""
+        """'preto', 'prata', 'azul', 'vermelho' ou 'branco' olhando o TCS do meio + IR."""
         ir = self.cor.le_reflexao()
         media_ir = sum(ir) / 4.0
-        if media_ir > 200:
+        r, g, b, c = self.cor.le_rgbc(2)
+        if media_ir < self.IR_PRETO and c < 30:
             return 'preto'
-        if media_ir < 9:
+        if media_ir > self.IR_PRATA:
             return 'prata'
-        c = self.cor.detecta_cor(2)
-        if c == CorReflexao.COR_AZUL:
+        if b > 1.6 * r and b > 1.3 * g:
             return 'azul'
-        if c == CorReflexao.COR_VERMELHO:
+        if r > 2 * g and r > 2 * b:
             return 'vermelho'
-        if c == CorReflexao.COR_PRETO:
-            return 'preto'
         return 'branco'
 
     def preto_na_frente(self):
         ir = self.cor.le_reflexao()
-        return max(ir) > 200 and sum(1 for v in ir if v > 200) >= 2
+        return sum(1 for v in ir if v < self.IR_PRETO) >= 2
+
+    def espera(self, segundos):
+        """Espera parado sem deixar o Mariola nem as placas de motor ficarem 5 s sem comando
+        (o firmware desliga os motores e APAGA OS LEDS, inclusive a iluminação das câmeras)."""
+        fim = time.time() + segundos
+        while time.time() < fim:
+            self.para()
+            time.sleep(min(0.5, max(0.0, fim - time.time())))
 
     def espera_botao(self):
         print('Aguardando o botão de início...')

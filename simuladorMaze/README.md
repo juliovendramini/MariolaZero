@@ -30,11 +30,11 @@ Funciona no Windows e no Linux. No Linux, para os diálogos de abrir/salvar mapa
 # abre a janela com o programa de exemplo
 python simulador.py
 
-# com o programa da equipe e outro mapa
-python simulador.py --programa ../maze2026/main.py --mapa mapas/exemplo1.json
+# com o programa da equipe (troque pelo caminho do main.py de vocês) e outro mapa
+python simulador.py --programa CAMINHO/DO/main.py --mapa mapas/exemplo1.json
 
 # sem janela: roda uma rodada inteira 4x mais rápido e imprime o placar (bom para testar várias vezes)
-python simulador.py --programa ../maze2026/main.py --mapa mapas/exemplo1.json --sem-janela --velocidade 4
+python simulador.py --programa CAMINHO/DO/main.py --mapa mapas/exemplo1.json --sem-janela --velocidade 4
 ```
 
 Opções: `--robo outro_robo.json`, `--semente N` (repete o mesmo ruído), `--lop botao|reiniciar`,
@@ -135,19 +135,50 @@ iluminação. Para usar um pino como LED de vítima, troque para `"led_vitima": 
 * **Tração 4x4 skid-steer**: cada roda tem atrito longitudinal e lateral limitado. O robô patina
   ao girar e ao empurrar parede, e os encoders contam a mais quando a roda patina. Quando o motor
   não tem força, o encoder acompanha o chão. Odometria pura erra, como no robô real.
-* **Motores**: PID de velocidade com constante de tempo (`tau_s`), movimento por ângulo
-  (`move_motores`, `move_motor` da placa) que para sozinho, freio solto/travado.
-  Mariola: motores 1 e 2 com encoder; `*_4x4` replicam 1→3 e 2→4.
-* **Giroscópio**: Z em graus, acumulando, positivo no sentido horário (configurável); integrado com deriva (`deriva_graus_min`) e ruído; X/Y mostram a inclinação
-  em escadas e os solavancos de lombadas/detritos. Trocar GYRO↔GYRO2 zera Z (como `reseta_z()`).
-* **VL53L0X**: feixe em cone de 25° (ignora retorno muito rasante), ruído, 8190 fora do alcance,
-  medida leva `tempo_medida_ms`. A lib `vl53.py` faz toda a inicialização de registradores normalmente.
+* **Giroscópio**: Z em graus, acumulando, positivo no sentido horário (configurável); com deriva
+  (`deriva_graus_min`) e ruído; X/Y mostram a inclinação em escadas e os solavancos de
+  lombadas/detritos. Trocar GYRO↔GYRO2 zera Z (como `reseta_z()`).
+* **VL53L0X**: feixe em cone de 25° (a borda do cone só enxerga perto), ruído, 8190 fora do
+  alcance, medida leva `tempo_medida_ms`. A lib `vl53.py` faz toda a inicialização de registradores normalmente.
 * **Para-choque**: dois botões na frente (P1 esquerdo, P2 direito); apertado = nível BAIXO, como
   em `Botoes`. Empurrar a parede com os dois apertados alinha o robô.
-* **Cor/reflexão V2** (Pro1616): 4 IR (0 = branco, 255 = preto) + 3 TCS RGBC; a transição entre
-  ladrilhos é misturada. Prata reflete muito no IR. Valores em `cores_piso`.
 * **Terreno**: lombadas (1 cm; 2 cm na zona de perigo), escadas (degraus de 1 cm, menos atrito,
   inclinação no giroscópio, mais íngreme na zona) e detritos soltos que se mexem quando a roda passa.
+
+## Firmware emulado (a partir do código das placas)
+
+O comportamento das placas foi tirado de `placaBrickVendra.ino`, `placaControleMotor.ino` e
+`sensorLinhaPro1616.ino` (`sim/firmware.py` e `fake_hw/dispositivos.py`):
+
+**Mariola (ATmega328PB)**
+* PID a 40 Hz. Velocidade 100 = calibração da EEPROM = 80% da rotação livre, em **pulsos por 25 ms**
+  (`map()` inteiro): velocidades baixas são quantizadas (com 1156 contagens/volta, cada degrau ≈ 3,5 rpm).
+* Encoder: só um canal, nas duas bordas (x2). A contagem devolvida é atualizada a cada 25 ms enquanto o PID roda.
+* Giro por ângulo: o ângulo é lido como **int16** (acima de 32767 vira negativo e o motor para na hora).
+  Ângulo 0 **mantém** o alvo anterior; velocidade 0 cancela. Ao chegar no alvo o setpoint zera,
+  mas a velocidade fica guardada: **um novo `atualiza_motores()` faz o motor voltar a girar sem
+  parar**. Para acompanhar o movimento use `estado()` (0xFB).
+* Potência (0xFA/0xF7): sem PID, encoder continua contando. Todas as respostas de motor vêm com 0xFC.
+* **Timeout de 5 s sem nenhum pacote: motores soltos e todos os LEDs apagados** (inclusive a
+  iluminação das câmeras). Não use `time.sleep()` longo sem mandar nada para o Mariola.
+* 10 LEDs (índice 10 é ignorado). `CALIBRA_MOTORES` deixa a placa surda por ~26 s.
+
+**Placa de controle de motor (ATtiny1616, one-wire)**
+* Encoder em quadratura (x4): o mesmo motor dá **o dobro de contagens** do Mariola.
+* Mesmo PID/escala do Mariola; sem calibração cai em PWM direto.
+* Giro por ângulo em uint16; giro 0 **cancela** o alvo (diferente do Mariola).
+* Timeout de 5 s: para o motor. **10 s sem pacote para ela: o watchdog reinicia a placa e a
+  contagem volta a 0** (o `angulo_delta` guardado na lib fica errado).
+* Respostas dos comandos de ajuste (KP, KI, KD, freio, delta) trazem o valor ecoado, não a contagem.
+  Calibração automática leva ~14 s e zera a contagem.
+
+**Sensor de cor/reflexão Pro1616**
+* Lê a ~50 Hz e devolve o último valor; 30 s sem pedido ele para de ler e o primeiro pedido
+  devolve valores velhos. Lê todos os bytes recebidos e usa só o último.
+* **IR: 0 = preto, ~100 = branco calibrado, acima de 100 = mais refletivo (prata).**
+* **TCS: calibrado no branco e enviado pela metade (branco ≈ 127).** Por isso
+  `CorReflexao.detecta_cor()` (que espera branco > 230) classifica o branco como vermelho; o
+  exemplo usa a própria classificação. Calibrar branco leva ~7 s; preto ~2 s.
 
 ## Juiz (regra 2026)
 
@@ -182,7 +213,7 @@ Os valores que vieram são **estimativas**. Para o simulador ficar fiel, meça n
 | `geometria` | comprimento, largura e massa |
 | `rodas.diametro`, `motores[].x/y` | diâmetro e posição de cada roda (mm, x para frente, y para a esquerda) |
 | `motores[]` | controlador (`mariola` canal 1/2 ou `placa` porta/ID) e `sentido` (−1 se o motor está espelhado) |
-| `motor_padrao` | `pulsos_encoder_motor` (17) × `reducao` × `multiplicador` = contagens por volta da roda; `rpm_max` (comando 100), `tau_s`, `forca_max_N` |
+| `motor_padrao` | `pulsos_encoder_motor` (17) × `reducao` × multiplicador (Mariola x2, placa x4) = contagens por volta da roda; `rpm_livre` (PWM 100%), `tau_s`, `forca_max_N` |
 | `rodas.atrito`, `atrito_lateral` | ajuste até o giro no lugar e a patinação ficarem parecidos com o real |
 | `portas_serial` | o que está ligado em cada SERIALn |
 | `vl53[]` | canal do mux (I2C1…I2C8), posição e ângulo de cada sensor |
@@ -192,7 +223,7 @@ Os valores que vieram são **estimativas**. Para o simulador ficar fiel, meça n
 | `cameras`, `deteccao`, `kits` | campo de visão das câmeras, erros de detecção, depósito |
 
 Uma forma prática de calibrar: rode o mesmo teste (ex.: andar 1 m, girar 360°) no robô e no
-simulador e ajuste `rpm_max`, `forca_max_N`, `atrito_lateral` e `deriva_graus_min` até baterem.
+simulador e ajuste `rpm_livre`, `forca_max_N`, `atrito_lateral` e `deriva_graus_min` até baterem.
 
 ## Programa de exemplo (`exemplo_aluno/`)
 
@@ -208,7 +239,7 @@ gira pelo giroscópio, encosta no para-choque para alinhar, detecta preto/azul/p
 * Mundo 2D: sem rampas, pontes ou segundo andar; escadas e lombadas são efeitos (solavanco,
   inclinação, perda de tração), não geometria 3D. Obstáculos ainda não existem.
 * A tela OLED (`tela.py`/luma) e o BNO085 não são emulados.
-* Se o programa morre, os motores param (no robô real o Mariola pode continuar com o último comando).
+* Se o programa morre, os motores seguem o último comando até o timeout de 5 s do firmware, como no robô.
 * `threading.Event.wait(timeout)` e afins usam o relógio real (não seguem pausa/velocidade).
 
 ## Estrutura
