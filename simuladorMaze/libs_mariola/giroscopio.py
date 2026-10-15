@@ -2,8 +2,8 @@ import struct
 import threading
 import time
 
-from cronometro import Cronometro
-from portas import Portas
+from libs.cronometro import Cronometro
+from libs.portas import Portas
 
 
 class Giroscopio:

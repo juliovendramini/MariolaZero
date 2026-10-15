@@ -6,23 +6,22 @@ from time import sleep
 from portas import Portas
 from motores import Motores
 from placaControleServo import PlacaControleServo
-
-servos = PlacaControleServo.buscar_servos(Portas.SERIAL1)
-print("Servos encontrados:")
-for servo in servos:
-    print(f"ID: {servo['id']}, Posição: {servo['posicao']}")
-
+print("comecou:")
+# servos = PlacaControleServo.buscar_servos("COM10")
+# print("Servos encontrados:")
+# for servo in servos:
+#     print(f"ID: {servo['id']}, Posição: {servo['posicao']}")
 # exit()
-servo1 = PlacaControleServo(Portas.SERIAL1, id_equipamento=47)
-servo2 = PlacaControleServo(Portas.SERIAL1, id_equipamento=66)
-servo3 = PlacaControleServo(Portas.SERIAL1, id_equipamento=73)
+servo1 = PlacaControleServo(Portas.SERIAL1, id_equipamento=5) #65 67 74
+# servo2 = PlacaControleServo(Portas.SERIAL1, id_equipamento=66)
+# servo3 = PlacaControleServo(Portas.SERIAL1, id_equipamento=73)
 posicao = 0
-potencia = 50
+potencia = 100
 zona_morta = 5
 
 try:   
     while(True):
-        resultado = servo2.move_servo(posicao, potencia, zona_morta)
+        resultado = servo1.move_servo(posicao, potencia, zona_morta)
         print(resultado)
         # resultado = servo2.move_servo(posicao, potencia, zona_morta)
         # print(resultado)

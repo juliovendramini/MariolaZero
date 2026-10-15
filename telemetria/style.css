@@ -1,0 +1,75 @@
+:root { --bg:#0f1115; --card:#1a1d24; --line:#2a2f3a; --txt:#e6e9ef; --dim:#8a92a3; --ok:#3ddc84; --warn:#ffb020; --bad:#ff5470; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--txt); font:14px/1.4 system-ui,sans-serif; transition: background 0.3s ease; }
+
+/* Cabeçalho */
+header { background: var(--card); border-bottom: 2px solid var(--ok); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: border-color 0.3s ease;}
+header h1 { margin: 0; font-size: 24px; color: var(--ok); text-transform: uppercase; letter-spacing: 2px; font-weight: 800; font-style: italic; transition: color 0.3s ease;}
+
+/* Controles de Tema */
+.theme-controls { display: flex; gap: 20px; align-items: center; background: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 8px; border: 1px solid var(--line);}
+.theme-controls label { font-size: 11px; font-weight: bold; color: var(--dim); display: flex; align-items: center; gap: 8px; text-transform: uppercase;}
+input[type="color"] { border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; padding: 0; background: none; }
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: 2px solid var(--line); border-radius: 50%; transition: border-color 0.2s;}
+input[type="color"]:hover::-webkit-color-swatch { border-color: var(--txt); }
+
+/* Navegação */
+.nav { max-width:1100px; margin: 0 auto 15px; display: flex; gap: 10px; padding: 0 12px; flex-wrap: wrap;}
+.nav button { background: var(--line); color: #fff; padding: 10px 15px; border:none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold; transition: 0.2s;}
+.nav button.active { background: var(--ok); color: #000; box-shadow: 0 0 10px rgba(0,0,0,0.5);}
+
+/* Controle de Abas */
+.tab-content { display: none; max-width: 1100px; margin: 0 auto; padding: 12px; }
+.tab-content.active { display: block; }
+#tab-operacao.active { display: grid; grid-template-columns: 1fr 320px; gap: 12px; }
+@media(max-width:800px){ #tab-operacao.active { grid-template-columns: 1fr; } }
+
+/* Operação (Vídeo e Telemetria) */
+.video { background:#000; border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center; aspect-ratio: 4/3; border: 1px solid var(--line);}
+.video img { width:100%; display:block; }
+.panel { display:flex; flex-direction:column; gap:10px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+.card h3 { margin:0 0 6px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--dim); }
+.big { font-size:26px; font-weight:600; }
+.row { display:flex; justify-content:space-between; margin:2px 0; }
+.row span:last-child { font-variant-numeric:tabular-nums; }
+.status { display:flex; align-items:center; gap:8px; font-size:13px; }
+.dot { width:9px; height:9px; border-radius:50%; background:var(--bad); }
+.dot.on { background:var(--ok); box-shadow: 0 0 8px var(--ok);}
+.stale { color:var(--warn); }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:6px 14px; }
+
+/* UI Genérica */
+.file-selector { background: var(--card); padding: 15px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
+.file-selector label { font-weight: bold; color: var(--dim); }
+.file-selector select { padding: 8px 12px; background: var(--bg); color: var(--ok); border: 1px solid var(--line); border-radius: 4px; font-size: 16px; cursor: pointer; font-family: monospace;}
+textarea { width: 100%; height: 400px; background: var(--card); color: var(--ok); font-family: monospace; font-size: 16px; padding: 15px; border: 1px solid var(--line); border-radius: 5px; resize: vertical; }
+
+.btn-submit { background: var(--ok); color: #000; border: none; padding: 12px 24px; font-weight: bold; cursor: pointer; border-radius: 5px; margin-top: 20px; font-size: 16px; width: 100%; transition: 0.2s;}
+.btn-submit:hover { opacity: 0.8; }
+.btn-submit:disabled { opacity: 0.5; cursor: wait; }
+
+/* Dinâmico (Sliders/Inputs) */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; transition: opacity 0.2s;}
+.param-card { background: var(--card); padding: 15px; border: 1px solid var(--line); border-radius: 8px; position: relative;}
+.param-card label { display: block; margin-bottom: 8px; font-size: 13px; text-transform: uppercase; color: var(--dim); }
+input[type="text"], input[type="number"] { width: 100%; padding: 10px; background: var(--bg); color: var(--ok); border: 1px solid var(--line); border-radius: 4px; font-family: monospace; font-size: 16px; box-sizing: border-box;}
+.slider-wrap { display: flex; align-items: center; gap: 15px; }
+input[type="range"] { flex: 1; accent-color: var(--ok); cursor: pointer; }
+.range-val { font-family: monospace; font-size: 16px; color: var(--ok); font-weight: bold; min-width: 40px; text-align: right;}
+.check-wrap { display: flex; align-items: center; gap: 10px; font-size: 16px; font-family: monospace; color: var(--ok); font-weight: bold;}
+input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--ok); cursor: pointer; }
+
+/* Terminal */
+#tab-terminal.active { display: flex; flex-direction: column; gap: 10px; height: calc(100vh - 180px); min-height: 400px;}
+#terminal-output { flex: 1; background: #000; color: #fff; font-family: monospace; font-size: 14px; padding: 15px; border-radius: 8px; border: 1px solid var(--line); overflow-y: auto; white-space: pre-wrap; line-height: 1.5; }
+#form-terminal { display: flex; gap: 10px; background: #000; padding: 10px 15px; border-radius: 8px; border: 1px solid var(--line); align-items: center; }
+.prompt { color: var(--ok); font-family: monospace; font-weight: bold; white-space: nowrap;}
+#terminal-input { flex: 1; background: transparent; border: none; color: #fff; font-family: monospace; font-size: 16px; outline: none; }
+
+/* Toast */
+#toast { position: fixed; bottom: 20px; right: 20px; padding: 15px 25px; border-radius: 5px; font-weight: bold; color: #000; opacity: 0; transform: translateY(20px); transition: all 0.3s ease; pointer-events: none; z-index: 1000;}
+#toast.show { opacity: 1; transform: translateY(0); }
+.toast-ok { background: var(--ok); }
+.toast-erro { background: var(--bad); color: #fff !important; }

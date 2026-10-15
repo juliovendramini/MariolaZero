@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Interfaces Bem 10</title>
+    <!-- Importa o CSS externo -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- CABEÇALHO PERSONALIZÁVEL -->
+    <header>
+        <h1>interfaces Bem 10</h1>
+        <div class="theme-controls">
+            <label>Fundo <input type="color" id="cor-bg" value="#0f1115"></label>
+            <label>Destaque <input type="color" id="cor-ok" value="#3ddc84"></label>
+        </div>
+    </header>
+
+    <!-- NAVEGAÇÃO ÚNICA -->
+    <div class="nav">
+        <button class="tab-btn active" data-target="tab-operacao">📺 Operação</button>
+        <button class="tab-btn" data-target="tab-projetos">🚀 Lançador</button>
+        <button class="tab-btn" data-target="tab-form">🎛️ Painel Interativo</button>
+        <button class="tab-btn" data-target="tab-config">⚙️ Editor Avançado</button>
+        <button class="tab-btn" data-target="tab-terminal">💻 Terminal</button>
+    </div>
+
+    <!-- ==================== ABA 1: OPERAÇÃO ==================== -->
+    <div id="tab-operacao" class="tab-content active">
+        <div class="video">
+            <img id="cam" alt="Aguardando vídeo (Verifique se o Python está rodando)...">
+        </div>
+        <div class="panel">
+            
+            <!-- Card Fixo de Conexão -->
+            <div class="card">
+                <div class="status"><span id="dot" class="dot"></span><span id="conn">desconectado</span></div>
+                <div id="age" style="font-size:12px;color:var(--dim);margin-top:4px;">—</div>
+            </div>
+
+            <!-- O JavaScript vai injetar os novos cards dinâmicos AQUI dentro -->
+            <div id="telemetria-cards" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            
+        </div>
+    </div>
+
+    <!-- ==================== ABA 2: LANÇADOR DE PROJETOS ==================== -->
+    <div id="tab-projetos" class="tab-content">
+        <div class="card">
+            <h3>Projetos Disponíveis (/home/banana/)</h3>
+            <div id="lista-projetos" class="form-grid">
+                <!-- O JS vai injetar os botões gigantes aqui -->
+            </div>
+        </div>
+        <div class="card" style="margin-top: 15px;">
+            <div class="row">
+                <span style="font-weight: bold; font-size: 16px;">Status:</span>
+                <span id="status-projeto" style="color: var(--dim); font-size: 16px;">Aguardando comando...</span>
+            </div>
+            <!-- Botão de emergência para matar o script -->
+            <button onclick="pararRobo()" class="btn-submit" style="background: var(--bad); color: white;">🛑 Interromper Processos do Robô</button>
+
+            <!-- COLE ISTO AQUI: Caixa de Log ao Vivo -->
+            <div style="margin-top: 15px; border-top: 1px solid var(--line); padding-top: 10px;">
+                <span style="font-weight: bold; font-size: 14px; color: var(--dim);">Saída do Terminal (Log):</span>
+                <pre id="projeto-log" style="background: #000; color: #3ddc84; padding: 10px; border-radius: 5px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 13px; margin-top: 8px; border: 1px solid var(--line); white-space: pre-wrap;">Aguardando execução...</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== ABA 3: PAINEL INTERATIVO ==================== -->
+    <div id="tab-form" class="tab-content">
+        <div class="file-selector">
+            <label>Editando:</label>
+            <select class="combo-files" id="select-form"></select>
+        </div>
+        <form id="form-dinamico">
+            <div class="form-grid" id="grid-dinamica"></div>
+            <button type="submit" class="btn-submit">💾 Aplicar ao Robô</button>
+        </form>
+    </div>
+
+    <!-- ==================== ABA 4: EDITOR AVANÇADO ==================== -->
+    <div id="tab-config" class="tab-content">
+        <div class="file-selector">
+            <label>Editando:</label>
+            <select class="combo-files" id="select-config"></select>
+        </div>
+        <form id="form-raw">
+            <textarea id="json-area" name="dados_json" spellcheck="false"></textarea>
+            <button type="submit" class="btn-submit">💾 Salvar Arquivo</button>
+        </form>
+    </div>
+
+    <!-- ==================== ABA 5: TERMINAL DE COMANDO ==================== -->
+    <div id="tab-terminal" class="tab-content">
+        <div id="terminal-output">Bem-vindo ao sistema do Robô.
+Digite comandos Linux abaixo (ex: ls -la, ps aux, ip a).
+Aviso: Comandos interativos (como 'nano') travarão o terminal.
+
+</div>
+        <form id="form-terminal">
+            <span class="prompt">banana@robo:~$</span>
+            <input type="text" id="terminal-input" autocomplete="off" spellcheck="false">
+            <button type="submit" class="btn-submit" style="width: auto; margin-top: 0; padding: 10px 20px;">Executar</button>
+        </form>
+    </div>
+
+    <!-- Notificações -->
+    <div id="toast"></div>
+
+    <!-- Importa o JavaScript externo no final para não atrasar a tela -->
+    <script src="app.js"></script>
+</body>
+</html>

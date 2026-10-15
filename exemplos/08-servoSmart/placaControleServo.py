@@ -1,5 +1,6 @@
 import struct
 import time
+import serial
 
 from portas import Portas
 
@@ -29,7 +30,8 @@ class PlacaControleServo:
     def __init__(self, porta_serial, id_equipamento, baud_rate=250000):
         self.id_equipamento = id_equipamento & 0xFF
         portas = Portas()
-        self.ser = portas.abre_porta_serial(porta_serial, baud_rate)
+        #self.ser = portas.abre_porta_serial(porta_serial, baud_rate)
+        self.ser = serial.Serial("COM10", baud_rate, timeout=0.1)
         if self.ser is None:
             raise Exception('Erro ao abrir a porta serial da PlacaControleServo')
 
@@ -236,10 +238,11 @@ class PlacaControleServo:
             Lista de dicts com 'id' e 'posicao' dos servos encontrados
         """
         portas = Portas()
-        ser = portas.abre_porta_serial(porta_serial, baud_rate)
+        #ser = portas.abre_porta_serial(porta_serial, baud_rate)
+        ser = serial.Serial("COM10", baud_rate, timeout=0.1)
         if ser is None:
             raise Exception('Erro ao abrir a porta serial para busca de servos')
-
+        print("cheguei aui")
         encontrados = []
         posicao = 512
         potencia = 0
@@ -247,6 +250,7 @@ class PlacaControleServo:
 
         try:
             for id_equip in range(256):
+                print (id_equip)
                 pacote = [
                     id_equip & 0xFF,
                     (posicao >> 8) & 0xFF,
@@ -256,16 +260,18 @@ class PlacaControleServo:
                 ]
                 pacote.append(PlacaControleServo._calcular_crc(pacote))
                 dados = bytes(pacote)
-
                 ser.reset_input_buffer()
                 ser.write(dados)
                 ser.flush()
 
                 # Descarta eco (half-duplex one-wire)
-                ser.read(PlacaControleServo.TAMANHO_PACOTE)
+                eco = ser.read(PlacaControleServo.TAMANHO_PACOTE)
                 # Lê resposta
                 resposta = ser.read(PlacaControleServo.TAMANHO_PACOTE)
-
+                if PlacaControleServo.DEBUG:
+                    print(f'TX:  {[f"0x{b:02x}" for b in dados]}')
+                    print(f'ECO: {[f"0x{b:02x}" for b in eco]}')
+                    print(f'RX:  {[f"0x{b:02x}" for b in resposta]}')
                 if len(resposta) == PlacaControleServo.TAMANHO_PACOTE:
                     crc_calculado = PlacaControleServo._calcular_crc(resposta[:5])
                     if crc_calculado == resposta[5]:

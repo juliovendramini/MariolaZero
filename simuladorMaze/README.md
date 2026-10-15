@@ -1,0 +1,226 @@
+# Simulador RoboCupJunior Rescue Maze — robô com brick Mariola
+
+Simulador 2D para desenvolver e testar **posicionamento, roteamento e descoberta do mapa** da
+Rescue Maze (regra 2026) com o **mesmo código** que vai para o robô real.
+
+O ponto principal: o programa do aluno importa as bibliotecas reais do Mariola
+(`motores.py`, `placaControleMotor.py`, `giroscopio.py`, `vl53.py`, `sensorCorReflexao.py`,
+`botoes.py`, ...) e elas rodam **sem nenhuma alteração**. O simulador troca só a camada de
+baixo (porta serial, I2C, GPIO e relógio) e emula o firmware de cada placa byte a byte.
+
+![tela](docs/tela.png)
+
+---
+
+## Instalação
+
+Python **3.11 ou mais novo** (no Windows, as versões antigas dormem em passos de 15 ms e deixam o
+laço de controle lento demais).
+
+```bash
+pip install pygame pymunk
+```
+
+Funciona no Windows e no Linux. No Linux, para os diálogos de abrir/salvar mapa, instale também
+`python3-tk` (sem ele, "Abrir" passa para o próximo mapa da pasta `mapas/` e "Salvar como" cria `mapaN.json`).
+
+## Uso rápido
+
+```bash
+# abre a janela com o programa de exemplo
+python simulador.py
+
+# com o programa da equipe e outro mapa
+python simulador.py --programa ../maze2026/main.py --mapa mapas/exemplo1.json
+
+# sem janela: roda uma rodada inteira 4x mais rápido e imprime o placar (bom para testar várias vezes)
+python simulador.py --programa ../maze2026/main.py --mapa mapas/exemplo1.json --sem-janela --velocidade 4
+```
+
+Opções: `--robo outro_robo.json`, `--semente N` (repete o mesmo ruído), `--lop botao|reiniciar`,
+`--tempo 480`.
+
+### Na janela
+
+| Botão / tecla | O que faz |
+|---|---|
+| **▶ Iniciar rodada** (F5) | zera o placar, põe o robô no início, inicia o programa e o cronômetro de 8 min |
+| **■ Parar** | manda `KeyboardInterrupt` para o programa (como Ctrl+C) e, se não sair em 2 s, mata o processo |
+| **↺ Nova rodada** | para tudo, volta o robô ao início e apaga os arquivos de `arquivos_rodada` (o checkpoint salvo) |
+| **LoP** (L) | falta de progresso: robô volta ao último checkpoint visitado |
+| **LoP: reinicia prog. / só botão** | o que acontece num LoP: desliga e liga o programa (testa o checkpoint salvo em arquivo) ou só aperta o botão de início |
+| **Botão do robô** (B) | aperta o botão de início (pino P3) |
+| **Auto-botão** | aperta o botão sozinho 1,5 s depois que o programa inicia |
+| **Pausar** (espaço) / **Vel.** (1–5) | pausa ou muda a velocidade (0,25x a 4x). O programa do aluno segue o mesmo relógio. |
+| arrastar o robô / Q, E / roda do mouse | reposiciona o robô (com o programa parado) |
+| R, T, C, F | raios dos VL53, trilha, campo das câmeras, ladrilhos flutuantes (roxo) |
+| F1–F4 | botões do teclado do brick (`teclado.py`) |
+
+O painel mostra o tempo, a pontuação item por item, os eventos do juiz, as leituras dos sensores
+e a saída (`print`) do programa no console de baixo.
+
+---
+
+## Como o código continua compatível com o robô
+
+```
+  programa do aluno (main.py)
+        │  from motores import Motores, from vl53 import VL53L0X ...
+        ▼
+  bibliotecas REAIS do Mariola  (pasta do programa, ou libs_mariola/ como reserva)
+        │  serial.Serial / smbus2.SMBus / gpiod / time
+        ▼
+  fake_hw/  ── emula o firmware: pacote de 10 bytes do Mariola, barramento one-wire com eco+CRC
+        │      das placas de motor, giroscópio, sensor de cor V2, registradores do VL53L0X
+        │      atrás do TCA9548A, PCF8574 do teclado, linhas GPIO
+        │  socket TCP local
+        ▼
+  simulador.py  ── física (pymunk), motores, sensores, juiz, janela
+```
+
+* O programa roda num **processo separado**, igual no robô. LoP com "reinicia prog." mata e
+  sobe o processo de novo, como desligar o robô.
+* `rodar.py` (chamado pelo simulador) instala os substitutos de `serial`, `smbus2`, `gpiod` e do
+  relógio, e troca só a função `Portas.porta_serial_real` (que no robô procura em `/dev/serial/by-path`).
+* A ordem de import é: **pasta do programa primeiro**, depois `libs_mariola/`. Se a equipe copiar as
+  libs para a pasta do projeto (como o `envia.ps1` faz), são essas cópias que rodam no simulador.
+* `from libs.portas import Portas` (usado no `giroscopio.py`) também funciona.
+
+### O que só existe no simulador
+
+A câmera e o depósito de kits não são simulados fisicamente. O programa usa dois módulos com uma
+interface simples. No simulador eles são trocados automaticamente; no robô, copie os modelos de
+`robo_real/` para o projeto e complete.
+
+```python
+from deteccaoVitimas import DeteccaoVitimas
+from dispensadorKits import DispensadorKits
+
+cam = DeteccaoVitimas()
+v = cam.detecta()            # None ou {'camera': 'esquerda'|'direita', 'tipo': 'letra'|'cognitivo',
+                             #          'status': 'ferida'|'estavel'|'ilesa', 'kits': 2|1|0,
+                             #          'letra': 'H'|'S'|'U', 'distancia_mm': int}
+todas = cam.detecta_todas('esquerda')
+
+kits = DispensadorKits()
+kits.deposita(2, 'esquerda') # devolve quantos kits saíram
+```
+
+A câmera "vê" uma vítima quando ela está dentro do campo de visão (`cameras` em `robo.json`),
+de frente para a câmera e sem parede no caminho. Vítimas falsas não são reportadas (a não ser que
+você ligue `deteccao.vitimas_falsas_enganam`). Também dá para simular falso positivo e falso negativo.
+
+`simdebug` desenha na tela o que o programa **acha** (contorno roxo = pose estimada):
+
+```python
+try:
+    import simdebug                       # no robô, use robo_real/simdebug.py (não faz nada)
+except ImportError:
+    simdebug = None
+simdebug.pose(x_mm, y_mm, theta_graus)    # referencial do início: x para frente, y para a esquerda
+simdebug.texto('pos (2,1) dir 0')
+simdebug.marca(x_mm, y_mm, 'verde')
+```
+
+**LEDs**: o Mariola tem os LEDs RGB de `set_led_rgb_one(índice, r, g, b)`. No `robo.json` (`leds`):
+0–3 iluminam a câmera esquerda, 4–7 a direita e 8–9 são a indicação de vítima (só estes contam
+para o juiz). Com `deteccao.exige_iluminacao` ligado, **câmera com os LEDs apagados não enxerga
+vítima**. Por isso, use `set_led_rgb_one` nos LEDs 8–9 para piscar; `set_led_rgb_all` também pisca a
+iluminação. Para usar um pino como LED de vítima, troque para `"led_vitima": "gpio:P5"`.
+
+---
+
+## Física e sensores
+
+* **Tração 4x4 skid-steer**: cada roda tem atrito longitudinal e lateral limitado. O robô patina
+  ao girar e ao empurrar parede, e os encoders contam a mais quando a roda patina. Quando o motor
+  não tem força, o encoder acompanha o chão. Odometria pura erra, como no robô real.
+* **Motores**: PID de velocidade com constante de tempo (`tau_s`), movimento por ângulo
+  (`move_motores`, `move_motor` da placa) que para sozinho, freio solto/travado.
+  Mariola: motores 1 e 2 com encoder; `*_4x4` replicam 1→3 e 2→4.
+* **Giroscópio**: Z em graus, acumulando, positivo no sentido horário (configurável); integrado com deriva (`deriva_graus_min`) e ruído; X/Y mostram a inclinação
+  em escadas e os solavancos de lombadas/detritos. Trocar GYRO↔GYRO2 zera Z (como `reseta_z()`).
+* **VL53L0X**: feixe em cone de 25° (ignora retorno muito rasante), ruído, 8190 fora do alcance,
+  medida leva `tempo_medida_ms`. A lib `vl53.py` faz toda a inicialização de registradores normalmente.
+* **Para-choque**: dois botões na frente (P1 esquerdo, P2 direito); apertado = nível BAIXO, como
+  em `Botoes`. Empurrar a parede com os dois apertados alinha o robô.
+* **Cor/reflexão V2** (Pro1616): 4 IR (0 = branco, 255 = preto) + 3 TCS RGBC; a transição entre
+  ladrilhos é misturada. Prata reflete muito no IR. Valores em `cores_piso`.
+* **Terreno**: lombadas (1 cm; 2 cm na zona de perigo), escadas (degraus de 1 cm, menos atrito,
+  inclinação no giroscópio, mais íngreme na zona) e detritos soltos que se mexem quando a roda passa.
+
+## Juiz (regra 2026)
+
+Pontua automaticamente: identificação de vítima (piscar 500/500 ms por 5 s parado a até 15 cm;
+5/15 letra, 10/30 cognitiva, linear/flutuante calculado pelo seguimento de parede), kits (10 para 1, 30 para 2,
+só depois da identificação), checkpoint (10), azul (30 / −10 por revisita, LoP se não parar 5 s),
+lombada (5), escada (10), identificação errada (−5), LoP por ladrilho preto, bônus de confiabilidade
+e bônus de saída (piscar 1 s/1 s por 10 s no início). A rodada termina em 8 min ou na saída.
+
+Simplificações: o kit vale pela posição em que caiu; "parado" é velocidade < 6 mm/s.
+
+## Mapas
+
+Formato `mapas/*.json` (fácil de editar na mão também):
+
+* `paredes_h`: uma string por borda horizontal (linha 0 = borda norte da fileira 0); `1` = parede.
+* `paredes_v`: uma string por fileira; posição `c` = borda oeste da coluna `c`.
+* `ladrilhos`: `piso` (`preto`, `prata`, `azul`, `vermelho`), `terreno` (`lombada`, `escada`,
+  `detritos`) com `direcao` (`NS`/`LO`), `zona: true`.
+* `vitimas`: ladrilho, `parede` (N/S/L/O), `posicao` ao longo da parede (0–1), `tipo` `letra`
+  (`H`=Φ, `S`=Ψ, `U`=Ω, outra letra = falsa) ou `cognitivo` com 5 `aneis` (soma 2/1/0, outra soma = falsa).
+
+O **editor** (botão "Editar mapa") faz tudo isso com o mouse, avisa vítimas em posição proibida e
+ladrilhos que não dá para alcançar, e tem "Sortear pisos" (como o dado do juiz).
+
+## Configuração do robô — `robo.json`
+
+Os valores que vieram são **estimativas**. Para o simulador ficar fiel, meça no robô:
+
+| chave | o que é |
+|---|---|
+| `geometria` | comprimento, largura e massa |
+| `rodas.diametro`, `motores[].x/y` | diâmetro e posição de cada roda (mm, x para frente, y para a esquerda) |
+| `motores[]` | controlador (`mariola` canal 1/2 ou `placa` porta/ID) e `sentido` (−1 se o motor está espelhado) |
+| `motor_padrao` | `pulsos_encoder_motor` (17) × `reducao` × `multiplicador` = contagens por volta da roda; `rpm_max` (comando 100), `tau_s`, `forca_max_N` |
+| `rodas.atrito`, `atrito_lateral` | ajuste até o giro no lugar e a patinação ficarem parecidos com o real |
+| `portas_serial` | o que está ligado em cada SERIALn |
+| `vl53[]` | canal do mux (I2C1…I2C8), posição e ângulo de cada sensor |
+| `para_choque`, `botao_inicio` | pinos (P1…P8) |
+| `giroscopio` | escala (unidades por grau), Z contínuo ou ±180, sentido positivo, deriva |
+| `cor_reflexao`, `cores_piso` | posição dos sensores e valores calibrados de cada piso |
+| `cameras`, `deteccao`, `kits` | campo de visão das câmeras, erros de detecção, depósito |
+
+Uma forma prática de calibrar: rode o mesmo teste (ex.: andar 1 m, girar 360°) no robô e no
+simulador e ajuste `rpm_max`, `forca_max_N`, `atrito_lateral` e `deriva_graus_min` até baterem.
+
+## Programa de exemplo (`exemplo_aluno/`)
+
+Busca em profundidade ladrilho a ladrilho, com:
+`robo.py` (hardware + movimentos: anda reto com giroscópio e centralização pelos VL53 laterais,
+gira pelo giroscópio, encosta no para-choque para alinhar, detecta preto/azul/prata),
+`navegacao.py` (mapa interno, BFS, checkpoint em arquivo com escrita atômica) e `main.py`
+(estratégia, vítimas, kits, volta ao início). Ele **evita a zona de perigo** de propósito.
+É um ponto de partida, não a solução.
+
+## Limitações conhecidas
+
+* Mundo 2D: sem rampas, pontes ou segundo andar; escadas e lombadas são efeitos (solavanco,
+  inclinação, perda de tração), não geometria 3D. Obstáculos ainda não existem.
+* A tela OLED (`tela.py`/luma) e o BNO085 não são emulados.
+* Se o programa morre, os motores param (no robô real o Mariola pode continuar com o último comando).
+* `threading.Event.wait(timeout)` e afins usam o relógio real (não seguem pausa/velocidade).
+
+## Estrutura
+
+```
+simulador.py        janela / modo sem janela
+rodar.py            executa o programa do aluno com o hardware virtual
+robo.json           configuração do robô
+sim/                mapa, física, juiz, servidor, interface
+fake_hw/            serial, smbus2, gpiod, firmware das placas, relógio virtual
+libs_mariola/       cópia das libs do Mariola (reserva, se a pasta do programa não tiver)
+robo_real/          deteccaoVitimas.py, dispensadorKits.py e simdebug.py para o robô real
+mapas/              exemplo1.json (com zona de perigo, escada, lombadas) e treino.json
+exemplo_aluno/      programa de exemplo
+```

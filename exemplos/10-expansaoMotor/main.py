@@ -28,8 +28,8 @@ import portas
 #id 67 e 71
 portas = Portas()
 portaSerialbarramento = portas.abre_porta_serial(Portas.SERIAL1, 250000, timeout=0.005)
-motor1 = PlacaControleMotor(portaSerialbarramento, id_equipamento=0)
-motor2 = PlacaControleMotor(portaSerialbarramento, id_equipamento=7)
+motor1 = PlacaControleMotor(portaSerialbarramento, id_equipamento=8)
+motor2 = PlacaControleMotor(portaSerialbarramento, id_equipamento=51)
 posicao = 0
 potencia = 0
 zona_morta = 5
@@ -61,8 +61,11 @@ motor1.direcao_motor(Motores.INVERTIDO)
 # motor1.calibracao_manual(32,-32)
 
 resultado = motores.obtem_calibracao_motores()
+motores
 print(resultado)
 # motores.calibra_motores();
+# motor1.calibrar();
+# print(motor1.obter_calibracao())
 # exit()
 sleep(0.5)
 motores.set_modo_freio(Motores.HOLD)
@@ -75,9 +78,8 @@ motor2.set_kd_freio(10)
 motor1.set_delta_freio(20)
 motor2.set_delta_freio(20)
 motor1.pid_motor(2,2,2)
-motor1.calibracao_manual(80,-80)
-motor2.calibracao_manual(80,-80)
-# motor1.calibrar();
+motor1.calibracao_manual(208,-208)
+motor2.calibracao_manual(208,-208)
 try:   
     
     #motor1.reseta_angulo_motor()
@@ -93,10 +95,14 @@ try:
 
     contador = 0
     tempo_inicio = time.time()
-    # while True:
-    #     resultado1 = motor1.move_motor(0, 0)
-    #     resultado2 = motor2.move_motor(0, 0)
-    #     print(resultado1, resultado2)    
+    while True:
+        # resultado1 = motor1.move_motor(0, 0)
+        # resultado2 = motor2.move_motor(0, 0)
+        motores.estado()
+        resultado1 = motores.angulo_motor(1)
+        resultado2 = motores.angulo_motor(2)
+        print(resultado1, resultado2)    
+
     while(True):
         contador+=1
         t = threading.Thread(target=motores.potencia_motores, args=(100,100))

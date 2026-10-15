@@ -1,0 +1,133 @@
+{
+  "_comentario": "Configuração do robô simulado. Unidades: mm, graus, kg. Robô: x para frente, y para a esquerda, ângulos anti-horários (0 = frente, 90 = esquerda).",
+
+  "geometria": {
+    "comprimento": 190,
+    "largura": 170,
+    "massa_kg": 1.6
+  },
+
+  "rodas": {
+    "_comentario": "posição de cada roda está em 'motores' (x, y)",
+    "diametro": 65,
+    "atrito": 0.9,
+    "atrito_lateral": 0.75,
+    "atrito_parede": 0.25
+  },
+
+  "motores": [
+    {"nome": "traseira_esquerda", "x": -55, "y":  75, "controlador": "mariola", "canal": 1, "sentido":  1},
+    {"nome": "traseira_direita",  "x": -55, "y": -75, "controlador": "mariola", "canal": 2, "sentido": -1},
+    {"nome": "dianteira_esquerda","x":  55, "y":  75, "controlador": "placa", "porta": "SERIAL1", "id": 8,  "sentido":  1},
+    {"nome": "dianteira_direita", "x":  55, "y": -75, "controlador": "placa", "porta": "SERIAL1", "id": 51, "sentido": -1}
+  ],
+
+  "motor_padrao": {
+    "_comentario": "contagens por volta da roda = pulsos_encoder_motor x reducao x multiplicador (x1/x2/x4 conforme a placa conta as bordas). Se preferir, ponha 'contagens_por_volta' direto. rpm_max: rotação da roda com comando 100.",
+    "pulsos_encoder_motor": 17,
+    "reducao": 34,
+    "multiplicador": 1,
+    "rpm_max": 130,
+    "tau_s": 0.06,
+    "forca_max_N": 6.0,
+    "calibracao": 208
+  },
+
+  "portas_serial": {
+    "SERIAL0": "mariola",
+    "SERIAL1": "barramento_motores",
+    "SERIAL5": "giroscopio",
+    "SERIAL6": "cor_reflexao_v2"
+  },
+  "latencia_serial_ms": 1.0,
+
+  "vl53": [
+    {"nome": "esq_frente", "mux": "I2C1", "x":  70, "y":  85, "angulo":  90},
+    {"nome": "esq_tras",   "mux": "I2C2", "x": -70, "y":  85, "angulo":  90},
+    {"nome": "dir_frente", "mux": "I2C3", "x":  70, "y": -85, "angulo": -90},
+    {"nome": "dir_tras",   "mux": "I2C4", "x": -70, "y": -85, "angulo": -90},
+    {"nome": "frente",     "mux": "I2C5", "x":  95, "y":   0, "angulo":   0}
+  ],
+  "vl53_params": {
+    "alcance_mm": 1200,
+    "ruido_mm": 3.0,
+    "ruido_percentual": 1.0,
+    "cone_graus": 25,
+    "tempo_medida_ms": 33,
+    "fora_alcance": 8190,
+    "offset_mm": 0
+  },
+
+  "para_choque": {
+    "_comentario": "botões de contato na frente; pino = P1..P8 (Botoes/PinosDigitais). Apertado = nível BAIXO, como na lib Botoes.",
+    "esquerdo": {"pino": "P1", "y_min": 5, "y_max": 80},
+    "direito":  {"pino": "P2", "y_min": -80, "y_max": -5},
+    "curso_mm": 2.0
+  },
+  "botao_inicio": {"pino": "P3"},
+
+  "giroscopio": {
+    "_comentario": "escala: unidades por grau (1 = graus inteiros, 10 = décimos). z_continuo=false faz Z voltar entre -180 e 180.",
+    "escala": 1,
+    "z_continuo": true,
+    "z_horario_positivo": true,
+    "eixo_inclinacao_frente": "x",
+    "deriva_graus_min": 0.6,
+    "ruido_graus": 0.15,
+    "tempo_calibracao_s": 2.0
+  },
+
+  "cor_reflexao": {
+    "tcs": [ {"x": 75, "y": 40}, {"x": 75, "y": 0}, {"x": 75, "y": -40} ],
+    "ir":  [ {"x": 80, "y": 45}, {"x": 80, "y": 15}, {"x": 80, "y": -15}, {"x": 80, "y": -45} ],
+    "ruido": 4,
+    "tempo_calibracao_s": 1.5
+  },
+  "cores_piso": {
+    "_comentario": "RGBC calibrado (0-255) do TCS e IR (0 = branco, 255 = preto) para cada piso",
+    "branco":   {"rgbc": [235, 238, 236, 245], "ir": 20},
+    "preto":    {"rgbc": [8, 8, 9, 12],        "ir": 245},
+    "prata":    {"rgbc": [250, 252, 255, 255], "ir": 3},
+    "azul":     {"rgbc": [35, 80, 210, 120],   "ir": 140},
+    "vermelho": {"rgbc": [210, 45, 40, 110],   "ir": 110}
+  },
+
+  "leds": {
+    "_comentario": "índices do set_led_rgb_one do Mariola. As câmeras só enxergam com os LEDs de iluminação acesos (deteccao.exige_iluminacao).",
+    "camera_esquerda": [0, 1, 2, 3],
+    "camera_direita": [4, 5, 6, 7],
+    "vitima": [8, 9]
+  },
+  "led_vitima": "mariola_rgb",
+
+  "cameras": [
+    {"nome": "esquerda", "x": 0, "y":  60, "angulo":  90, "fov": 70, "alcance_mm": 230},
+    {"nome": "direita",  "x": 0, "y": -60, "angulo": -90, "fov": 70, "alcance_mm": 230}
+  ],
+  "deteccao": {
+    "_comentario": "probabilidades por chamada, para testar robustez do algoritmo",
+    "exige_iluminacao": true,
+    "falso_negativo": 0.0,
+    "falso_positivo": 0.0,
+    "vitimas_falsas_enganam": 0.0
+  },
+
+  "kits": {
+    "capacidade": 8,
+    "tempo_por_kit_s": 0.7,
+    "distancia_lateral_mm": 15
+  },
+
+  "terreno": {
+    "lombada_giro_graus": 1.2,
+    "lombada_pitch_graus": 6,
+    "detritos_giro_graus": 2.0,
+    "escada_atrito": 0.65,
+    "tempo_no_ar_s": 0.04
+  },
+
+  "teclado": true,
+
+  "_arquivos_rodada": "arquivos (na pasta do programa) apagados ao clicar em 'Nova rodada', como se fosse uma rodada nova de verdade",
+  "arquivos_rodada": ["checkpoint_maze.json"]
+}

@@ -1,0 +1,31 @@
+{
+  "formato": "maze-sim-1",
+  "nome": "treino",
+  "linhas": 4,
+  "colunas": 5,
+  "inicio": {"linha": 3, "coluna": 0, "direcao": "L"},
+  "semente": 1,
+  "paredes_h": [
+    "11111",
+    "01100",
+    "00000",
+    "01000",
+    "11111"
+  ],
+  "paredes_v": [
+    "100001",
+    "100101",
+    "100101",
+    "101001"
+  ],
+  "ladrilhos": [
+    {"linha": 0, "coluna": 4, "piso": "prata"},
+    {"linha": 1, "coluna": 0, "piso": "azul"},
+    {"linha": 2, "coluna": 2, "piso": "preto"}
+  ],
+  "vitimas": [
+    {"linha": 0, "coluna": 0, "parede": "N", "tipo": "letra", "letra": "H", "posicao": 0.5},
+    {"linha": 3, "coluna": 4, "parede": "L", "tipo": "cognitivo", "aneis": ["amarelo", "azul", "amarelo", "vermelho", "amarelo"], "posicao": 0.5},
+    {"linha": 1, "coluna": 2, "parede": "N", "tipo": "letra", "letra": "S", "posicao": 0.4}
+  ]
+}

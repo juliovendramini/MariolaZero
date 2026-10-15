@@ -8,13 +8,14 @@ class PlacaControleServo:
     """Controle de servo via protocolo serial half-duplex one-wire.
 
     Protocolo (6 bytes):
-        [0] ID do equipamento
-        [1] Posição desejada HIGH byte
+        [0] ID do equipamento (254 = broadcast sem resposta)
+        [1] Posição desejada HIGH byte  (0xFF = comando especial)
         [2] Posição desejada LOW byte
-        [3] Potência PWM (0-255)
-        [4] Zona morta (0-255)
+        [3] Potência PWM (0-255)          (0xAA em comando especial)
+        [4] Zona morta (0-255)             (0x55 em comando especial)
         [5] CRC = XOR dos bytes 0..4
     """
+    ID_BROADCAST = 254
     ultima_posicao = None
     TAMANHO_PACOTE = 6
     DEBUG = True
@@ -71,6 +72,59 @@ class PlacaControleServo:
             'potencia': potencia,
             'zona_morta': zona_morta,
         }
+
+    def envia_broadcast(self, posicao, potencia, zona_morta=5):
+        """Envia comando para todos os dispositivos; nenhuma resposta é esperada."""
+        id_original = self.id_equipamento
+        self.id_equipamento = self.ID_BROADCAST
+        pacote = self._montar_pacote(posicao, potencia, zona_morta)
+        self.id_equipamento = id_original
+
+        self.ser.reset_input_buffer()
+        self.ser.write(pacote)
+        self.ser.flush()
+        self.ser.read(self.TAMANHO_PACOTE)  # descarta eco
+
+        if self.DEBUG:
+            print(f'BROADCAST TX: {[f"0x{b:02x}" for b in pacote]}')
+
+    def define_id(self, novo_id):
+        """Grava novo_id na EEPROM do dispositivo e o adota como ID ativo.
+
+        Envia o comando especial (buf[1]=0xFF, buf[3]=0xAA, buf[4]=0x55)
+        endereçado ao ID atual. O firmware não responde a este comando.
+
+        Args:
+            novo_id: Novo ID desejado (0-253)
+
+        Returns:
+            True se o pacote foi enviado, False se novo_id inválido.
+        """
+        if not (0 <= novo_id < self.ID_BROADCAST):
+            if self.DEBUG:
+                print(f'define_id: ID {novo_id} inválido (deve ser 0-253)')
+            return False
+
+        pacote = [
+            self.id_equipamento,
+            0xFF,
+            novo_id & 0xFF,
+            0xAA,
+            0x55,
+        ]
+        pacote.append(self._calcular_crc(pacote))
+        pacote = bytes(pacote)
+
+        self.ser.reset_input_buffer()
+        self.ser.write(pacote)
+        self.ser.flush()
+        self.ser.read(self.TAMANHO_PACOTE)  # descarta eco
+
+        if self.DEBUG:
+            print(f'SET ID TX: {[f"0x{b:02x}" for b in pacote]}')
+
+        self.id_equipamento = novo_id
+        return True
 
     def envia_comando(self, posicao, potencia, zona_morta=5, tentativas=3):
         """Envia comando para o equipamento e retorna a resposta.
