@@ -1,0 +1,271 @@
+{
+ "_comentario": "Robô de esteira com 2 motores no brick Mariola e o mesmo sensor de linha Pro1616 (mesma altura). Unidades: mm, graus, kg. Robô: x para frente, y para a esquerda. Medidas, motor e esteira são ESTIMATIVAS (A MEDIR).",
+ "nome": "esteira (2 motores)",
+ "tipo_tracao": "esteira",
+ "geometria": {
+  "comprimento": 200,
+  "largura": 180,
+  "massa_kg": 1.4
+ },
+ "rodas": {
+  "_roda": "diametro = roda dentada (polia) que puxa a esteira, A MEDIR. Cada esteira encosta no chão em 5 pontos (contatos).",
+  "diametro": 40,
+  "atrito": 0.95,
+  "atrito_lateral": 0.8,
+  "largura": 20
+ },
+ "motores": [
+  {
+   "nome": "esteira_esquerda",
+   "x": 0,
+   "y": 72,
+   "contatos": [
+    [
+     -75,
+     72
+    ],
+    [
+     -37.5,
+     72
+    ],
+    [
+     0,
+     72
+    ],
+    [
+     37.5,
+     72
+    ],
+    [
+     75,
+     72
+    ]
+   ],
+   "controlador": "mariola",
+   "canal": 1,
+   "sentido": 1
+  },
+  {
+   "nome": "esteira_direita",
+   "x": 0,
+   "y": -72,
+   "contatos": [
+    [
+     -75,
+     -72
+    ],
+    [
+     -37.5,
+     -72
+    ],
+    [
+     0,
+     -72
+    ],
+    [
+     37.5,
+     -72
+    ],
+    [
+     75,
+     -72
+    ]
+   ],
+   "controlador": "mariola",
+   "canal": 2,
+   "sentido": -1
+  }
+ ],
+ "motor_padrao": {
+  "_comentario": "Motor e redução da esteira A MEDIR (mesmo modelo de motor do 4x4 por enquanto). forca_max_N é a força de cada motor no chão.",
+  "contagens_por_volta_mariola": null,
+  "contagens_por_volta_placa": null,
+  "calibracao_mariola": null,
+  "calibracao_placa": null,
+  "pulsos_encoder_motor": 17,
+  "reducao": 34,
+  "multiplicador_mariola": 2,
+  "multiplicador_placa": 4,
+  "rpm_livre": 200,
+  "tau_s": 0.06,
+  "forca_max_N": 10.0
+ },
+ "portas_serial": {
+  "SERIAL0": "mariola",
+  "SERIAL5": "giroscopio",
+  "SERIAL6": "cor_reflexao_v2"
+ },
+ "latencia_serial_ms": 1.0,
+ "sensor_linha": {
+  "_comentario": "Sensor de linha/cor Pro1616 na porta SERIAL6 (lib sensorCorReflexao.py). 12 ITR8307 em fileira, 65 mm entre o centro do 1 e do 12 (passo 5,9 mm), agrupados de 3 em 3 = 4 canais de reflexão (canal 0 = mais à esquerda). Atrás deles, a 9 mm, a fileira de 3 TCS34725 com 20 mm entre si (TCS1 = esquerda). x_ir/x_tcs = distância à frente do centro do robô (A MEDIR). modo_grupo: 'media' (3 fototransistores em paralelo no mesmo pino) ou 'minimo'. Distância ao piso: altura_mm = 12 mm (medida da equipe, para não pegar nas lombadas); a calibração vale nessa altura (branco ~100). A leitura com outra distância segue a curva do ITR8307 (pico perto de 1 mm, caindo ~1/d² depois): piso mais longe (crista de rampa, robô inclinado) escurece; piso mais perto (sensor passando por cima da lombada) clareia bastante e pode saturar em 255; encostado vai a 0. Para trocar a curva, ponha 'curva_ir': [[mm, relativo], ...] (e 'curva_tcs'; padrão: a do IR com distâncias x2). A placa raspa se o chão subir mais que altura_mm.",
+  "x_ir": 85,
+  "x_tcs": 76,
+  "n_ir": 12,
+  "distancia_extremos_ir_mm": 65.0,
+  "grupo_ir": 3,
+  "modo_grupo": "media",
+  "ordem_ir": "esquerda_para_direita",
+  "y_tcs": [
+   20,
+   0,
+   -20
+  ],
+  "raio_mancha_ir_mm": 2.0,
+  "raio_mancha_tcs_mm": 4.0,
+  "altura_mm": 12,
+  "taxa_hz": 50,
+  "ruido": 2.0,
+  "tempo_calibra_branco_s": 7.0,
+  "tempo_calibra_preto_s": 2.2
+ },
+ "cores_piso": {
+  "_comentario": "Leitura de cada material JÁ na escala do firmware. TCS calibrado no branco e enviado pela metade (branco ~127). IR: 0 = preto, ~100 = branco calibrado. Troque pelos valores lidos no robô. ATENÇÃO ao verde no IR: fita/impressão verde costuma refletir bastante infravermelho.",
+  "branco": {
+   "rgbc": [
+    127,
+    128,
+    126,
+    127
+   ],
+   "ir": 100
+  },
+  "preto": {
+   "rgbc": [
+    3,
+    3,
+    4,
+    5
+   ],
+   "ir": 4
+  },
+  "verde": {
+   "rgbc": [
+    30,
+    85,
+    45,
+    62
+   ],
+   "ir": 75
+  },
+  "vermelho": {
+   "rgbc": [
+    115,
+    25,
+    22,
+    58
+   ],
+   "ir": 85
+  },
+  "prata": {
+   "rgbc": [
+    190,
+    195,
+    200,
+    205
+   ],
+   "ir": 190
+  },
+  "madeira": {
+   "rgbc": [
+    105,
+    85,
+    55,
+    85
+   ],
+   "ir": 90
+  },
+  "fora": {
+   "rgbc": [
+    60,
+    60,
+    60,
+    60
+   ],
+   "ir": 40
+  }
+ },
+ "vl53": [
+  {
+   "nome": "esquerda",
+   "mux": "I2C1",
+   "x": 40,
+   "y": 92,
+   "angulo": 90,
+   "altura": 50
+  },
+  {
+   "nome": "direita",
+   "mux": "I2C3",
+   "x": 40,
+   "y": -92,
+   "angulo": -90,
+   "altura": 50
+  },
+  {
+   "nome": "frente",
+   "mux": "I2C5",
+   "x": 100,
+   "y": 0,
+   "angulo": 0,
+   "altura": 50
+  }
+ ],
+ "vl53_params": {
+  "alcance_mm": 1200,
+  "ruido_mm": 3.0,
+  "ruido_percentual": 1.0,
+  "cone_graus": 25,
+  "tempo_medida_ms": 33,
+  "fora_alcance": 8190,
+  "offset_mm": 0
+ },
+ "para_choque": {
+  "_comentario": "botões de contato na frente; pino = P1..P8. Apertado = nível BAIXO, como na lib Botoes.",
+  "esquerdo": {
+   "pino": "P1",
+   "y_min": 5,
+   "y_max": 85
+  },
+  "direito": {
+   "pino": "P2",
+   "y_min": -85,
+   "y_max": -5
+  },
+  "curso_mm": 2.0
+ },
+ "botao_inicio": {
+  "pino": "P3"
+ },
+ "giroscopio": {
+  "_comentario": "escala: unidades por grau. z_continuo=false faz Z voltar entre -180 e 180. Inclinação: X = frente (positivo subindo a rampa).",
+  "escala": 1,
+  "z_continuo": true,
+  "z_horario_positivo": true,
+  "eixo_inclinacao_frente": "x",
+  "deriva_graus_min": 0.6,
+  "ruido_graus": 0.15,
+  "tempo_calibracao_s": 2.0
+ },
+ "terreno": {
+  "_comentario": "Lombada e palito são relevo de verdade: rodas, esteira e a placa do sensor sobem neles (o robô se apoia nos pontos mais altos). lombada: altura (regra: até 10 mm) e largura do perfil arredondado. vibracao_graus: tremida extra no giroscópio quando a roda bate. tempo_no_ar_s: 0 (a roda que fica no ar já sai do cálculo de apoio).",
+  "lombada_altura_mm": 10,
+  "lombada_largura_mm": 30,
+  "detrito_diametro_mm": 3,
+  "lombada_giro_graus": 1.0,
+  "detritos_giro_graus": 1.0,
+  "vibracao_graus": 1.0,
+  "tempo_no_ar_s": 0.0,
+  "tempo_gangorra_s": 0.35
+ },
+ "juiz": {
+  "_comentario": "tempo_fora_do_caminho_s: tempo num ladrilho fora do caminho (sem linha) até o LoP automático; chegar numa linha que não é a próxima dá LoP na hora. lop_sem_progresso_s: 0 = desligado.",
+  "tempo_fora_do_caminho_s": 10.0,
+  "lop_sem_progresso_s": 0,
+  "pula_checkpoint_apos_3_tentativas": true
+ },
+ "teclado": true,
+ "_arquivos_rodada": "arquivos (na pasta do programa) apagados ao clicar em 'Nova rodada'",
+ "arquivos_rodada": [
+  "checkpoint_line.json"
+ ]
+}

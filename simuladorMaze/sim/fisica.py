@@ -52,18 +52,26 @@ class Motor:
         self.x = float(p['x'])
         self.y = float(p['y'])
         self.sentido = 1 if p.get('sentido', 1) >= 0 else -1
-        if 'contagens_por_volta' in p:
-            self.cpr = float(p['contagens_por_volta'])
+        cpr = p.get('contagens_por_volta_' + self.tipo, p.get('contagens_por_volta'))
+        if cpr:
+            self.cpr = float(cpr)
         else:
             mult = p.get('multiplicador_' + self.tipo, p.get('multiplicador', 1))
             self.cpr = float(p['pulsos_encoder_motor']) * float(p['reducao']) * float(mult)
-        self.rpm_livre = float(p.get('rpm_livre', p.get('rpm_max', 130)))
-        self.vlivre = self.rpm_livre / 60.0 * self.cpr          # contagens/s com PWM 100%
+        cal_medida = p.get('calibracao_' + self.tipo)
+        if cal_medida:
+            # valor da EEPROM (obtem_calibracao_motores / obter_calibracao) = 80% da
+            # velocidade livre em pulsos por 25 ms -> dá a rotação livre real
+            self.vlivre = abs(float(cal_medida)) / 0.8 * FREQ_PID
+            self.rpm_livre = self.vlivre / self.cpr * 60.0
+        else:
+            self.rpm_livre = float(p.get('rpm_livre', p.get('rpm_max', 130)))
+            self.vlivre = self.rpm_livre / 60.0 * self.cpr      # contagens/s com PWM 100%
         self.tau = float(p['tau_s'])
         self.forca_max = float(p['forca_max_N']) * 1000.0     # kg·mm/s²
         self.diametro = diametro
         # calibração gravada na EEPROM: 80% da velocidade máxima, em pulsos por período do PID
-        c = int(p.get('calibracao_horario', int(0.8 * self.vlivre / FREQ_PID)))
+        c = int(abs(cal_medida)) if cal_medida else int(0.8 * self.vlivre / FREQ_PID)
         self.cal = [c, -c]
         self.reset()
 

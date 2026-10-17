@@ -20,9 +20,9 @@ from sensorCorReflexao import CorReflexao
 from vl53 import VL53L0X
 
 # ------------------------------------------------------------------ constantes do robô
-DIAMETRO_RODA = 65.0          # mm
+DIAMETRO_RODA = 70.0          # mm (roda do aspirador Xiaomi)
 PULSOS_ENCODER_MOTOR = 17     # pulsos por volta do eixo do motor
-REDUCAO = 34                  # caixa de redução (CONFIRMAR)
+REDUCAO = 34                  # caixa de redução do motor do aspirador (A MEDIR)
 # o Mariola conta as duas bordas de um canal do encoder (x2); a placa de motor, quadratura (x4)
 CONTAGENS_POR_VOLTA = PULSOS_ENCODER_MOTOR * REDUCAO * 2         # motores do Mariola
 CONTAGENS_POR_VOLTA_PLACA = PULSOS_ENCODER_MOTOR * REDUCAO * 4   # placas de motor
@@ -56,7 +56,9 @@ class Robo:
         self.m_dd.direcao_motor(PlacaControleMotor.INVERTIDO)
 
         self.giro = Giroscopio(Portas.SERIAL5)
-        self.cor = CorReflexao(Portas.SERIAL6)
+        # cores aprendidas no campo com calibra_cores.py (se o arquivo existir)
+        self.cor = CorReflexao(Portas.SERIAL6, arquivo_cores='cores_piso.json')
+        self.cor.usa_cores(['branco', 'preto', 'prata', 'azul', 'vermelho'])   # cores da Maze
         self.vl = {
             'esq_frente': VL53L0X(Portas.I2C1),
             'esq_tras': VL53L0X(Portas.I2C2),
@@ -114,31 +116,13 @@ class Robo:
         return (self.botoes.botao_pressionado(PARA_CHOQUE_ESQ),
                 self.botoes.botao_pressionado(PARA_CHOQUE_DIR))
 
-    # Escala do firmware do sensor (sensorLinhaPro1616.ino):
-    #   IR: 0 = preto, ~100 = branco calibrado, > 100 = mais refletivo que o branco (prata)
-    #   TCS: calibrado no branco e enviado pela METADE (branco ~127)
-    # Obs.: CorReflexao.detecta_cor() ainda espera branco perto de 255, por isso não é usado aqui.
-    IR_PRETO = 25
-    IR_PRATA = 140
-
+    # Cor do piso pela lib (referências aprendidas no campo com calibra_cores.py)
     def piso(self):
-        """'preto', 'prata', 'azul', 'vermelho' ou 'branco' olhando o TCS do meio + IR."""
-        ir = self.cor.le_reflexao()
-        media_ir = sum(ir) / 4.0
-        r, g, b, c = self.cor.le_rgbc(2)
-        if media_ir < self.IR_PRETO and c < 30:
-            return 'preto'
-        if media_ir > self.IR_PRATA:
-            return 'prata'
-        if b > 1.6 * r and b > 1.3 * g:
-            return 'azul'
-        if r > 2 * g and r > 2 * b:
-            return 'vermelho'
-        return 'branco'
+        """'preto', 'prata', 'azul', 'vermelho', 'branco' ou 'desconhecida' (votação dos 3 TCS)."""
+        return self.cor.cor_piso()
 
     def preto_na_frente(self):
-        ir = self.cor.le_reflexao()
-        return sum(1 for v in ir if v < self.IR_PRETO) >= 2
+        return self.cor.cores().count('preto') >= 2
 
     def espera(self, segundos):
         """Espera parado sem deixar o Mariola nem as placas de motor ficarem 5 s sem comando

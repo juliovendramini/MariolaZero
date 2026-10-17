@@ -1,0 +1,339 @@
+{
+ "_comentario": "Robô 4x4 da Maze (brick Mariola + 2 placas de motor, rodas de aspirador) com o sensor de linha Pro1616. Unidades: mm, graus, kg. Robô: x para frente, y para a esquerda, origem no centro da caixa do robô. Valores marcados 'A MEDIR' são estimativas.",
+ "nome": "4x4 (robô da Maze)",
+ "tipo_tracao": "rodas",
+ "geometria": {
+  "comprimento": 190,
+  "largura": 170,
+  "massa_kg": 1.6
+ },
+ "rodas": {
+  "_roda": "roda+motor do aspirador Xiaomi Mijia E10/B112/E12: 70 mm x 15 mm",
+  "diametro": 70,
+  "atrito": 0.9,
+  "atrito_lateral": 0.75,
+  "largura": 15
+ },
+ "motores": [
+  {
+   "nome": "traseira_esquerda",
+   "x": -55,
+   "y": 75,
+   "controlador": "mariola",
+   "canal": 1,
+   "sentido": 1
+  },
+  {
+   "nome": "traseira_direita",
+   "x": -55,
+   "y": -75,
+   "controlador": "mariola",
+   "canal": 2,
+   "sentido": -1
+  },
+  {
+   "nome": "dianteira_esquerda",
+   "x": 55,
+   "y": 75,
+   "controlador": "placa",
+   "porta": "SERIAL1",
+   "id": 8,
+   "sentido": 1
+  },
+  {
+   "nome": "dianteira_direita",
+   "x": 55,
+   "y": -75,
+   "controlador": "placa",
+   "porta": "SERIAL1",
+   "id": 51,
+   "sentido": -1
+  }
+ ],
+ "motor_padrao": {
+  "_comentario": "Motor de aspirador Xiaomi (redução e rotação ainda NÃO medidas). Contagens por volta da roda = pulsos_encoder_motor x reducao x multiplicador (Mariola x2: um canal nas duas bordas; placa x4: quadratura). rpm_livre = rotação da roda com PWM 100%; no PID o comando 100 = 80% disso. Para usar o robô real: gire a roda 1 volta à mão e ponha a contagem em contagens_por_volta_mariola / contagens_por_volta_placa; ponha o valor de motores.obtem_calibracao_motores() em calibracao_mariola e o giro_max_horario de PlacaControleMotor.obter_calibracao() em calibracao_placa.",
+  "contagens_por_volta_mariola": null,
+  "contagens_por_volta_placa": null,
+  "calibracao_mariola": null,
+  "calibracao_placa": null,
+  "pulsos_encoder_motor": 17,
+  "reducao": 34,
+  "multiplicador_mariola": 2,
+  "multiplicador_placa": 4,
+  "rpm_livre": 130,
+  "tau_s": 0.06,
+  "forca_max_N": 6.0
+ },
+ "portas_serial": {
+  "SERIAL0": "mariola",
+  "SERIAL1": "barramento_motores",
+  "SERIAL5": "giroscopio",
+  "SERIAL6": "cor_reflexao_v2"
+ },
+ "latencia_serial_ms": 1.0,
+ "sensor_linha": {
+  "_comentario": "Sensor de linha/cor Pro1616 na porta SERIAL6 (lib sensorCorReflexao.py). 12 ITR8307 em fileira, 65 mm entre o centro do 1 e do 12 (passo 5,9 mm), agrupados de 3 em 3 = 4 canais de reflexão (canal 0 = mais à esquerda). Atrás deles, a 9 mm, a fileira de 3 TCS34725 com 20 mm entre si (TCS1 = esquerda). x_ir/x_tcs = distância à frente do centro do robô (A MEDIR). modo_grupo: 'media' (3 fototransistores em paralelo no mesmo pino) ou 'minimo'. Distância ao piso: altura_mm = 12 mm (medida da equipe, para não pegar nas lombadas); a calibração vale nessa altura (branco ~100). A leitura com outra distância segue a curva do ITR8307 (pico perto de 1 mm, caindo ~1/d² depois): piso mais longe (crista de rampa, robô inclinado) escurece; piso mais perto (sensor passando por cima da lombada) clareia bastante e pode saturar em 255; encostado vai a 0. Para trocar a curva, ponha 'curva_ir': [[mm, relativo], ...] (e 'curva_tcs'; padrão: a do IR com distâncias x2). A placa raspa se o chão subir mais que altura_mm.",
+  "x_ir": 80,
+  "x_tcs": 71,
+  "n_ir": 12,
+  "distancia_extremos_ir_mm": 65.0,
+  "grupo_ir": 3,
+  "modo_grupo": "media",
+  "ordem_ir": "esquerda_para_direita",
+  "y_tcs": [
+   20,
+   0,
+   -20
+  ],
+  "raio_mancha_ir_mm": 2.0,
+  "raio_mancha_tcs_mm": 4.0,
+  "altura_mm": 12,
+  "taxa_hz": 50,
+  "ruido": 2.0,
+  "tempo_calibra_branco_s": 7.0,
+  "tempo_calibra_preto_s": 2.2
+ },
+ "cores_piso": {
+  "_comentario": "Leitura de cada material JÁ na escala do firmware. TCS calibrado no branco e enviado pela metade (branco ~127). IR: 0 = preto, ~100 = branco calibrado. Troque pelos valores lidos no robô. ATENÇÃO ao verde no IR: fita/impressão verde costuma refletir bastante infravermelho.",
+  "branco": {
+   "rgbc": [
+    127,
+    128,
+    126,
+    127
+   ],
+   "ir": 100
+  },
+  "preto": {
+   "rgbc": [
+    3,
+    3,
+    4,
+    5
+   ],
+   "ir": 4
+  },
+  "verde": {
+   "rgbc": [
+    30,
+    85,
+    45,
+    62
+   ],
+   "ir": 75
+  },
+  "vermelho": {
+   "rgbc": [
+    115,
+    25,
+    22,
+    58
+   ],
+   "ir": 85
+  },
+  "prata": {
+   "rgbc": [
+    190,
+    195,
+    200,
+    205
+   ],
+   "ir": 190
+  },
+  "madeira": {
+   "rgbc": [
+    105,
+    85,
+    55,
+    85
+   ],
+   "ir": 90
+  },
+  "fora": {
+   "rgbc": [
+    60,
+    60,
+    60,
+    60
+   ],
+   "ir": 40
+  }
+ },
+ "_vl53": "VL53L0X no mux I2C (canal = I2C1..I2C8). altura = mm do chão: o feixe só vê o que for mais alto que isso (parede da área 10 cm, triângulo 6 cm, vítima 4,5 cm). 'na_garra': true = o da garra, no fundo dela olhando para a frente: com a garra abaixada mede até a bolinha que entra; com uma bolinha presa mede a bolinha; com a garra levantada e vazia não vê nada.",
+ "vl53": [
+  {
+   "nome": "esquerda",
+   "mux": "I2C1",
+   "x": 0,
+   "y": 85,
+   "angulo": 90,
+   "altura": 50
+  },
+  {
+   "nome": "direita",
+   "mux": "I2C3",
+   "x": 0,
+   "y": -85,
+   "angulo": -90,
+   "altura": 50
+  },
+  {
+   "nome": "frente",
+   "mux": "I2C5",
+   "x": 95,
+   "y": 0,
+   "angulo": 0,
+   "altura": 50
+  },
+  {
+   "nome": "garra",
+   "mux": "I2C2",
+   "x": 97,
+   "y": 0,
+   "angulo": 0,
+   "altura": 20,
+   "na_garra": true
+  }
+ ],
+ "vl53_params": {
+  "alcance_mm": 1200,
+  "ruido_mm": 3.0,
+  "ruido_percentual": 1.0,
+  "cone_graus": 25,
+  "tempo_medida_ms": 33,
+  "fora_alcance": 8190,
+  "offset_mm": 0
+ },
+ "para_choque": {
+  "_comentario": "botões de contato na frente; pino = P1..P8. Apertado = nível BAIXO, como na lib Botoes.",
+  "esquerdo": {
+   "pino": "P1",
+   "y_min": 5,
+   "y_max": 80
+  },
+  "direito": {
+   "pino": "P2",
+   "y_min": -80,
+   "y_max": -5
+  },
+  "curso_mm": 2.0
+ },
+ "_tcs_i2c": "TCS34725 (lib tcs34725.py) no mux I2C, apontados para o lado (não para o chão): leem a cor do que estiver na frente deles, na altura deles (parede do triângulo, parede da área, vítima). Não pode ficar no mesmo canal de um VL53 (os dois usam o endereço 0x29).",
+ "tcs_i2c": [
+  {
+   "nome": "frente",
+   "mux": "I2C6",
+   "x": 95,
+   "y": 12,
+   "angulo": 0,
+   "altura": 50
+  },
+  {
+   "nome": "tras",
+   "mux": "I2C7",
+   "x": -95,
+   "y": 0,
+   "angulo": 180,
+   "altura": 30
+  }
+ ],
+ "_camera": "Stub da câmera USB da frente (módulo visao). Não gera imagem: devolve as vítimas e os triângulos que a IA/OpenCV veriam. acerto = chance de detectar uma vítima visível (o erro fica 'preso' ao ponto de vista: parado, o resultado se repete). A garra toda abaixada tapa a câmera.",
+ "camera": {
+  "x": 100,
+  "y": 0,
+  "altura": 50,
+  "angulo": 0,
+  "fov_graus": 62,
+  "largura_px": 320,
+  "altura_px": 240,
+  "alcance_mm": 1300,
+  "acerto": 0.9,
+  "acerto_triangulos": 0.97,
+  "erro_classe": 0.03,
+  "ruido_graus": 1.0,
+  "ruido_distancia_pct": 8,
+  "falsa_detectada": 0.25,
+  "fps_vitimas": 4,
+  "fps_triangulos": 30
+ },
+ "_resgate": "Mecanismo de resgate com 4 servos inteligentes (placaControleServo, firmware unificado) no mesmo barramento das placas de motor. Os números de cada servo são a leitura do potenciômetro (0-1023) em cada posição: CALIBRE NO SEU ROBÔ. braco: baixo = garra no chão, alto = toda levantada (só aí ela se segura sem força). dedo_*: aberto / fechado = encostando no outro dedo. porta: fechada / solta_esq (solta o lado esquerdo da caçamba) / solta_dir. servo: MG90S a 5 V pela ponte L9110S (~0,12 s/60 graus), pot_por_grau do potenciômetro, pwm_minimo abaixo do qual o motor não gira. carga: braço mais lento por causa do peso. tempo_trava_ms: o que estiver calibrado na EEPROM (1000 a 5000). garra: x_base = onde a garra começa (frente do robô), comprimento e abertura dos dedos (A MEDIR). cacamba: a bolinha sai em saida_x (traseira), +-saida_y, caindo distancia_queda atrás, de ~10 cm de altura.",
+ "resgate": {
+  "ativo": true,
+  "porta_serial": "SERIAL1",
+  "tempo_trava_ms": 3000,
+  "servo": {
+   "graus_por_s": 500,
+   "pot_por_grau": 3.41,
+   "pwm_minimo": 60
+  },
+  "braco": {
+   "id": 70,
+   "baixo": 820,
+   "alto": 270,
+   "carga": 0.6
+  },
+  "dedo_esq": {
+   "id": 71,
+   "aberto": 380,
+   "fechado": 680
+  },
+  "dedo_dir": {
+   "id": 72,
+   "aberto": 640,
+   "fechado": 340
+  },
+  "porta": {
+   "id": 73,
+   "fechada": 512,
+   "solta_esq": 330,
+   "solta_dir": 700
+  },
+  "garra": {
+   "x_base": 95,
+   "comprimento": 60,
+   "abertura": 80
+  },
+  "cacamba": {
+   "capacidade_lado": 2,
+   "saida_x": -95,
+   "saida_y": 30,
+   "distancia_queda": 20,
+   "altura_saida": 100
+  }
+ },
+ "botao_inicio": {
+  "pino": "P3"
+ },
+ "giroscopio": {
+  "_comentario": "escala: unidades por grau. z_continuo=false faz Z voltar entre -180 e 180. Inclinação: X = frente (positivo subindo a rampa).",
+  "escala": 1,
+  "z_continuo": true,
+  "z_horario_positivo": true,
+  "eixo_inclinacao_frente": "x",
+  "deriva_graus_min": 0.6,
+  "ruido_graus": 0.15,
+  "tempo_calibracao_s": 2.0
+ },
+ "terreno": {
+  "_comentario": "Lombada e palito são relevo de verdade: rodas, esteira e a placa do sensor sobem neles (o robô se apoia nos pontos mais altos). lombada: altura (regra: até 10 mm) e largura do perfil arredondado. vibracao_graus: tremida extra no giroscópio quando a roda bate. tempo_no_ar_s: 0 (a roda que fica no ar já sai do cálculo de apoio).",
+  "lombada_altura_mm": 10,
+  "lombada_largura_mm": 30,
+  "detrito_diametro_mm": 3,
+  "lombada_giro_graus": 1.0,
+  "detritos_giro_graus": 1.0,
+  "vibracao_graus": 1.0,
+  "tempo_no_ar_s": 0.0,
+  "tempo_gangorra_s": 0.35
+ },
+ "juiz": {
+  "_comentario": "tempo_fora_do_caminho_s: tempo num ladrilho fora do caminho (sem linha) até o LoP automático; chegar numa linha que não é a próxima dá LoP na hora. lop_sem_progresso_s: 0 = desligado.",
+  "tempo_fora_do_caminho_s": 10.0,
+  "lop_sem_progresso_s": 0,
+  "pula_checkpoint_apos_3_tentativas": true
+ },
+ "teclado": true,
+ "_arquivos_rodada": "arquivos (na pasta do programa) apagados ao clicar em 'Nova rodada'",
+ "arquivos_rodada": [
+  "checkpoint_line.json"
+ ]
+}

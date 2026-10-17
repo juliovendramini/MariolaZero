@@ -177,8 +177,12 @@ O comportamento das placas foi tirado de `placaBrickVendra.ino`, `placaControleM
   devolve valores velhos. Lê todos os bytes recebidos e usa só o último.
 * **IR: 0 = preto, ~100 = branco calibrado, acima de 100 = mais refletivo (prata).**
 * **TCS: calibrado no branco e enviado pela metade (branco ≈ 127).** Por isso
-  `CorReflexao.detecta_cor()` (que espera branco > 230) classifica o branco como vermelho; o
-  exemplo usa a própria classificação. Calibrar branco leva ~7 s; preto ~2 s.
+  A versão antiga de `CorReflexao.detecta_cor()` (que esperava branco > 230) classificava o branco como vermelho.
+  Calibrar branco leva ~7 s; preto ~2 s.
+* A lib `sensorCorReflexao.py` (V2) foi reescrita: cada cor é uma referência (cromaticidade r/g/b,
+  brilho C e IR) aprendida no campo (`aprende_cor`, `salva_cores`, `carrega_cores`; no exemplo,
+  `calibra_cores.py` grava `cores_piso.json`), e cada leitura vai para a referência mais próxima
+  (`cor(sensor)`, `cores()`, `cor_piso()` com votação dos 3 TCS; `detecta_cor()` agora usa isso).
 
 ## Juiz (regra 2026)
 
@@ -213,7 +217,7 @@ Os valores que vieram são **estimativas**. Para o simulador ficar fiel, meça n
 | `geometria` | comprimento, largura e massa |
 | `rodas.diametro`, `motores[].x/y` | diâmetro e posição de cada roda (mm, x para frente, y para a esquerda) |
 | `motores[]` | controlador (`mariola` canal 1/2 ou `placa` porta/ID) e `sentido` (−1 se o motor está espelhado) |
-| `motor_padrao` | `pulsos_encoder_motor` (17) × `reducao` × multiplicador (Mariola x2, placa x4) = contagens por volta da roda; `rpm_livre` (PWM 100%), `tau_s`, `forca_max_N` |
+| `motor_padrao` | **o jeito mais fiel:** `contagens_por_volta_mariola/placa` (gire a roda 1 volta à mão e leia a contagem) e `calibracao_mariola/placa` (valor de `obtem_calibracao_motores()` / `obter_calibracao()`, que dá a rotação real). Sem eles: `pulsos_encoder_motor` × `reducao` × multiplicador e `rpm_livre`. Também `tau_s`, `forca_max_N` |
 | `rodas.atrito`, `atrito_lateral` | ajuste até o giro no lugar e a patinação ficarem parecidos com o real |
 | `portas_serial` | o que está ligado em cada SERIALn |
 | `vl53[]` | canal do mux (I2C1…I2C8), posição e ângulo de cada sensor |

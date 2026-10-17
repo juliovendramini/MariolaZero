@@ -1,0 +1,933 @@
+{
+ "_fonte": "rcj-rescue-cms (MIT) — github.com/robocup-junior/rcj-rescue-cms",
+ "tamanho_mm": 300,
+ "mm_por_px": 1.0,
+ "ladrilhos": {
+  "007": {
+   "imagem": "007.png",
+   "caminhos": {
+    "right": "bottom",
+    "bottom": "right"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1610d2",
+   "tem_verde": false
+  },
+  "009": {
+   "imagem": "009.png",
+   "caminhos": {
+    "left": "bottom",
+    "bottom": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1610d3",
+   "tem_verde": false
+  },
+  "010": {
+   "imagem": "010.png",
+   "caminhos": {
+    "right": "left",
+    "left": "right"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1610d4",
+   "tem_verde": false
+  },
+  "011": {
+   "imagem": "011.png",
+   "caminhos": {
+    "right": "left",
+    "left": "right"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1610d5",
+   "tem_verde": false
+  },
+  "021": {
+   "imagem": "021.png",
+   "caminhos": {
+    "right": "left",
+    "left": "right"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1610d6",
+   "tem_verde": false
+  },
+  "022": {
+   "imagem": "022.png",
+   "caminhos": {
+    "right": "left",
+    "left": "right"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1610d7",
+   "tem_verde": false
+  },
+  "025": {
+   "imagem": "025.png",
+   "caminhos": {
+    "right": "left",
+    "left": "right"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1610d8",
+   "tem_verde": false
+  },
+  "tile-0": {
+   "imagem": "tile-0.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3af90",
+   "tem_verde": false
+  },
+  "tile-1": {
+   "imagem": "tile-1.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3af91",
+   "tem_verde": false
+  },
+  "tile-2": {
+   "imagem": "tile-2.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3af92",
+   "tem_verde": false
+  },
+  "tile-3": {
+   "imagem": "tile-3.png",
+   "caminhos": {
+    "left": "bottom",
+    "bottom": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3af93",
+   "tem_verde": false
+  },
+  "tile-4": {
+   "imagem": "tile-4.png",
+   "caminhos": {
+    "left": "bottom",
+    "bottom": "left",
+    "right": "top",
+    "top": "right"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3af94",
+   "tem_verde": false
+  },
+  "tile-5": {
+   "imagem": "tile-5.png",
+   "caminhos": {
+    "left": "bottom",
+    "bottom": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3af95",
+   "tem_verde": false
+  },
+  "tile-6": {
+   "imagem": "tile-6.png",
+   "caminhos": {
+    "left": "bottom",
+    "bottom": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3af96",
+   "tem_verde": false
+  },
+  "tile-7": {
+   "imagem": "tile-7.png",
+   "caminhos": {
+    "top": "bottom",
+    "bottom": "top"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3af97",
+   "tem_verde": false
+  },
+  "tile-8": {
+   "imagem": "tile-8.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3af98",
+   "tem_verde": false
+  },
+  "tile-9": {
+   "imagem": "tile-9.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3af99",
+   "tem_verde": false
+  },
+  "tile-10": {
+   "imagem": "tile-10.png",
+   "caminhos": {
+    "left": "bottom",
+    "bottom": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3af9a",
+   "tem_verde": false
+  },
+  "tile-11": {
+   "imagem": "tile-11.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 2,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3af9b",
+   "tem_verde": false
+  },
+  "tile-11_2": {
+   "imagem": "tile-11_2.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 1,
+   "intersecoes": 0,
+   "id_cms": "58cfe0d457501b50da7afa62",
+   "tem_verde": false
+  },
+  "tile-12": {
+   "imagem": "tile-12.png",
+   "caminhos": {
+    "left": "bottom",
+    "bottom": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3af9c",
+   "tem_verde": false
+  },
+  "tile-13": {
+   "imagem": "tile-13.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3af9d",
+   "tem_verde": false
+  },
+  "tile-14": {
+   "imagem": "tile-14.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3af9e",
+   "tem_verde": false
+  },
+  "tile-15": {
+   "imagem": "tile-15.png",
+   "caminhos": {
+    "left": "top",
+    "top": "left",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 1,
+   "id_cms": "570c27c3f5a9dabe23f3af9f",
+   "tem_verde": true
+  },
+  "tile-16": {
+   "imagem": "tile-16.png",
+   "caminhos": {
+    "left": "right",
+    "right": "top",
+    "top": "right"
+   },
+   "gaps": 0,
+   "intersecoes": 1,
+   "id_cms": "570c27c3f5a9dabe23f3afa0",
+   "tem_verde": true
+  },
+  "tile-16_2": {
+   "imagem": "tile-16_2.png",
+   "caminhos": {
+    "left": "top",
+    "right": "top",
+    "top": "top"
+   },
+   "gaps": 0,
+   "intersecoes": 1,
+   "id_cms": "58cfd29b204466244ba56a1f",
+   "tem_verde": true
+  },
+  "tile-17": {
+   "imagem": "tile-17.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3afa1",
+   "tem_verde": false
+  },
+  "tile-18": {
+   "imagem": "tile-18.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3afa2",
+   "tem_verde": false
+  },
+  "tile-19": {
+   "imagem": "tile-19.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left",
+    "top": "bottom",
+    "bottom": "top"
+   },
+   "gaps": 1,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3afa3",
+   "tem_verde": false
+  },
+  "tile-20": {
+   "imagem": "tile-20.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 1,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3afa4",
+   "tem_verde": false
+  },
+  "tile-21": {
+   "imagem": "tile-21.png",
+   "caminhos": {
+    "bottom": "left",
+    "left": "bottom"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3afa5",
+   "tem_verde": false
+  },
+  "tile-22": {
+   "imagem": "tile-22.png",
+   "caminhos": {
+    "bottom": "left",
+    "left": "bottom"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3afa6",
+   "tem_verde": false
+  },
+  "tile-23": {
+   "imagem": "tile-23.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3afa7",
+   "tem_verde": false
+  },
+  "tile-24": {
+   "imagem": "tile-24.png",
+   "caminhos": {
+    "bottom": "left",
+    "left": "bottom"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3afa8",
+   "tem_verde": false
+  },
+  "tile-25": {
+   "imagem": "tile-25.png",
+   "caminhos": {
+    "right": "top",
+    "top": "right",
+    "bottom": "left",
+    "left": "bottom"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3afa9",
+   "tem_verde": false
+  },
+  "tile-26": {
+   "imagem": "tile-26.png",
+   "caminhos": {
+    "bottom": "left",
+    "left": "bottom"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "570c27c3f5a9dabe23f3afaa",
+   "tem_verde": false
+  },
+  "tile-27": {
+   "imagem": "tile-27.png",
+   "caminhos": {
+    "bottom": "right",
+    "right": "bottom"
+   },
+   "gaps": 0,
+   "intersecoes": 2,
+   "id_cms": "570c27c3f5a9dabe23f3afab",
+   "tem_verde": true
+  },
+  "tile-28": {
+   "imagem": "tile-28.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 1,
+   "intersecoes": 2,
+   "id_cms": "570c27c3f5a9dabe23f3afac",
+   "tem_verde": true
+  },
+  "tile-29": {
+   "imagem": "tile-29.png",
+   "caminhos": {
+    "left": "bottom",
+    "bottom": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 2,
+   "id_cms": "570c27c3f5a9dabe23f3afad",
+   "tem_verde": true
+  },
+  "tile-30": {
+   "imagem": "tile-30.png",
+   "caminhos": {
+    "left": "right",
+    "bottom": "top",
+    "right": "top",
+    "top": "right"
+   },
+   "gaps": 0,
+   "intersecoes": 1,
+   "id_cms": "570c27c3f5a9dabe23f3afae",
+   "tem_verde": true
+  },
+  "tile-31": {
+   "imagem": "tile-31.png",
+   "caminhos": {
+    "left": "top",
+    "bottom": "top",
+    "right": "top",
+    "top": "top"
+   },
+   "gaps": 0,
+   "intersecoes": 1,
+   "id_cms": "58cfd29b204466244ba56a20",
+   "tem_verde": true
+  },
+  "tile-32": {
+   "imagem": "tile-32.png",
+   "caminhos": {
+    "left": "top",
+    "top": "left",
+    "right": "bottom",
+    "bottom": "right"
+   },
+   "gaps": 0,
+   "intersecoes": 1,
+   "id_cms": "570c27c3f5a9dabe23f3afb2",
+   "tem_verde": true
+  },
+  "tile-33": {
+   "imagem": "tile-33.png",
+   "caminhos": {
+    "left": "left",
+    "bottom": "bottom",
+    "right": "bottom",
+    "top": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 1,
+   "id_cms": "58cfd29b204466244ba56a21",
+   "tem_verde": true
+  },
+  "tile-34": {
+   "imagem": "tile-34.png",
+   "caminhos": {
+    "left": "left",
+    "bottom": "bottom",
+    "right": "right",
+    "top": "top"
+   },
+   "gaps": 0,
+   "intersecoes": 1,
+   "id_cms": "58cfd29b204466244ba56a22",
+   "tem_verde": true
+  },
+  "tile-35": {
+   "imagem": "tile-35.png",
+   "caminhos": {
+    "left": "right",
+    "top": "bottom",
+    "right": "left",
+    "bottom": "top"
+   },
+   "gaps": 0,
+   "intersecoes": 1,
+   "id_cms": "570c27c3f5a9dabe23f3afb4",
+   "tem_verde": false
+  },
+  "tile-41": {
+   "imagem": "tile-41.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 1,
+   "id_cms": "5975fb67038dda73c0f5ddaf",
+   "tem_verde": false
+  },
+  "tile-46": {
+   "imagem": "tile-46.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1610e4",
+   "tem_verde": false
+  },
+  "tile-49": {
+   "imagem": "tile-49.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 1,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1610e5",
+   "tem_verde": false
+  },
+  "tile-50": {
+   "imagem": "tile-50.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1610e6",
+   "tem_verde": false
+  },
+  "tile-51": {
+   "imagem": "tile-51.png",
+   "caminhos": {
+    "left": "bottom",
+    "bottom": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1610e7",
+   "tem_verde": false
+  },
+  "tile-52": {
+   "imagem": "tile-52.png",
+   "caminhos": {
+    "left": "bottom",
+    "bottom": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1610e8",
+   "tem_verde": false
+  },
+  "tile-53": {
+   "imagem": "tile-53.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1610e9",
+   "tem_verde": false
+  },
+  "tile-55": {
+   "imagem": "tile-55.png",
+   "caminhos": {
+    "top": "bottom"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "5976bc04d6ef2a2620cdfc86",
+   "tem_verde": false
+  },
+  "tile-56": {
+   "imagem": "tile-56.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "5975fb67038dda73c0f5ddb0",
+   "tem_verde": false
+  },
+  "tile-57": {
+   "imagem": "tile-57.png",
+   "caminhos": {
+    "bottom": "left",
+    "left": "bottom"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "5975fb67038dda73c0f5ddb1",
+   "tem_verde": false
+  },
+  "tile-58": {
+   "imagem": "tile-58.png",
+   "caminhos": {
+    "bottom": "right",
+    "right": "bottom"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "5975fb67038dda73c0f5ddb2",
+   "tem_verde": false
+  },
+  "tile-59": {
+   "imagem": "tile-59.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "5975fb67038dda73c0f5ddb3",
+   "tem_verde": false
+  },
+  "tile-60": {
+   "imagem": "tile-60.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "5975fb67038dda73c0f5ddb4",
+   "tem_verde": false
+  },
+  "tile-61": {
+   "imagem": "tile-61.png",
+   "caminhos": {
+    "bottom": "left",
+    "left": "bottom"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "5975fb67038dda73c0f5ddb5",
+   "tem_verde": false
+  },
+  "tile-62": {
+   "imagem": "tile-62.png",
+   "caminhos": {
+    "top": "bottom",
+    "bottom": "top"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "5975fb67038dda73c0f5ddb6",
+   "tem_verde": false
+  },
+  "tile-63": {
+   "imagem": "tile-63.png",
+   "caminhos": {
+    "bottom": "left",
+    "left": "bottom",
+    "right": "top",
+    "top": "right"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "5975fb67038dda73c0f5ddb7",
+   "tem_verde": false
+  },
+  "tile-64": {
+   "imagem": "tile-64.png",
+   "caminhos": {
+    "top": "bottom",
+    "bottom": "top"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "5975fb67038dda73c0f5ddb8",
+   "tem_verde": false
+  },
+  "tile-65": {
+   "imagem": "tile-65.png",
+   "caminhos": {
+    "bottom": "left",
+    "left": "bottom"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "5975fb67038dda73c0f5ddb9",
+   "tem_verde": false
+  },
+  "tile-66": {
+   "imagem": "tile-66.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "5975fb67038dda73c0f5ddba",
+   "tem_verde": false
+  },
+  "tile-67": {
+   "imagem": "tile-67.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "5975fb67038dda73c0f5ddbb",
+   "tem_verde": false
+  },
+  "tile-68": {
+   "imagem": "tile-68.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "5975fb67038dda73c0f5ddbc",
+   "tem_verde": false
+  },
+  "tile-69": {
+   "imagem": "tile-69.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "5975fb67038dda73c0f5ddbd",
+   "tem_verde": false
+  },
+  "tile-70": {
+   "imagem": "tile-70.png",
+   "caminhos": {
+    "left": "right",
+    "right": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "5975fb67038dda73c0f5ddbe",
+   "tem_verde": false
+  },
+  "tile-71": {
+   "imagem": "tile-71.png",
+   "caminhos": {
+    "left": "bottom",
+    "bottom": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "5976b9b7607ff6242c06a614",
+   "tem_verde": false
+  },
+  "tile-72": {
+   "imagem": "tile-72.png",
+   "caminhos": {
+    "bottom": "right",
+    "right": "bottom"
+   },
+   "gaps": 0,
+   "intersecoes": 2,
+   "id_cms": "58cfd6549792e9313b1610d9",
+   "tem_verde": true
+  },
+  "tile-73": {
+   "imagem": "tile-73.png",
+   "caminhos": {
+    "bottom": "right",
+    "right": "bottom"
+   },
+   "gaps": 0,
+   "intersecoes": 2,
+   "id_cms": "58cfd6549792e9313b1610da",
+   "tem_verde": true
+  },
+  "tile-74": {
+   "imagem": "tile-74.png",
+   "caminhos": {
+    "bottom": "top",
+    "top": "bottom"
+   },
+   "gaps": 0,
+   "intersecoes": 2,
+   "id_cms": "58cfd6549792e9313b1610db",
+   "tem_verde": true
+  },
+  "tile-75": {
+   "imagem": "tile-75.png",
+   "caminhos": {
+    "bottom": "top",
+    "top": "bottom"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1610dc",
+   "tem_verde": false
+  },
+  "tile-76": {
+   "imagem": "tile-76.png",
+   "caminhos": {
+    "bottom": "top",
+    "top": "bottom"
+   },
+   "gaps": 1,
+   "intersecoes": 2,
+   "id_cms": "58cfd6549792e9313b1610dd",
+   "tem_verde": true
+  },
+  "tile-77": {
+   "imagem": "tile-77.png",
+   "caminhos": {
+    "right": "left",
+    "left": "right"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1610de",
+   "tem_verde": false
+  },
+  "tile-78": {
+   "imagem": "tile-78.png",
+   "caminhos": {
+    "top": "bottom",
+    "bottom": "top"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1620e4",
+   "tem_verde": false
+  },
+  "tile-79": {
+   "imagem": "tile-79.png",
+   "caminhos": {
+    "top": "bottom",
+    "bottom": "top"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1620e5",
+   "tem_verde": false
+  },
+  "tile-80": {
+   "imagem": "tile-80.png",
+   "caminhos": {
+    "right": "bottom",
+    "bottom": "right"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1620e6",
+   "tem_verde": false
+  },
+  "tile-81-1": {
+   "imagem": "tile-81-1.png",
+   "caminhos": {
+    "right": "bottom",
+    "bottom": "right"
+   },
+   "gaps": 0,
+   "intersecoes": 2,
+   "id_cms": "58cfd6549792e9313b1620e7",
+   "tem_verde": true
+  },
+  "tile-81-2": {
+   "imagem": "tile-81-2.png",
+   "caminhos": {
+    "right": "bottom",
+    "bottom": "right"
+   },
+   "gaps": 0,
+   "intersecoes": 2,
+   "id_cms": "58cfd6549792e9313b1620e8",
+   "tem_verde": true
+  },
+  "tile-82": {
+   "imagem": "tile-82.png",
+   "caminhos": {
+    "right": "bottom",
+    "bottom": "right"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1620e9",
+   "tem_verde": false
+  },
+  "tile-83": {
+   "imagem": "tile-83.png",
+   "caminhos": {
+    "right": "bottom",
+    "bottom": "right",
+    "left": "top",
+    "top": "left"
+   },
+   "gaps": 0,
+   "intersecoes": 0,
+   "id_cms": "58cfd6549792e9313b1620ea",
+   "tem_verde": false
+  }
+ }
+}

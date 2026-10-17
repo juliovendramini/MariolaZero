@@ -9,7 +9,8 @@
 
   "rodas": {
     "_comentario": "posição de cada roda está em 'motores' (x, y)",
-    "diametro": 65,
+    "_roda": "roda+motor do aspirador Xiaomi Mijia E10/B112/E12: 70 mm x 15 mm",
+    "diametro": 70,
     "atrito": 0.9,
     "atrito_lateral": 0.75,
     "atrito_parede": 0.25
@@ -23,7 +24,12 @@
   ],
 
   "motor_padrao": {
-    "_comentario": "contagens por volta da roda = pulsos_encoder_motor x reducao x multiplicador. O Mariola conta as duas bordas de um canal (x2); a placa de motor decodifica quadratura (x4). rpm_livre: rotação da roda com PWM 100%. No modo PID o comando 100 = 80% disso (calibração do firmware), em pulsos a cada 25 ms.",
+    "_comentario": "Motor de aspirador Xiaomi (redução e rotação ainda NÃO medidas). Contagens por volta da roda = pulsos_encoder_motor x reducao x multiplicador (Mariola x2: um canal nas duas bordas; placa x4: quadratura). rpm_livre = rotação da roda com PWM 100%; no PID o comando 100 = 80% disso.",
+    "_medidas_reais": "Para usar o robô real: gire a roda 1 volta à mão e ponha a contagem em contagens_por_volta_mariola / contagens_por_volta_placa; ponha o valor de motores.obtem_calibracao_motores() em calibracao_mariola e o giro_max_horario de PlacaControleMotor.obter_calibracao() em calibracao_placa. Esses valores têm prioridade sobre os de baixo.",
+    "contagens_por_volta_mariola": null,
+    "contagens_por_volta_placa": null,
+    "calibracao_mariola": null,
+    "calibracao_placa": null,
     "pulsos_encoder_motor": 17,
     "reducao": 34,
     "multiplicador_mariola": 2,

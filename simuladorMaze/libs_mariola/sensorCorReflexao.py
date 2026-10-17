@@ -1,3 +1,5 @@
+import json
+import math
 import threading
 import time
 
@@ -5,13 +7,37 @@ from portas import Portas
 
 
 class CorReflexao:
-    """Biblioteca de comunicação com o sensor de linha Pro1616 (ATtiny1616) via serial em Linux.
+    """Biblioteca do sensor de linha/cor Pro1616 (ATtiny1616) via serial em Linux.
 
-    Layout dos 16 bytes recebidos do sensor:
-      [0-3]:   Sensores infravermelhos de reflexão (0=branco, 255=preto)
-      [4-7]:   Sensor de cor TCS1       (R, G, B, C)  — valores 0-255
-      [8-11]:  Sensor de cor TCS meio   (R, G, B, C)  — valores 0-255
-      [12-15]: Sensor de cor TCS2       (R, G, B, C)  — valores 0-255
+    Layout dos 16 bytes recebidos do sensor (comando 0x61):
+      [0-3]:   Reflexão IR dos 4 sensores. Escala do firmware: 0 = preto, ~100 = branco
+               calibrado, acima de 100 = mais refletivo que o branco (ex.: piso prateado).
+      [4-7]:   Sensor de cor TCS1     (R, G, B, C)
+      [8-11]:  Sensor de cor TCS meio (R, G, B, C)
+      [12-15]: Sensor de cor TCS2     (R, G, B, C)
+      O TCS é calibrado no branco e o firmware envia METADE do valor: branco ~127, o que
+      deixa folga até 255 para superfícies refletivas (prata).
+
+    Detecção de cor
+    ---------------
+    Cada cor é uma referência (média e desvio) de cinco características:
+      cromaticidade r/(r+g+b), g/(r+g+b), b/(r+g+b)  -> a cor em si, independe do brilho
+      brilho C / 127                                  -> branco = 1, prata > 1, preto ~ 0
+      IR / 100                                        -> branco = 1, prata > 1, preto ~ 0
+    A leitura vai para a referência mais próxima (distância medida em desvios). Se nenhuma
+    estiver perto o bastante, o resultado é COR_DESCONHECIDA.
+
+    As referências padrão são só um ponto de partida. No tempo de calibração, coloque o
+    robô sobre cada cor e chame aprende_cor('azul') etc.; salve com salva_cores() e
+    carregue com carrega_cores() (ou passe arquivo_cores no construtor).
+
+        sensor = CorReflexao(Portas.SERIAL6, arquivo_cores='cores.json')
+        sensor.usa_cores(['branco', 'preto', 'prata', 'azul', 'vermelho'])   # Maze
+        sensor.aprende_cor('azul')            # robô parado com os 3 TCS sobre o azul
+        sensor.salva_cores('cores.json')
+        sensor.cor(2)                         # 'azul'  (TCS do meio)
+        sensor.cor_piso()                     # votação dos 3 TCS
+        sensor.detecta_cor(2)                 # mesma coisa, como constante COR_*
     """
 
     QUANTIDADE_BYTES = 16
@@ -21,7 +47,7 @@ class CorReflexao:
     MODO_CALIBRA_BRANCO = 0x62
     MODO_CALIBRA_PRETO = 0x63
 
-    # Cores básicas (portado de TCS34725::CorBasica)
+    # Cores (constantes mantidas da versão anterior; PRATA é nova)
     COR_NADA = -1
     COR_PRETO = 0
     COR_BRANCO = 1
@@ -30,6 +56,7 @@ class CorReflexao:
     COR_AZUL = 4
     COR_AMARELO = 5
     COR_DESCONHECIDA = 6
+    COR_PRATA = 7
 
     NOMES_CORES = {
         -1: "nada",
@@ -40,14 +67,43 @@ class CorReflexao:
         4: "azul",
         5: "amarelo",
         6: "desconhecida",
+        7: "prata",
     }
+    CODIGO_COR = {v: k for k, v in NOMES_CORES.items()}
 
-    def __init__(self, porta_serial):
+    # Referências padrão na escala do firmware: (R, G, B, C) do TCS e IR. Estimativas!
+    REFERENCIAS_PADRAO = {
+        "branco":   ((127, 128, 126, 127), 100),
+        "preto":    ((3, 3, 4, 5), 2),
+        "prata":    ((190, 195, 200, 205), 190),
+        "azul":     ((20, 45, 115, 66), 70),
+        "vermelho": ((115, 25, 22, 58), 85),
+        "verde":    ((30, 85, 45, 62), 75),
+        "amarelo":  ((125, 115, 35, 110), 95),
+    }
+    # desvio mínimo de cada característica (cr, cg, cb, brilho, ir)
+    DESVIO_MINIMO = (0.03, 0.03, 0.03, 0.08, 0.08)
+    # abaixo deste brilho (escala 0-255) a cromaticidade é só ruído e não pesa
+    BRILHO_MINIMO_COR = 15
+    # IR que fica do lado de cada TCS: TCS1 -> IR 0, meio -> IR 1 e 2, TCS2 -> IR 3
+    IR_DO_TCS = {1: (0,), 2: (1, 2), 3: (3,)}
+
+    def __init__(self, porta_serial, arquivo_cores=None, limiar=6.0, usar_ir=True):
         """
         Args:
-            porta_serial: Constante da classe Portas (ex.: Portas.SERIAL1)
+            porta_serial: Constante da classe Portas (ex.: Portas.SERIAL6)
+            arquivo_cores: JSON com referências aprendidas (opcional)
+            limiar: distância máxima (em desvios) para aceitar uma cor
+            usar_ir: considera a reflexão IR na classificação de cor
         """
         self.lista = [0] * self.QUANTIDADE_BYTES
+        self.limiar = limiar
+        self.usar_ir = usar_ir
+        self.referencias = {}
+        for nome, (rgbc, ir) in self.REFERENCIAS_PADRAO.items():
+            self.referencias[nome] = (self.caracteristicas(rgbc, ir), self.DESVIO_MINIMO)
+        if arquivo_cores:
+            self.carrega_cores(arquivo_cores)
         portas = Portas()
         self.ser = portas.abre_porta_serial(porta_serial, 115200)
         if self.ser is None:
@@ -58,8 +114,9 @@ class CorReflexao:
         self._iniciar_thread()
 
     def __del__(self):
-        self._parar_thread()
-        if self.ser is not None:
+        if getattr(self, '_thread', None) is not None:
+            self._parar_thread()
+        if getattr(self, 'ser', None) is not None:
             self.ser.close()
 
     # ── Thread de leitura ───────────────────────────────────────────────
@@ -110,7 +167,7 @@ class CorReflexao:
     # ── Reflexão IR (índices 0-3) ───────────────────────────────────────
 
     def le_reflexao(self):
-        """Retorna lista com os 4 valores de reflexão IR (0=branco, 255=preto)."""
+        """Lista com os 4 valores de reflexão IR (0 = preto, ~100 = branco, >100 = prata)."""
         return self.lista[0:4]
 
     def reflexao(self, sensor):
@@ -122,7 +179,7 @@ class CorReflexao:
     # ── Cor RGBC ────────────────────────────────────────────────────────
 
     def le_rgbc(self, sensor):
-        """Retorna [R, G, B, C] do sensor de cor (1=TCS1, 2=TCS meio, 3=TCS2)."""
+        """Retorna [R, G, B, C] do sensor de cor (1=TCS1, 2=TCS meio, 3=TCS2). Branco ~127."""
         if sensor == 1:
             return self.lista[4:8]
         elif sensor == 2:
@@ -142,7 +199,7 @@ class CorReflexao:
 
     def le_hsv(self, sensor):
         """Retorna [H, S, V] do sensor de cor (1=TCS1, 2=TCS meio, 3=TCS2).
-        H: 0-360, S: 0-100, V: 0-100."""
+        H: 0-360, S: 0-100, V: 0-100 (V com branco calibrado ~50; prata pode chegar a 100)."""
         rgb = self.le_rgb(sensor)
         if rgb is not None:
             return list(self.rgb_para_hsv(rgb[0], rgb[1], rgb[2]))
@@ -213,55 +270,137 @@ class CorReflexao:
 
         return (h, s, v)
 
-    # ── Detecção de cor (portado de TCS34725::detectaCorBasica) ─────────
+    # ── Detecção de cor por referências ─────────────────────────────────
+
+    @staticmethod
+    def caracteristicas(rgbc, ir):
+        """(cr, cg, cb, brilho, ir): cromaticidade e valores relativos ao branco calibrado."""
+        r, g, b, c = (float(x) for x in rgbc)
+        s = r + g + b
+        if s <= 0:
+            cr = cg = cb = 1.0 / 3
+        else:
+            cr, cg, cb = r / s, g / s, b / s
+        return (cr, cg, cb, c / 127.0, float(ir) / 100.0)
+
+    def _distancia(self, f, referencia):
+        media, desvio = referencia
+        pesa_cor = min(f[3], media[3]) * 127.0 >= self.BRILHO_MINIMO_COR
+        soma = 0.0
+        for i in range(5):
+            if i < 3 and not pesa_cor:
+                continue
+            if i == 4 and not self.usar_ir:
+                continue
+            soma += ((f[i] - media[i]) / desvio[i]) ** 2
+        return math.sqrt(soma)
+
+    def _leitura(self, sensor):
+        rgbc = self.le_rgbc(sensor)
+        irs = self.le_reflexao()
+        idx = self.IR_DO_TCS[sensor]
+        ir = sum(irs[i] for i in idx) / len(idx)
+        return self.caracteristicas(rgbc, ir)
+
+    def distancias(self, sensor=2):
+        """Lista [(distância, nome)] ordenada; útil para depurar e ajustar o limiar."""
+        f = self._leitura(sensor)
+        return sorted((self._distancia(f, ref), nome) for nome, ref in self.referencias.items())
+
+    def cor(self, sensor=2):
+        """Nome da cor no sensor (1=TCS1, 2=TCS meio, 3=TCS2) ou 'desconhecida'."""
+        d = self.distancias(sensor)
+        if not d:
+            return "desconhecida"
+        dist, nome = d[0]
+        return nome if dist <= self.limiar else "desconhecida"
+
+    def cores(self):
+        """Nome da cor nos três TCS: [TCS1, meio, TCS2]."""
+        return [self.cor(s) for s in (1, 2, 3)]
+
+    def cor_piso(self):
+        """Votação dos três TCS; sem maioria, vale o do meio."""
+        v = self.cores()
+        for nome in set(v):
+            if v.count(nome) >= 2:
+                return nome
+        return v[1]
 
     def detecta_cor(self, sensor):
-        """Detecta cor básica no sensor (1=TCS1, 2=TCS meio, 3=TCS2).
-        Retorna constante COR_*."""
-        rgbc = self.le_rgbc(sensor)
-        if rgbc is None:
+        """Cor no sensor (1=TCS1, 2=TCS meio, 3=TCS2) como constante COR_*."""
+        if not self.conectado and not any(self.lista):
             return self.COR_NADA
-        return self.detectar_cor(rgbc[0], rgbc[1], rgbc[2], rgbc[3])
+        return self.CODIGO_COR.get(self.cor(sensor), self.COR_DESCONHECIDA)
 
     def nome_cor(self, sensor):
         """Retorna o nome da cor detectada pelo sensor (1, 2 ou 3)."""
-        return self.NOMES_CORES.get(self.detecta_cor(sensor), "desconhecida")
+        return self.cor(sensor)
 
-    @staticmethod
-    def detectar_cor(r, g, b, c):
-        """Detecta cor básica a partir de RGBC (0-255). Retorna constante COR_*."""
-        if c <= 3 and r < 5 and g < 5 and b < 5:
-            return CorReflexao.COR_NADA
-        if 3 < c < 25:
-            return CorReflexao.COR_PRETO
-        if c > 230 and abs(r - g) < 20 and abs(r - b) < 20 and abs(g - b) < 20:
-            return CorReflexao.COR_BRANCO
+    def detectar_cor(self, r, g, b, c, ir=None):
+        """Classifica um RGBC avulso (escala do firmware, branco ~127). Retorna constante COR_*.
+        Sem IR, usa só cromaticidade e brilho."""
+        f = self.caracteristicas((r, g, b, c), 100 if ir is None else ir)
+        usar_ir, self.usar_ir = self.usar_ir, self.usar_ir and ir is not None
+        try:
+            d = sorted((self._distancia(f, ref), nome) for nome, ref in self.referencias.items())
+        finally:
+            self.usar_ir = usar_ir
+        if not d or d[0][0] > self.limiar:
+            return self.COR_DESCONHECIDA
+        return self.CODIGO_COR.get(d[0][1], self.COR_DESCONHECIDA)
 
-        max_val = max(r, g, b)
-        if max_val == 0:
-            return CorReflexao.COR_NADA
+    # ── Referências de cor (calibração no campo) ────────────────────────
 
-        rn = r / max_val
-        gn = g / max_val
-        bn = b / max_val
+    def usa_cores(self, nomes):
+        """Mantém só as cores listadas (ex.: na Maze não há verde nem amarelo)."""
+        self.referencias = {n: r for n, r in self.referencias.items() if n in nomes}
+        for n in nomes:
+            if n not in self.referencias and n in self.REFERENCIAS_PADRAO:
+                rgbc, ir = self.REFERENCIAS_PADRAO[n]
+                self.referencias[n] = (self.caracteristicas(rgbc, ir), self.DESVIO_MINIMO)
 
-        if r == max_val:
-            if gn > 0.6 and bn < 0.5:
-                return CorReflexao.COR_AMARELO
-            return CorReflexao.COR_VERMELHO
-        if g == max_val:
-            return CorReflexao.COR_VERDE
-        if b == max_val:
-            return CorReflexao.COR_AZUL
+    def aprende_cor(self, nome, amostras=25, intervalo=0.03, sensores=(1, 2, 3)):
+        """Robô parado com os sensores sobre a cor `nome`: lê várias vezes e grava a
+        referência (média e 2 desvios de folga). Retorna (media, desvio)."""
+        fs = []
+        for _ in range(amostras):
+            for s in sensores:
+                fs.append(self._leitura(s))
+            time.sleep(intervalo)
+        n = len(fs)
+        media = tuple(sum(f[i] for f in fs) / n for i in range(5))
+        desvio = tuple(
+            max(2.0 * math.sqrt(sum((f[i] - media[i]) ** 2 for f in fs) / max(1, n - 1)),
+                self.DESVIO_MINIMO[i])
+            for i in range(5))
+        self.referencias[nome] = (media, desvio)
+        return self.referencias[nome]
 
-        if c > 150:
-            return CorReflexao.COR_BRANCO
-        return CorReflexao.COR_DESCONHECIDA
+    def esquece_cor(self, nome):
+        self.referencias.pop(nome, None)
 
-    # ── Calibração ──────────────────────────────────────────────────────
+    def salva_cores(self, arquivo="cores.json"):
+        with open(arquivo, "w") as f:
+            json.dump({n: {"media": list(m), "desvio": list(d)} for n, (m, d) in self.referencias.items()},
+                      f, indent=1)
+
+    def carrega_cores(self, arquivo="cores.json"):
+        """Carrega referências salvas. Retorna False se o arquivo não existir."""
+        try:
+            with open(arquivo) as f:
+                dados = json.load(f)
+        except (OSError, ValueError):
+            return False
+        for nome, r in dados.items():
+            desvio = tuple(max(d, m) for d, m in zip(r["desvio"], self.DESVIO_MINIMO))
+            self.referencias[nome] = (tuple(r["media"]), desvio)
+        return True
+
+    # ── Calibração do firmware ──────────────────────────────────────────
 
     def calibra_branco(self, timeout_ms=10000):
-        """Solicita calibração do branco. Retorna True se confirmada."""
+        """Solicita calibração do branco (o firmware leva ~7 s). Retorna True se confirmada."""
         return self._executar_calibracao(self.MODO_CALIBRA_BRANCO, timeout_ms)
 
     def calibra_preto(self, timeout_ms=5000):
