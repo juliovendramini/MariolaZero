@@ -1,0 +1,237 @@
+{
+ "_comentario": "Robô com o brick Paçoca (ATmega328PB, programa em Arduino/C++): 2 motores sem encoder ligados direto na ponte H do brick (portas M1 e M2) e uma roda boba na frente. Unidades: mm, graus, kg. Robô: x para frente, y para a esquerda. Medidas e motores são ESTIMATIVAS (A MEDIR).",
+ "nome": "Paçoca motor EV3",
+ "brick": "pacoca",
+ "programa_padrao": "exemplo_pacoca/exemplo_pacoca.ino",
+ "tipo_tracao": "rodas",
+ "geometria": {
+  "comprimento": 180,
+  "largura": 165,
+  "massa_kg": 0.9
+ },
+ "rodas": {
+  "_roda": "roda LEGO 56 x 28 mm",
+  "diametro": 56,
+  "atrito": 0.9,
+  "atrito_lateral": 0.8,
+  "largura": 28
+ },
+ "motores": [
+  {
+   "nome": "esquerdo",
+   "x": -25,
+   "y": 78,
+   "controlador": "pacoca",
+   "porta": "M1",
+   "sentido": 1
+  },
+  {
+   "nome": "direito",
+   "x": -25,
+   "y": -78,
+   "controlador": "pacoca",
+   "porta": "M2",
+   "sentido": -1
+  }
+ ],
+ "_motores": "porta M1 = pinos 9 (PWM) e 7 (direção); M2 = 10 e 4. sentido -1: o motor da direita está montado espelhado, então no programa ele precisa de MOTOR_INVERTIDO (como no robô).",
+ "motor_padrao": {
+  "_comentario": "Motor grande do EV3 ligado direto a 5 V, sem usar o encoder (ESTIMATIVA, A MEDIR: a 9 V ele faz ~170 rpm e trava com ~40 N·cm). Ver os campos no robo_pacoca_amarelo.json.",
+  "rpm_livre": 90,
+  "forca_max_N": 7.5,
+  "pwm_minimo": 0.06,
+  "variacao": 0.03,
+  "contagens_por_volta": 360,
+  "tau_s": 0.05,
+  "ponte_h": {
+   "_comentario": "Ponte H do brick: L9110S. O que ela faz com os dois pinos iguais: LL = parar() e a parte desligada do PWM para a frente; HH = frear() e a parte desligada do PWM na ré (o brick faz analogWrite(255 - pwm) na ré). No L9110S os dois são freio (saídas em curto); há clones em que LL deixa as saídas soltas (alta impedância): aí use \"LL\": \"solto\".",
+   "LL": "freio",
+   "HH": "freio"
+  }
+ },
+ "apoios": [
+  {
+   "_comentario": "roda boba / bola",
+   "x": 70,
+   "y": 0,
+   "raio": 8
+  }
+ ],
+ "carga_apoios": 0.3,
+ "_carga_apoios": "fração do peso que fica na roda boba (o resto fica nas rodas com tração)",
+ "pacoca": {
+  "_comentario": "Portas do brick: 1 a 5 (as mesmas para I2C, serial e ultrassom). Cada porta tem uma lista de dispositivos (ou um só). tipo: pro1616 (sensor de linha, serial), bmi160 (I2C), vl53 (I2C; \"sensor\" = nome em \"vl53\"), tcs34725 (I2C; \"sensor\" = nome em \"tcs_i2c\"), ultrassonico (\"sensor\" = nome em \"vl53\", com \"params\" de ultrassom). Escreva aqui o que o robô de vocês tem em cada porta.",
+  "bateria_mV": 3900,
+  "portas": {
+   "1": {
+    "tipo": "vl53",
+    "sensor": "frente"
+   },
+   "3": {
+    "tipo": "pro1616"
+   },
+   "5": {
+    "tipo": "bmi160"
+   }
+  },
+  "bmi160": {
+   "_comentario": "eixos: para onde aponta cada eixo do chip (x, y, z) no robô: frente, esquerda, cima, com - na frente para o contrário. bias_dps: viés do giro de cada eixo do chip (graus/s) sem calibrar; erro_foc_dps: o que sobra depois do calibrar().",
+   "eixos": [
+    "frente",
+    "esquerda",
+    "cima"
+   ],
+   "bias_dps": [
+    0.3,
+    -0.25,
+    0.5
+   ],
+   "erro_foc_dps": [
+    0.02,
+    -0.03,
+    0.04
+   ]
+  },
+  "botoes": []
+ },
+ "sensor_linha": {
+  "_comentario": "Sensor de linha/cor Pro1616 numa porta serial do brick (sensorLinha.h). 12 ITR8307 em fileira, 65 mm entre o centro do 1 e do 12 (passo 5,9 mm), agrupados de 3 em 3 = 4 canais de reflexão (canal 0 = mais à esquerda). Atrás deles, a 9 mm, a fileira de 3 TCS34725 com 20 mm entre si (TCS1 = esquerda). x_ir/x_tcs = distância à frente do centro do robô (A MEDIR). modo_grupo: 'media' (3 fototransistores em paralelo no mesmo pino) ou 'minimo'. Distância ao piso: altura_mm = 12 mm (medida da equipe, para não pegar nas lombadas); a calibração vale nessa altura (branco ~100). A leitura com outra distância segue a curva do ITR8307 (pico perto de 1 mm, caindo ~1/d² depois): piso mais longe (crista de rampa, robô inclinado) escurece; piso mais perto (sensor passando por cima da lombada) clareia bastante e pode saturar em 255; encostado vai a 0. Para trocar a curva, ponha 'curva_ir': [[mm, relativo], ...] (e 'curva_tcs'; padrão: a do IR com distâncias x2). A placa raspa se o chão subir mais que altura_mm.",
+  "x_ir": 82,
+  "x_tcs": 73,
+  "n_ir": 12,
+  "distancia_extremos_ir_mm": 65.0,
+  "grupo_ir": 3,
+  "modo_grupo": "media",
+  "ordem_ir": "esquerda_para_direita",
+  "y_tcs": [
+   20,
+   0,
+   -20
+  ],
+  "raio_mancha_ir_mm": 2.0,
+  "raio_mancha_tcs_mm": 4.0,
+  "altura_mm": 12,
+  "taxa_hz": 50,
+  "ruido": 2.0,
+  "tempo_calibra_branco_s": 7.0,
+  "tempo_calibra_preto_s": 2.2
+ },
+ "cores_piso": {
+  "_comentario": "Leitura de cada material JÁ na escala do firmware. TCS calibrado no branco e enviado pela metade (branco ~127). IR: 0 = preto, ~100 = branco calibrado; o prata lê MENOS que o branco no IR (~80), quem vê o prata é o TCS (com os LEDs de 5 mm ele passa de 127). Troque pelos valores lidos no robô. ATENÇÃO ao verde no IR: fita/impressão verde costuma refletir bastante infravermelho.",
+  "branco": {
+   "rgbc": [
+    127,
+    128,
+    126,
+    127
+   ],
+   "ir": 100
+  },
+  "preto": {
+   "rgbc": [
+    3,
+    3,
+    4,
+    5
+   ],
+   "ir": 4
+  },
+  "verde": {
+   "rgbc": [
+    30,
+    85,
+    45,
+    62
+   ],
+   "ir": 75
+  },
+  "vermelho": {
+   "rgbc": [
+    115,
+    25,
+    22,
+    58
+   ],
+   "ir": 85
+  },
+  "prata": {
+   "rgbc": [
+    190,
+    195,
+    200,
+    205
+   ],
+   "ir": 80
+  },
+  "madeira": {
+   "rgbc": [
+    105,
+    85,
+    55,
+    85
+   ],
+   "ir": 90
+  },
+  "fora": {
+   "rgbc": [
+    60,
+    60,
+    60,
+    60
+   ],
+   "ir": 40
+  }
+ },
+ "vl53": [
+  {
+   "nome": "frente",
+   "x": 90.0,
+   "y": 0,
+   "angulo": 0,
+   "altura": 40
+  }
+ ],
+ "_vl53": "sensores de distância (VL53L0X e ultrassom) com a posição no robô. Só os que aparecem em \"pacoca\" -> \"portas\" existem no robô. Ultrassom: um item com \"params\" de ultrassom, por exemplo {\"nome\": \"ultrassom\", \"x\": 80, \"y\": 0, \"angulo\": 0, \"altura\": 50, \"params\": {\"alcance_mm\": 2500, \"cone_graus\": 30, \"ruido_mm\": 4.0}}, ligado com {\"tipo\": \"ultrassonico\", \"sensor\": \"ultrassom\"} numa porta.",
+ "vl53_params": {
+  "alcance_mm": 1200,
+  "ruido_mm": 3.0,
+  "ruido_percentual": 1.0,
+  "cone_graus": 25,
+  "tempo_medida_ms": 33,
+  "fora_alcance": 8190,
+  "offset_mm": 0
+ },
+ "botao_inicio": {
+  "pino": 20,
+  "_comentario": "botão do brick (A6)"
+ },
+ "giroscopio": {
+  "_comentario": "Painel do simulador. O BMI160 do Paçoca tem o viés em pacoca -> bmi160.",
+  "escala": 1,
+  "z_continuo": true,
+  "z_horario_positivo": false,
+  "eixo_inclinacao_frente": "x",
+  "deriva_graus_min": 0.0,
+  "ruido_graus": 0.05,
+  "tempo_calibracao_s": 0.3
+ },
+ "terreno": {
+  "_comentario": "Lombada e palito são relevo de verdade: rodas, esteira e a placa do sensor sobem neles (o robô se apoia nos pontos mais altos). lombada: altura (regra: até 10 mm) e largura do perfil arredondado. vibracao_graus: tremida extra no giroscópio quando a roda bate. tempo_no_ar_s: 0 (a roda que fica no ar já sai do cálculo de apoio).",
+  "lombada_altura_mm": 10,
+  "lombada_largura_mm": 30,
+  "detrito_diametro_mm": 3,
+  "lombada_giro_graus": 1.0,
+  "detritos_giro_graus": 1.0,
+  "vibracao_graus": 1.0,
+  "tempo_no_ar_s": 0.0,
+  "tempo_gangorra_s": 0.35
+ },
+ "juiz": {
+  "_comentario": "tempo_fora_do_caminho_s: tempo num ladrilho fora do caminho (sem linha) até o LoP automático; chegar numa linha que não é a próxima dá LoP na hora. lop_sem_progresso_s: 0 = desligado.",
+  "tempo_fora_do_caminho_s": 10.0,
+  "lop_sem_progresso_s": 0,
+  "pula_checkpoint_apos_3_tentativas": true
+ },
+ "portas_serial": {},
+ "arquivos_rodada": []
+}

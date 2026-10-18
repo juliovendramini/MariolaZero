@@ -18,17 +18,17 @@ import time
 RAIZ = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, RAIZ)
 
-from sim.app import Simulacao, carregar_cfg  # noqa: E402
+from sim.app import Simulacao, carregar_cfg, eh_pacoca, programa_do_robo  # noqa: E402
 from sim.mapa import Mapa  # noqa: E402
 
 
 def main():
     ap = argparse.ArgumentParser(description='Simulador RoboCupJunior Rescue Line (Mariola)')
     ap.add_argument('--mapa', default=os.path.join(RAIZ, 'mapas', 'treino.json'))
-    ap.add_argument('--programa', default=os.path.join(RAIZ, 'exemplo_aluno', 'main.py'),
-                    help='main.py do programa do robô')
-    ap.add_argument('--robo', default=os.path.join(RAIZ, 'robo_4x4.json'),
-                    help='configuração do robô (robo_4x4.json ou robo_esteira.json)')
+    ap.add_argument('--programa', default=None,
+                    help='main.py do programa do robô (Mariola) ou o .ino (brick Paçoca)')
+    ap.add_argument('--robo', default=None,
+                    help='configuração do robô (robo_4x4.json, robo_esteira.json, robo_pacoca_amarelo.json...)')
     ap.add_argument('--sem-janela', action='store_true', help='roda uma rodada sem interface gráfica')
     ap.add_argument('--velocidade', type=float, default=1.0, help='fator de tempo (ex.: 2 = 2x mais rápido)')
     ap.add_argument('--tempo', type=float, default=480, help='(sem janela) duração máxima da rodada em s simulados')
@@ -44,6 +44,9 @@ def main():
     a = ap.parse_args()
 
     robo = a.robo
+    if robo is None:
+        # programa .ino = brick Paçoca
+        robo = 'robo_pacoca_amarelo.json' if (a.programa or '').lower().endswith('.ino') else 'robo_4x4.json'
     if not os.path.exists(robo) and os.path.exists(os.path.join(RAIZ, robo)):
         robo = os.path.join(RAIZ, robo)
     cfg = carregar_cfg(robo)
@@ -52,6 +55,12 @@ def main():
     programa = a.programa if a.programa and os.path.exists(a.programa) else None
     if a.programa and not programa:
         print(f'aviso: programa {a.programa} não encontrado')
+    if a.programa is None:
+        programa = programa_do_robo(cfg, None)
+    elif programa and programa.lower().endswith('.ino') != eh_pacoca(cfg):
+        print(f'aviso: o robô {os.path.basename(robo)} usa programa '
+              f'{".ino (brick Paçoca)" if eh_pacoca(cfg) else ".py (brick Mariola)"}; '
+              f'o {os.path.basename(programa)} não vai rodar nele')
     sim = Simulacao(mapa, cfg, programa, a.porta, None if a.semente < 0 else a.semente)
     sim.sincronizado = not a.tempo_real
     sim.modo_lop = a.lop

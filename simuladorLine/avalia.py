@@ -222,11 +222,15 @@ def cabecalho():
 
 
 def impressao_digital(programa):
-    """Hash dos .py da pasta do programa (para o professor conferir que é o mesmo código)."""
+    """Hash dos fontes da pasta do programa (.py; .ino/.h/.cpp do Paçoca) para o professor
+    conferir que é o mesmo código."""
     pasta = os.path.dirname(os.path.abspath(programa))
     h = hashlib.sha256()
-    for arq in sorted(glob.glob(os.path.join(pasta, '**', '*.py'), recursive=True)):
-        if '__pycache__' in arq:
+    arqs = []
+    for ext in ('py', 'ino', 'h', 'hpp', 'c', 'cpp'):
+        arqs += glob.glob(os.path.join(pasta, '**', '*.' + ext), recursive=True)
+    for arq in sorted(arqs):
+        if '__pycache__' in arq or '.sim_build' in arq:
             continue
         h.update(os.path.relpath(arq, pasta).replace(os.sep, '/').encode())
         with open(arq, 'rb') as f:
@@ -265,7 +269,11 @@ def main():
             print(f'desafio {a.desafio} não existe. Use --lista.')
             return 2
         d = ds[chave]
-    robo = caminho(a.robo or d.get('robo') or ROBO_PADRAO)
+    ino = a.programa.lower().endswith('.ino')
+    robo_desafio = d.get('robo')
+    if ino and robo_desafio and not robo_desafio.startswith('robo_pacoca'):
+        robo_desafio = None              # programa do Paçoca: o desafio vale com o robô do Paçoca
+    robo = caminho(a.robo or robo_desafio or ('robo_pacoca_amarelo.json' if ino else ROBO_PADRAO))
     tempo = a.tempo or d.get('tempo', 480)
     surpresa = a.surpresa or d.get('surpresa')
     if a.sementes:
@@ -281,6 +289,15 @@ def main():
     if not os.path.exists(robo):
         print(f'robô não encontrado: {robo}')
         return 2
+    if ino:
+        # compila uma vez aqui (as rodadas em paralelo só usam o executável pronto)
+        sys.path.insert(0, RAIZ)
+        from pacoca import compila
+        try:
+            compila.compila(programa, log=print)
+        except compila.ErroCompilacao as e:
+            print('erro de compilação:\n' + str(e))
+            return 1
 
     # mapas: um fixo, ou uma pista surpresa por rodada
     if surpresa:

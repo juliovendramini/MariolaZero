@@ -83,9 +83,39 @@ class Motor:
         self.diametro = diametro
         c = int(abs(cal_medida)) if cal_medida else int(0.8 * self.vlivre / FREQ_PID)
         self.cal = [c, -c]
+        # motor DC ligado direto numa ponte H (brick Paçoca): sem encoder, sem PID
+        self.dc = self.tipo == 'pacoca'
+        if self.dc:
+            self.porta = p.get('porta', 'M1')
+            ponte = p.get('ponte_h', {})
+            self.ll_freia = ponte.get('LL', 'solto') == 'freio'
+            self.hh_freia = ponte.get('HH', 'freio') == 'freio'
+            self.pwm_minimo = float(p.get('pwm_minimo', 0.1))
+            self.v0 = float(p.get('rpm_livre', 100)) / 60.0 * math.pi * diametro   # mm/s sem carga
         self.reset()
 
+    def varia(self, rng, variacao):
+        """Motores do mesmo modelo não são iguais: sorteia (pela semente) a velocidade sem
+        carga, a força e o atrito interno deste motor."""
+        if not self.dc or variacao <= 0:
+            return
+        self.v0 *= max(0.5, 1.0 + rng.gauss(0, variacao))
+        self.forca_max *= max(0.5, 1.0 + rng.gauss(0, variacao))
+        self.pwm_minimo *= max(0.3, 1.0 + rng.gauss(0, 2 * variacao))
+
+    def dc_estado(self, frente=0.0, re=0.0, ll=1.0, hh=0.0):
+        self.frac = (float(frente), float(re), float(ll), float(hh))
+
+    def dc_coef(self):
+        """(u, c): força no chão = Fs·(u − c·w/v0). u = fração do tempo com tensão (sinal = sentido),
+        c = fração do tempo com o circuito fechado (tensão ou freio). Com o motor solto (LL ou HH
+        sem freio) não passa corrente: não há força nem freio."""
+        f, r, ll, hh = self.frac
+        freio = (ll if self.ll_freia else 0.0) + (hh if self.hh_freia else 0.0)
+        return f - r, f + r + freio
+
     def reset(self):
+        self.frac = (0.0, 0.0, 1.0, 0.0)
         self.modo = 'pid'
         self.setpoint = 0
         self.pwm = 0
@@ -113,6 +143,8 @@ class Motor:
         return max(-self.vlivre, min(self.vlivre, self.setpoint * FREQ_PID))
 
     def atualiza_controle(self, dt):
+        if self.dc:
+            return
         t = self.alvo_vel()
         if t is None:
             return
@@ -123,6 +155,8 @@ class Motor:
         self.vel += (t - self.vel) * k
 
     def livre(self):
+        if self.dc:
+            return False
         if self.desligado:
             return True
         return self.alvo_vel() == 0 and not self.travado and abs(self.vel) < 0.03 * self.vlivre
@@ -166,6 +200,7 @@ class Motor:
         return int(math.floor(self.contagem))
 
     def para(self):
+        self.frac = (0.0, 0.0, 1.0, 0.0)
         self.setpoint = 0
         self.pwm = 0
         self.modo = 'pid'
@@ -265,6 +300,10 @@ class Mundo:
         self.mu_lat = float(r['atrito_lateral'])
         self.esteira = cfg.get('tipo_tracao') == 'esteira'
         self.motores = [Motor(mc, cfg['motor_padrao'], self.diametro) for mc in cfg['motores']]
+        rng_mot = random.Random(self._base_semente * 7 + 5)
+        for m in self.motores:
+            m.varia(rng_mot, float(m.cfg.get('variacao', 0.0)))
+        self.por_dc = {m.porta: m for m in self.motores if m.dc}
         self.contatos = [(i, cx, cy) for i, m in enumerate(self.motores) for (cx, cy) in m.contatos]
         xs = [c[1] for c in self.contatos]
         ys = [c[2] for c in self.contatos]
@@ -275,6 +314,8 @@ class Mundo:
         for m in self.motores:
             if m.cfg['controlador'] == 'mariola':
                 self.por_mariola[int(m.cfg['canal'])] = m
+            elif m.dc:
+                pass                              # brick Paçoca: ponte H direto (por_dc)
             else:
                 self.por_placa[(m.cfg['porta'], int(m.cfg['id']))] = m
         self.fw_mariola = FW.FirmwareMariola(self)
@@ -647,6 +688,19 @@ class Mundo:
                             lift.append(lf)
                             xs_el.append(cx)
                     self.elementos.append(('roda', cx, cy, np.array(idx)))
+        # apoios sem tração (roda boba / bola): seguram o robô em pé, mas não empurram nem
+        # freiam. Ficam depois dos motores na lista (os índices dos contatos não mudam).
+        for ap in self.cfg.get('apoios', []):
+            rb = float(ap.get('raio', 6.0))
+            cx, cy = float(ap['x']), float(ap['y'])
+            idx = []
+            for sx in np.arange(-rb, rb + 0.01, 1.0):
+                for sy in (-rb / 2, 0.0, rb / 2):
+                    idx.append(len(loc))
+                    loc.append((cx + sx, cy + sy))
+                    lift.append(rb - math.sqrt(max(0.0, rb * rb - sx * sx - sy * sy)))
+                    xs_el.append(cx)
+            self.elementos.append(('roda', cx, cy, np.array(idx)))
         self._amostras = np.array(loc)
         self._lift = np.array(lift)
         self._xs_el = np.array(xs_el)
@@ -912,7 +966,8 @@ class Mundo:
             F = -self.massa * G / (1.0 + g2)
             b.apply_impulse_at_world_point((F * gx * dt, F * gy * dt), b.position)
         n_apoio = max(1, n - sum(1 for x in self.suspenso if x))
-        N = self.massa * G * cos_incl / n_apoio
+        carga_rodas = 1.0 - float(self.cfg.get('carga_apoios', 0.0))     # parte do peso na roda boba
+        N = self.massa * G * cos_incl * carga_rodas / n_apoio
         # inclinação na direção do movimento (a roda anda na rampa, o plano vê a projeção)
         incl_f = gx * f.x + gy * f.y
         proj = 1.0 / math.sqrt(1.0 + incl_f * incl_f)
@@ -947,6 +1002,29 @@ class Mundo:
             vl = v.dot(f)
             rx = r.cross(f)
             meff = 1.0 / (invm + rx * rx * invI)
+            if mot.dc:
+                # motor DC: força Fs·(u − c·w/v0) (amortecimento implícito) e atrito interno da
+                # redução (zona morta: abaixo de pwm_minimo o motor não vence o atrito parado)
+                nct = len(mot.contatos)
+                u, c = mot.dc_coef()
+                fs = mot.forca_max / nct
+                k = fs * c / mot.v0
+                w = vl * mot.sentido / proj                       # velocidade da roda no sentido do motor
+                Jm = (fs * u * dt - k * dt * w) / (1.0 + k * dt / meff)
+                jat = mot.pwm_minimo * fs * dt
+                parar = -w * meff                                 # impulso que deixaria a roda parada
+                if abs(Jm - parar) <= jat:
+                    Jm = parar                                    # o atrito segura
+                else:
+                    Jm -= math.copysign(jat, Jm - parar)
+                J = Jm * mot.sentido * proj
+                jf = self.mu * N * dt
+                if abs(J) > jf:
+                    J = math.copysign(jf, J)                      # patina
+                b.apply_impulse_at_world_point(f * J, p)
+                soma_vl[imot] += (vl + J / meff) / proj
+                cont_vl[imot] += 1
+                continue
             if livres[imot]:
                 J = -vl * meff * min(1.0, 3.0 * dt)
                 b.apply_impulse_at_world_point(f * J, p)
@@ -967,7 +1045,7 @@ class Mundo:
             else:
                 b.apply_impulse_at_world_point(f * math.copysign(jf, J), p)
         for i, mot in enumerate(self.motores):
-            if cont_vl[i] and (livres[i] or cont_vl[i] == len(mot.contatos)):
+            if cont_vl[i] and (livres[i] or mot.dc or cont_vl[i] == len(mot.contatos)):
                 mot.set_vel_superficie(soma_vl[i] / cont_vl[i])
 
     def _filtros_altura(self):
@@ -1013,6 +1091,9 @@ class Mundo:
     def vl53(self, idx):
         sc = self.cfg['vl53'][idx]
         pr = self.cfg['vl53_params']
+        if sc.get('params'):
+            pr = dict(pr)
+            pr.update(sc['params'])
         b = self.corpo
         p0 = b.local_to_world((sc['x'], sc['y']))
         a0 = b.angle + math.radians(sc['angulo'])
@@ -1094,6 +1175,15 @@ class Mundo:
             x, y = roll, pitch
         esc = float(gc['escala'])
         return [int(round(x * esc)), int(round(y * esc)), int(round(z * esc))]
+
+    def imu(self):
+        """[guinada (anti-horário +, contínua), arfagem (nariz para cima +), rolagem (direita
+        desce +)] em graus, com o ruído do giroscópio. O BMI160 do Paçoca deriva a taxa disso."""
+        gc = self.cfg['giroscopio']
+        ruido = float(gc.get('ruido_graus', 0.05))
+        z = math.degrees(self.corpo.angle - self.yaw_ref) + self.deriva + self.rng_giro.gauss(0, ruido)
+        pitch, roll = self._inclinacao()
+        return [z, pitch + self.rng_giro.gauss(0, ruido), roll + self.rng_giro.gauss(0, ruido)]
 
     # ---------------------------------------------------------------- piso / sensor de linha
     def materiais(self, pts):

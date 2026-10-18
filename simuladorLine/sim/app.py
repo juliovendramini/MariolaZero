@@ -19,6 +19,7 @@ class Simulacao:
     def __init__(self, mapa, cfg, programa=None, porta=0, semente=None):
         self.cfg = cfg
         self.programa = os.path.abspath(programa) if programa else None
+        self._programas = {}          # último programa usado com cada tipo de brick (.ino ou .py)
         self.mundo = Mundo(mapa, cfg, semente)
         self.juiz = Juiz(self.mundo)
         self.juiz.on_lop = self._lop
@@ -220,7 +221,14 @@ class Simulacao:
                 self._alvo_sinc = self.t_virtual
                 self._espera_conexao = time.perf_counter() + 15.0
             self._auto_pendente = True
-        cmd = [sys.executable, '-u', os.path.join(RAIZ, 'rodar.py'), self.programa]
+        if self.programa.lower().endswith('.ino'):
+            # brick Paçoca: compila o .ino (pode levar alguns segundos na primeira vez)
+            cmd = [sys.executable, '-u', os.path.join(RAIZ, 'rodar_pacoca.py'), self.programa]
+            if self.sincronizado:
+                with self._cv:
+                    self._espera_conexao = time.perf_counter() + 90.0
+        else:
+            cmd = [sys.executable, '-u', os.path.join(RAIZ, 'rodar.py'), self.programa]
         kw = {}
         if os.name == 'nt':
             kw['creationflags'] = subprocess.CREATE_NEW_PROCESS_GROUP
@@ -375,6 +383,7 @@ class Simulacao:
     def troca_robo(self, cfg):
         """Troca a configuração do robô (ex.: 4x4 <-> esteira) mantendo o mapa."""
         self.parar_programa()
+        self.programa = programa_do_robo(cfg, self.programa, getattr(self, '_programas', None))
         velho = self.mundo
         with velho.lock:
             novo = Mundo(velho.mapa, cfg, velho.semente)
@@ -398,6 +407,25 @@ class Simulacao:
             self.servidor.sock.close()
         except OSError:
             pass
+
+
+def eh_pacoca(cfg):
+    return cfg.get('brick') == 'pacoca'
+
+
+def programa_do_robo(cfg, atual, lembrados=None):
+    """Robô do Paçoca roda .ino; os do Mariola, .py. Ao trocar de robô, volta ao último programa
+    usado com aquele tipo de brick (ou ao programa padrão do robô)."""
+    quer_ino = eh_pacoca(cfg)
+    if atual and atual.lower().endswith('.ino') == quer_ino:
+        return atual
+    if lembrados is not None and atual:
+        lembrados[not quer_ino] = atual
+    if lembrados and lembrados.get(quer_ino):
+        return lembrados[quer_ino]
+    padrao = cfg.get('programa_padrao') or os.path.join('exemplo_aluno', 'main.py')
+    caminho = padrao if os.path.isabs(padrao) else os.path.join(RAIZ, padrao)
+    return os.path.abspath(caminho) if os.path.exists(caminho) else atual
 
 
 def carregar_cfg(caminho):

@@ -52,7 +52,8 @@
     {"nome": "esq_tras",   "mux": "I2C2", "x": -70, "y":  85, "angulo":  90},
     {"nome": "dir_frente", "mux": "I2C3", "x":  70, "y": -85, "angulo": -90},
     {"nome": "dir_tras",   "mux": "I2C4", "x": -70, "y": -85, "angulo": -90},
-    {"nome": "frente",     "mux": "I2C5", "x":  95, "y":   0, "angulo":   0}
+    {"nome": "frente",     "mux": "I2C5", "x":  95, "y":   0, "angulo":   0},
+    {"nome": "tras",       "mux": "I2C6", "x": -95, "y":   0, "angulo": 180}
   ],
   "vl53_params": {
     "alcance_mm": 1200,

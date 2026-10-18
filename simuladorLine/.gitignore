@@ -1,3 +1,7 @@
 # criados pelo avalia.py (relatórios, logs e mapas surpresa)
 resultados/
 __pycache__/
+# Paçoca: build do .ino, cache do núcleo e EEPROM simulada
+.sim_build/
+pacoca/.cache/
+eeprom_pacoca.bin

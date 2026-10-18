@@ -762,7 +762,8 @@ class Interface:
             d['vl53'] = [(sc['nome'], w.vl53(i)) for i, sc in enumerate(w.cfg['vl53'])]
             d['giro'] = w.giro()
             d['linha'] = w.leitura_sensor()
-            d['enc'] = [(m.nome, m.contagem_int()) for m in w.motores]
+            d['enc'] = [(m.nome, f'{m.dc_coef()[0] * 100:+.0f}%' if m.dc else m.contagem_int()) for m in w.motores]
+            d['dc'] = any(m.dc for m in w.motores)
             d['pc'] = []
             pc = w.cfg.get('para_choque')
             if pc:
@@ -841,7 +842,8 @@ class Interface:
             cor = COR_TEXTO if max(abs(v - nom) for v in ds) < 1.5 else COR_DESTAQUE
             y = self._txt(f'Sensor IR até o piso: {min(ds):.1f} a {max(ds):.1f} mm (normal {nom:g})',
                           x, y, self.f12, cor)
-        y = self._txt('Encoders  ' + '   '.join(f'{_sigla(n)} {c}' for n, c in d['enc']), x, y, self.f12)
+        rotulo = 'Motores (tensão média)  ' if d.get('dc') else 'Encoders  '
+        y = self._txt(rotulo + '   '.join(f'{_sigla(n)} {c}' for n, c in d['enc']), x, y, self.f12)
         col = larg // 2
         yy = y
         for i, (n, v) in enumerate(d['vl53']):
@@ -1181,7 +1183,7 @@ class Interface:
             elif self.modo == 'simular' and self._area().collidepoint(pos) and not s.programa_rodando():
                 self._gira_robo(5 if ev.y > 0 else -5)
         elif ev.type == pygame.MOUSEBUTTONDOWN:
-            if (self.modo == 'simular' and ev.button == 1
+            if (self.modo == 'simular' and ev.button == 1 and s.cfg.get('brick') != 'pacoca'
                     and self.brick.mouse_down(ev.pos, s.mundo, self._area())):
                 return
             if ev.button in (4, 5):
@@ -1364,7 +1366,8 @@ class Interface:
             self._desenha_robo(snap)
             if snap['embaixo']:
                 self._redesenha_pontes(snap)
-            self.brick.desenha(self.tela, self.sim.mundo, self._area(), self.f12b, self.f11)
+            if self.sim.cfg.get('brick') != 'pacoca':        # tela + teclado são do brick Mariola
+                self.brick.desenha(self.tela, self.sim.mundo, self._area(), self.f12b, self.f11)
         lw, lh = self.tela.get_size()
         pygame.draw.rect(self.tela, COR_PAINEL, (lw - PAINEL, 0, PAINEL, lh))
         x = lw - PAINEL + 14

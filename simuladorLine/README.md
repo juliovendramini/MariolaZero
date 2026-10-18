@@ -9,6 +9,10 @@ Como no simulador da Maze, o programa do aluno importa as bibliotecas reais do M
 `botoes.py`, ...) e elas rodam **sem nenhuma alteração**. O simulador troca só a camada de baixo
 (serial, I2C, GPIO e relógio) e emula o firmware de cada placa byte a byte.
 
+Também roda robôs com o **brick Paçoca** (ATmega328PB, programa em Arduino/C++): o `.ino` da equipe
+e a biblioteca brickSimples compilam para o PC sem mudar e falam com o mesmo simulador
+(ver [Brick Paçoca](#brick-paçoca-programa-em-arduino)).
+
 ---
 
 ## Instalação
@@ -22,6 +26,14 @@ pip install pygame pymunk numpy pillow
 Funciona no Windows e no Linux. No Linux, para os diálogos de abrir/salvar mapa, instale também
 `python3-tk`.
 
+Para o **brick Paçoca** é preciso também um **g++** (compilador C++ do PC):
+
+* **Windows:** instale o [MSYS2](https://www.msys2.org), abra o terminal "MSYS2 UCRT64" e rode
+  `pacman -S mingw-w64-ucrt-x86_64-gcc`. O simulador acha o g++ sozinho em `C:\msys64\ucrt64\bin`
+  (ou ponha essa pasta no PATH, ou defina `PACOCA_GXX` com o caminho do `g++.exe`). O
+  [w64devkit](https://github.com/skeeto/w64devkit) também serve.
+* **Linux:** `sudo apt install g++`.
+
 ## Uso rápido
 
 ```bash
@@ -31,6 +43,8 @@ python simulador.py --mapa mapas/completo.json             # rampas, ponte, gang
 python simulador.py --mapa mapas/resgate.json              # linha + área de resgate
 python simulador.py --programa CAMINHO/DO/main.py          # programa da equipe
 python simulador.py --editor                               # abre direto no editor de mapas
+python simulador.py --programa exemplo_pacoca/exemplo_pacoca.ino   # brick Paçoca (motor amarelo)
+python simulador.py --robo robo_pacoca_ev3.json            # Paçoca com os motores grandes do EV3
 
 # sem janela: uma rodada inteira 2x mais rápido, imprime o placar (bom para testar várias vezes)
 python simulador.py --mapa mapas/completo.json --sem-janela --velocidade 2
@@ -103,7 +117,7 @@ como no robô.
 | **LoP** (L) | falta de progresso: o robô volta ao último checkpoint, virado para a chegada |
 | **LoP: reinicia prog. / só botão** | num LoP, desliga e liga o programa ou só aperta o botão de início |
 | **Botão do robô** (B), **Auto-botão** | aperta o botão de início (P3); o auto-botão aperta 1,5 s depois que o programa sobe |
-| **Robô: 4x4 / esteira** | troca o robô (os `robo_*.json` da pasta) |
+| **Robô: 4x4 / esteira / Paçoca** | troca o robô (os `robo_*.json` da pasta). Robô do Paçoca roda `.ino`; os do Mariola, `.py`: ao trocar, o programa troca junto (o último usado com aquele brick ou o exemplo) |
 | **Caminho (P)** | mostra o número de cada passo do caminho esperado, como no editor oficial |
 | **Pausar** (espaço) / **Vel.** (1–5) | pausa ou muda a velocidade (0,25x a 4x). O resultado é o mesmo em qualquer velocidade |
 | arrastar o robô / Q, E / roda do mouse | reposiciona o robô (com o programa parado) |
@@ -401,6 +415,123 @@ desligar o robô. Arquivos listados em `arquivos_rodada` são apagados a cada "N
 às vezes com. Na área de resgate ele costuma pegar as três vítimas, mas às vezes perde uma. Use isso
 para ver o que melhorar.
 
+## Brick Paçoca (programa em Arduino)
+
+O robô do Paçoca é programado em Arduino (C++) com a biblioteca **brickSimples**. O simulador
+compila o `.ino` da equipe **com o g++ do PC**, junto com as bibliotecas reais do brick
+(`brickSimples.h`, `BMI160.cpp`, `VL53L0X.cpp`, `TCS34725.cpp`, ...), e troca só a camada de baixo:
+
+```
+  programa da equipe (.ino)
+        │  #include "brickSimples.h"   (SensorLinha, BMI160, VL53L0X, Motor...)
+        ▼
+  bibliotecas REAIS do brick  (pasta do programa, ou pacoca/libs_pacoca/ como reserva)
+        │  Arduino.h, SoftwareSerial, SoftWire, pinos, millis()
+        ▼
+  pacoca/nucleo + pacoca/troca  ── Arduino simulado: relógio virtual, pinos, serial e I2C
+        │  socket local
+        ▼
+  pacoca/ponte.py  ── Pro1616, VL53L0X, TCS34725, BMI160, ultrassom, ponte H dos motores
+        │  socket TCP local
+        ▼
+  simulador.py  ── física, juiz, janela (os mesmos dos robôs do Mariola)
+```
+
+* **Para rodar:** `python simulador.py --programa CAMINHO/DO/programa.ino` (com um `.ino`, o
+  simulador já escolhe o `robo_pacoca_amarelo.json`). Ou troque o robô na janela.
+* A **primeira** rodada compila tudo (alguns segundos); depois só o que mudou. Os erros de
+  compilação aparecem no terminal do simulador, com o nome do arquivo e a linha. Para só compilar:
+  `python pacoca/compila.py CAMINHO/DO/programa.ino`.
+* A pasta do programa pode ter só o `.ino` (as bibliotecas vêm de `pacoca/libs_pacoca/`) ou a cópia
+  da brickSimples da equipe, mesmo modificada: os arquivos da pasta do programa ganham. Vários `.ino`
+  na pasta são juntados como na IDE do Arduino (o do nome passado primeiro), com os protótipos
+  das funções gerados sozinhos.
+* O build fica em `.sim_build/` dentro da pasta do programa (pode apagar). A EEPROM do brick fica
+  em `eeprom_pacoca.bin`, na mesma pasta: a calibragem gravada (`giro.calibrar()`) continua lá na
+  próxima rodada, como no robô. Apague o arquivo para começar com a EEPROM limpa.
+* O **sensor de linha** é o Pro1616 com o protocolo novo (`0x61` → 16 bytes; `0x62`/`0x63`
+  calibram). Use o `sensorLinha.h` atual da brickSimples; o antigo (modos 0 a 7, 32 bytes) não
+  recebe resposta e o simulador avisa.
+* `avalia.py` também aceita `.ino` (usa o robô do Paçoca; compila uma vez antes das rodadas).
+
+### Robôs do Paçoca (`robo_pacoca_amarelo.json`, `robo_pacoca_ev3.json`)
+
+Dois motores sem encoder nas portas **M1** (esquerdo: pinos 9 PWM e 7 direção) e **M2** (direito:
+10 e 4) e uma roda boba na frente (`apoios`). O motor da direita é montado espelhado
+(`"sentido": -1`): como no robô, o programa usa `MOTOR_INVERTIDO` nele. O botão do brick (A6) é o
+**Botão do robô** / tecla **B** (`brick.botaoApertado()`).
+
+O que está ligado em cada porta do brick fica em `"pacoca" → "portas"`. As portas 1 a 5 são
+genéricas: cada uma é I2C, serial ou ultrassom, conforme o que a equipe pôs nela.
+
+```json
+"pacoca": {
+  "portas": {
+    "1": {"tipo": "vl53", "sensor": "frente"},
+    "3": {"tipo": "pro1616"},
+    "5": {"tipo": "bmi160"},
+    "2": [{"tipo": "vl53", "sensor": "esquerda"}, {"tipo": "tcs34725", "sensor": "lado_esq"}]
+  }
+}
+```
+
+| tipo | o que é | detalhes |
+|---|---|---|
+| `pro1616` | sensor de linha/cor (serial 115200) | a geometria e as cores são as do `sensor_linha`/`cores_piso` |
+| `vl53` | VL53L0X (I2C 0x29; a lib muda para 0x30) | `sensor` = nome em `"vl53"` (posição, ângulo, altura no robô) |
+| `tcs34725` | TCS34725 olhando para o lado (I2C 0x29) | `sensor` = nome em `"tcs_i2c"`; VL53 + TCS na mesma porta funciona como no robô (o VL53 tem de ser iniciado primeiro) |
+| `bmi160` | BMI160 (I2C 0x68) | `"bmi160"`: eixos do chip no robô, viés de cada eixo, resíduo depois do `calibrar()` |
+| `ultrassonico` | HC-SR04 (`PORTA_ULTRASSONICO_n`) | `sensor` = um item de `"vl53"` com `"params"` de ultrassom (cone, alcance) |
+
+Para-choque e outros botões: `"para_choque"` com `"pino"` = número do pino do Arduino (ex.: 13 =
+porta S1) e `"pacoca" → "botoes"`; `digitalRead` desses pinos lê o simulador (0 = apertado).
+
+**Motores.** Cada motor é um motor DC numa ponte H, sem PID: força no chão = Fs·(u − c·v/v0), onde
+u é a fração do tempo com tensão (o sinal dá o sentido) e c a fração do tempo com o circuito fechado
+(tensão ou freio). Rotação sem carga (`rpm_livre`), força com o motor travado (`forca_max_N`),
+atrito interno da redução (`pwm_minimo`: abaixo disso o motor parado não sai do lugar) e a
+diferença entre dois motores do mesmo modelo (`variacao`, sorteada pela semente: um lado puxa mais)
+ficam em `motor_padrao`. **São estimativas (A MEDIR):** amarelo 1:48 a 5 V ~200 rpm, roda 65 mm;
+EV3 grande a 5 V ~90 rpm, roda 56 mm, bem mais força.
+
+`"ponte_h"` diz o que a ponte H do brick (**L9110S**) faz com os dois pinos iguais: `LL`
+(`parar()` e a parte desligada do PWM para a frente) e `HH` (`frear()` e a parte desligada do PWM
+na ré, porque o brick faz `analogWrite(255 - pwm)` com a direção em HIGH). No L9110S os dois são
+**freio** (saídas em curto): `parar()` e `frear()` fazem a mesma coisa, e entre os pulsos do PWM o
+motor freia nos dois sentidos, então frente e ré respondem igual. Há clones do L9110S em que `LL`
+deixa as saídas soltas (alta impedância); para simular um deles, use `"LL": "solto"`: aí a frente
+fica bem mais rápida que a ré com a mesma potência e a resposta deixa de ser linear.
+
+**BMI160.** A lib lê a FIFO do giro (25 Hz) a cada 40 ms e integra; `getEixoZ()` é em **décimos de
+grau** (+ = anti-horário com o chip na orientação padrão). Sem calibrar, o viés (`bias_dps`) faz o
+ângulo andar sozinho (0,5 °/s = 30° por minuto); o `calibrar()` usa o FOC do chip e grava os offsets
+na EEPROM.
+
+**Tempo.** Cada função do Arduino gasta mais ou menos o tempo que gasta no ATmega a 16 MHz
+(`analogRead` ~112 µs, I2C ~50 µs por byte, um byte da SoftwareSerial ~87 µs). O cálculo do
+programa não gasta tempo. O `brick.atualiza()` tem esperas fixas de ~15 ms e, com um VL53
+adicionado, espera a medida dele (~33 ms): o laço do programa roda a ~30 Hz, como no robô. O
+`millis()` atrasa um pouco quando a lib desliga as interrupções por mais de 1 ms (leitura do
+Pro1616), como no ATmega.
+
+**O que é diferente do robô** (o programa pode funcionar aqui e não no robô):
+
+* `int` tem 32 bits no PC (16 no AVR) e `double` tem 64 (32 no AVR): conta que estoura no robô
+  (`int x = 300 * 200;`) dá certo aqui. A RAM não tem o limite de 2 KB.
+* O código em assembly do AVR é retirado. O reset (`jmp 0`) reinicia o programa.
+* Servo, buzzer, voz, música e bluetooth não aparecem no robô simulado (voz e música só escrevem
+  no terminal). A fita de LED aparece nos LEDs do robô. Interrupções externas e de pino não são
+  simuladas (o ultrassom do brick foi trocado por uma versão sem interrupção, com a mesma interface).
+* A SoftwareSerial do brick não tem buffer, e a simulada também não: o byte que chega enquanto o
+  programa não está lendo é perdido, como no robô.
+
+### Programa de exemplo do Paçoca (`exemplo_pacoca/`)
+
+`exemplo_pacoca.ino`: o mesmo seguidor do exemplo em Python (PID nos 4 canais, verde, curva de 90°,
+gap pelo giroscópio, lombada/rampa, obstáculo pela direita, parada na fita vermelha), sem área de
+resgate. Sem encoder, as distâncias das manobras são por tempo (`MM_POR_S` e `PARTIDA_MS`, medidos
+no simulador com o motor amarelo: meçam no robô de vocês) e os giros são pelo BMI160.
+
 ## Como o código continua compatível com o robô
 
 ```
@@ -426,8 +557,14 @@ use `robo_real/visao.py` (câmera USB + a sua YOLO/OpenCV, mesma interface).
 ```
 simulador.py        janela / modo sem janela
 rodar.py            executa o programa do aluno com o hardware virtual
+rodar_pacoca.py     compila e executa o programa do brick Paçoca (.ino) com o hardware virtual
 robo_4x4.json       robô 4x4 (o da Maze) com o sensor de linha, câmera e mecanismo de resgate
 robo_esteira.json   robô de esteira
+robo_pacoca_*.json  robôs do brick Paçoca (motor amarelo, motor EV3)
+pacoca/             brick Paçoca: compila.py (g++), ponte.py (dispositivos), nucleo/ (Arduino.h
+                    simulado), troca/ (SoftwareSerial, SoftWire, ultrassom... simulados),
+                    libs_pacoca/ (cópia da brickSimples, reserva). Detalhes em pacoca/LEIAME.md
+exemplo_pacoca/     programa de exemplo do Paçoca (.ino)
 sim/                ladrilhos, mapa, física, área de resgate (resgate.py), juiz, servidor, interface
 ladrilhos/          os 82 ladrilhos oficiais (1 mm por pixel) + ladrilhos.json
 fake_hw/            serial, smbus2, gpiod, firmware das placas, relógio virtual
@@ -457,6 +594,8 @@ ferramentas/        importa_ladrilhos.py (refaz os ladrilhos a partir do rcj-res
 * O motor é ideal: em potência (`potencia_motores`) a rotação não cai com a carga (rampa, empurrar
   obstáculo), e em velocidade o PID nunca satura. No robô, potência fixa fica mais lenta na subida.
 * O BNO085 não é emulado.
+* Paçoca: ver "O que é diferente do robô" na seção do brick Paçoca. O motor DC é o modelo médio
+  (o PWM de ~30 Hz do Timer1 não faz o robô tremer).
 
 ## Créditos
 

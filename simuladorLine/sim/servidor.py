@@ -93,6 +93,17 @@ class Servidor:
                 return {'r': list(res[0]), 'd': res[1]} if res else {'r': None}
             if op == 'giro':
                 return {'v': w.giro()}
+            if op == 'imu':
+                return {'v': w.imu()}
+            if op == 'motor_dc':
+                m = w.por_dc.get(r['porta'])
+                if m is not None:
+                    m.dc_estado(r.get('frente', 0), r.get('re', 0), r.get('ll', 1), r.get('hh', 0))
+                return {}
+            if op == 'leds':
+                cores = [tuple(int(x) for x in c[:3]) for c in r.get('v', [])][:10]
+                w.leds = cores + [(0, 0, 0)] * (10 - len(cores))
+                return {}
             if op == 'giro_reset':
                 w.giro_reset_z()
                 return {}
