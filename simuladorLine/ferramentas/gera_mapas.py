@@ -99,8 +99,48 @@ def resgate():
     return m
 
 
+def curso_pista():
+    """Pista do curso (curso/): só retas e curvas, sem interseção nem gap. Para treinar o PID."""
+    m = Mapa(6, 4, 'curso_pista')
+    L = [
+        (0, 3, 'tile-0', 0), (1, 3, 'tile-0', 0), (2, 3, 'tile-13', 0), (3, 3, 'tile-8', 0),
+        (4, 3, 'tile-0', 0), (5, 3, 'tile-6', 90), (5, 2, 'tile-0', 90), (5, 1, 'tile-6', 0),
+        (4, 1, 'tile-6', 180), (4, 0, 'tile-6', 0), (3, 0, 'tile-17', 0), (2, 0, 'tile-0', 0),
+        (1, 0, 'tile-6', 270), (1, 1, 'tile-0', 90), (1, 2, 'chegada', 180),
+    ]
+    for x, y, t, r in L:
+        m.coloca(x, y, 0, t, r)
+    for k in ((5, 2), (1, 1)):
+        m.lad(*k)['checkpoint'] = True
+    m.inicio = (0, 3, 0)
+    m.inicio_dir = 'L'
+    preenche(m)
+    m.mudou()
+    return m
+
+
+def curso_area():
+    """Área de resgate do curso (curso/): o robô começa a 2 ladrilhos da entrada."""
+    m = Mapa(6, 5, 'curso_area')
+    L = [(2, 4, 'tile-0', 90), (2, 3, 'tile-0', 90),
+         (5, 1, 'tile-6', 0), (5, 2, 'tile-0', 90), (5, 3, 'chegada', 180)]
+    for x, y, t, r in L:
+        m.coloca(x, y, 0, t, r)
+    m.inicio = (2, 4, 0)
+    m.inicio_dir = 'N'
+    m.coloca_zona(1, 0)
+    m.zona['entrada'] = {'lado': 'S', 'i': 1}
+    m.zona['saida'] = {'lado': 'L', 'i': 1}
+    m.zona['verde'] = 'NO'
+    m.zona['vermelho'] = 'NE'
+    m.aplica_zona()
+    preenche(m)
+    m.mudou()
+    return m
+
+
 if __name__ == '__main__':
-    for f in (treino, completo, resgate):
+    for f in (treino, completo, resgate, curso_pista, curso_area):
         m = f()
         print(m.nome, len(m.passos()), m.erro_caminho(), m.validar())
         m.salvar(os.path.join(RAIZ, 'mapas', m.nome + '.json'))

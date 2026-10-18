@@ -6,6 +6,8 @@ import time
 
 import pygame
 
+from .painel_brick import PainelBrick
+
 from . import mapa as M
 from .fisica import pino_num
 
@@ -71,9 +73,12 @@ class Interface:
         self.pasta_mapas = pasta_mapas
         self.f12 = _fonte(12)
         self.f14 = _fonte(14)
+        self.f12b = _fonte(12, True)
+        self.f11 = _fonte(11)
         self.f16b = _fonte(16, True)
         self.f22b = _fonte(22, True)
         self.f30b = _fonte(30, True)
+        self.brick = PainelBrick()
         self.modo = 'simular'
         self.ferramenta = 'parede'
         self.arrasto = None
@@ -615,7 +620,7 @@ class Interface:
         y += 6
         ajuda = ['Arraste o robô com o mouse (programa parado). Q/E giram 90°, roda do mouse 5°.',
                  'Teclas: espaço pausa, B botão, L LoP, R raios, T trilha, C câmeras,',
-                 'F ladrilhos flutuantes, F1–F4 teclado do brick, 1–5 velocidade.']
+                 'F ladrilhos flutuantes, 1–5 velocidade, O tela/teclado do brick (botões: clique ou F1–F4).']
         for linha in _quebra(' '.join(ajuda), 64):
             y = self._txt(linha, x, y, self.f12, COR_TEXTO2)
 
@@ -756,6 +761,9 @@ class Interface:
         if ev.type == pygame.VIDEORESIZE:
             self.sujo = True
         elif ev.type == pygame.MOUSEBUTTONDOWN:
+            if (self.modo == 'simular' and ev.button == 1
+                    and self.brick.mouse_down(ev.pos, s.mundo, self._area())):
+                return
             linhas = self.bot_sim if self.modo == 'simular' else self.bot_ed
             if ev.button == 1:
                 for linha in linhas:
@@ -775,6 +783,7 @@ class Interface:
                 elif self.modo == 'simular' and ev.button in (4, 5) and not s.programa_rodando():
                     self._gira_robo(5 if ev.button == 4 else -5)
         elif ev.type == pygame.MOUSEBUTTONUP:
+            self.brick.mouse_up(s.mundo)
             self.arrasto = None
             self.arrasta_robo = None
         elif ev.type == pygame.MOUSEMOTION:
@@ -805,6 +814,8 @@ class Interface:
             elif k == pygame.K_f:
                 self.mostrar_flutuantes = not self.mostrar_flutuantes
                 self.sujo = True
+            elif k == pygame.K_o and self.modo == 'simular':
+                self.brick.visivel = not self.brick.visivel
             elif k == pygame.K_F5:
                 self._iniciar()
             elif k in (pygame.K_q, pygame.K_e) and self.modo == 'simular' and not s.programa_rodando():
@@ -868,6 +879,8 @@ class Interface:
                     self.trilha = self.trilha[-3000:]
             self._desenha_vitimas()
             self._desenha_robo(snap)
+            if self.modo == 'simular':
+                self.brick.desenha(self.tela, self.sim.mundo, self._area(), self.f12b, self.f11)
             # painel
             lw, lh = self.tela.get_size()
             pygame.draw.rect(self.tela, COR_PAINEL, (lw - PAINEL, 0, PAINEL, lh))

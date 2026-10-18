@@ -16,7 +16,7 @@ Como no simulador da Maze, o programa do aluno importa as bibliotecas reais do M
 Python **3.11 ou mais novo**.
 
 ```bash
-pip install pygame pymunk numpy
+pip install pygame pymunk numpy pillow
 ```
 
 Funciona no Windows e no Linux. No Linux, para os diálogos de abrir/salvar mapa, instale também
@@ -80,6 +80,7 @@ como no robô.
 | **Pausar** (espaço) / **Vel.** (1–5) | pausa ou muda a velocidade (0,25x a 4x). O resultado é o mesmo em qualquer velocidade |
 | arrastar o robô / Q, E / roda do mouse | reposiciona o robô (com o programa parado) |
 | R, T | raios dos VL53, trilha |
+| O | mostra/esconde a tela e o teclado do brick (botões: clique ou F1–F4) |
 
 O painel mostra o tempo, a pontuação, os eventos do juiz e as leituras: os **4 canais de reflexão**
 (o que a lib recebe), os **12 ITR8307 um a um** (cinza = leitura de cada um), a cor dos **3 TCS**,
@@ -88,6 +89,18 @@ leitura dele. Com área de resgate aparecem também os TCS horizontais, o estado
 da porta e da caçamba, cada servo (posição > alvo, ligado/desligado/TRAVA) e o que a câmera viu
 (o leque azul na frente do robô fica vermelho quando a garra abaixada tapa a câmera). As vítimas
 resgatadas continuam desenhadas dentro do triângulo, com um anel verde.
+
+
+### Tela OLED e teclado do brick
+
+A placa da tela + teclado (conector TELA, barramento I2C 0) aparece no canto de baixo à direita do
+mapa: a tela 128x64, os 4 LEDs (branco, vermelho, laranja, verde) e os 4 botões (Voltar, Baixo,
+Cima, Enter). Clique nos botões ou use F1–F4; **O** esconde o painel. A `tela.py` e a `teclado.py`
+rodam sem mudar: o simulador troca o `luma.oled` por uma tela virtual (o desenho é feito com o
+Pillow, como no robô) e traz a fonte DejaVu em `fake_hw/fontes/` para o caminho do Linux funcionar
+no Windows. No robo.json: `"tela"` (barramento e endereço) e `"teclado"` (barramento, endereço e
+`leds_acendem_com`: o nível do bit que acende o LED; na placa atual, 0). Use `Teclado(i2c_bus=0)`:
+`"teclado": true` simula a placa antiga, com o teclado no barramento 1.
 
 ---
 
@@ -403,7 +416,7 @@ ferramentas/        importa_ladrilhos.py (refaz os ladrilhos a partir do rcj-res
   estiver entre os dedos quando eles fecham.
 * O barramento dos servos e das placas de motor é ideal (no real a resposta de 8 bytes da placa de
   motor pode desalinhar o próximo pacote de servo).
-* A tela OLED e o BNO085 não são emulados.
+* O BNO085 não é emulado.
 
 ## Créditos
 

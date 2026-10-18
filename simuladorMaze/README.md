@@ -18,7 +18,7 @@ Python **3.11 ou mais novo** (no Windows, as versões antigas dormem em passos d
 laço de controle lento demais).
 
 ```bash
-pip install pygame pymunk
+pip install pygame pymunk pillow
 ```
 
 Funciona no Windows e no Linux. No Linux, para os diálogos de abrir/salvar mapa, instale também
@@ -54,10 +54,23 @@ Opções: `--robo outro_robo.json`, `--semente N` (repete o mesmo ruído), `--lo
 | **Pausar** (espaço) / **Vel.** (1–5) | pausa ou muda a velocidade (0,25x a 4x). O programa do aluno segue o mesmo relógio. |
 | arrastar o robô / Q, E / roda do mouse | reposiciona o robô (com o programa parado) |
 | R, T, C, F | raios dos VL53, trilha, campo das câmeras, ladrilhos flutuantes (roxo) |
-| F1–F4 | botões do teclado do brick (`teclado.py`) |
+| F1–F4 / clique | botões do teclado do brick (`teclado.py`): Voltar, Baixo, Cima, Enter |
+| O | mostra/esconde a tela e o teclado do brick |
 
 O painel mostra o tempo, a pontuação item por item, os eventos do juiz, as leituras dos sensores
 e a saída (`print`) do programa no console de baixo.
+
+
+### Tela OLED e teclado do brick
+
+A placa da tela + teclado (conector TELA, barramento I2C 0) aparece no canto de baixo à direita do
+mapa: a tela 128x64, os 4 LEDs (branco, vermelho, laranja, verde) e os 4 botões (Voltar, Baixo,
+Cima, Enter). Clique nos botões ou use F1–F4; **O** esconde o painel. A `tela.py` e a `teclado.py`
+rodam sem mudar: o simulador troca o `luma.oled` por uma tela virtual (o desenho é feito com o
+Pillow, como no robô) e traz a fonte DejaVu em `fake_hw/fontes/` para o caminho do Linux funcionar
+no Windows. No robo.json: `"tela"` (barramento e endereço) e `"teclado"` (barramento, endereço e
+`leds_acendem_com`: o nível do bit que acende o LED; na placa atual, 0). Use `Teclado(i2c_bus=0)`:
+`"teclado": true` simula a placa antiga, com o teclado no barramento 1.
 
 ---
 
@@ -242,7 +255,7 @@ gira pelo giroscópio, encosta no para-choque para alinhar, detecta preto/azul/p
 
 * Mundo 2D: sem rampas, pontes ou segundo andar; escadas e lombadas são efeitos (solavanco,
   inclinação, perda de tração), não geometria 3D. Obstáculos ainda não existem.
-* A tela OLED (`tela.py`/luma) e o BNO085 não são emulados.
+* O BNO085 não é emulado.
 * Se o programa morre, os motores seguem o último comando até o timeout de 5 s do firmware, como no robô.
 * `threading.Event.wait(timeout)` e afins usam o relógio real (não seguem pausa/velocidade).
 

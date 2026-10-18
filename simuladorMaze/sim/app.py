@@ -93,6 +93,8 @@ class Simulacao:
         if not self.programa or self.programa_rodando():
             return
         self.pedido_parar = False
+        self.mundo.oled = None              # ligar o robô: tela apagada, teclado com os LEDs no estado inicial
+        self.mundo.teclado_leds = 0x0F
         env = dict(os.environ)
         env['SIM_PORTA'] = str(self.servidor.porta)
         env['PYTHONUNBUFFERED'] = '1'

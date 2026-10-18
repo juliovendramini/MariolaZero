@@ -20,10 +20,13 @@ class CorReflexao:
 
     Detecção de cor
     ---------------
-    Cada cor é uma referência (média e desvio) de cinco características:
+    Cada cor é uma referência (média e desvio) de até cinco características:
       cromaticidade r/(r+g+b), g/(r+g+b), b/(r+g+b)  -> a cor em si, independe do brilho
       brilho C / 127                                  -> branco = 1, prata > 1, preto ~ 0
-      IR / 100                                        -> branco = 1, prata > 1, preto ~ 0
+      IR / 100 (só com usar_ir=True)                  -> branco = 1, prata > 1, preto ~ 0
+    O IR vem DESLIGADO por padrão: a fileira de IR fica uns 9 mm à frente dos TCS e, na borda da
+    linha e nas curvas, o IR já está no branco enquanto o TCS ainda está no preto. Com essa mistura
+    (escuro no TCS, claro no IR) a leitura caía em 'vermelho' ou 'verde'.
     A leitura vai para a referência mais próxima (distância medida em desvios). Se nenhuma
     estiver perto o bastante, o resultado é COR_DESCONHECIDA.
 
@@ -88,13 +91,14 @@ class CorReflexao:
     # IR que fica do lado de cada TCS: TCS1 -> IR 0, meio -> IR 1 e 2, TCS2 -> IR 3
     IR_DO_TCS = {1: (0,), 2: (1, 2), 3: (3,)}
 
-    def __init__(self, porta_serial, arquivo_cores=None, limiar=6.0, usar_ir=True):
+    def __init__(self, porta_serial, arquivo_cores=None, limiar=6.0, usar_ir=False):
         """
         Args:
             porta_serial: Constante da classe Portas (ex.: Portas.SERIAL6)
             arquivo_cores: JSON com referências aprendidas (opcional)
             limiar: distância máxima (em desvios) para aceitar uma cor
-            usar_ir: considera a reflexão IR na classificação de cor
+            usar_ir: considera também a reflexão IR na classificação de cor (padrão False,
+                ver a explicação no início da classe)
         """
         self.lista = [0] * self.QUANTIDADE_BYTES
         self.limiar = limiar

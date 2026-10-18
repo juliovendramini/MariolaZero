@@ -173,13 +173,21 @@ class Mux:
 
 
 class PCF8574:
-    """Teclado do brick (teclado.py): 4 botões nos bits 0..3 (0 = apertado), LEDs nos bits 4..7."""
+    """Teclado do brick (teclado.py): 4 botões nos bits 0..3 (0 = apertado), LEDs nos bits 4..7.
+
+    Botões da esquerda para a direita: Voltar, Baixo, Cima, Enter (bits 0..3).
+    LEDs da esquerda para a direita: branco, vermelho, laranja, verde (bits 4..7)."""
     def __init__(self):
         self.estado = 0xFF
+        self._leds = None
 
     def escreve(self, dados):
         if dados:
             self.estado = dados[-1]
+            leds = (self.estado >> 4) & 0x0F
+            if leds != self._leds:
+                self._leds = leds
+                cliente.conexao.chamar('teclado_leds', v=leds)
 
     def le(self, n):
         v = cliente.conexao.chamar('teclado')['v']
@@ -335,11 +343,16 @@ class BarramentoI2C:
         self.acima = {}       # dispositivos antes do mux
         self.canais = {}      # canal -> [dispositivos]
         self.mux = None
+        # teclado (PCF8574 em 0x38): no brick atual ele fica na mesma placa da tela, no conector
+        # TELA (barramento 0). "teclado": true no robo.json = placa antiga, no barramento 1.
+        tec = cliente.config.get('teclado')
+        if tec:
+            bus_tec = 1 if tec is True else int(tec.get('barramento', 0))
+            if bus_tec == num:
+                self.acima[int(tec.get('endereco', 0x38)) if isinstance(tec, dict) else 0x38] = PCF8574()
         if num == 1:
             self.mux = Mux()
             self.acima[0x70] = self.mux
-            if cliente.config.get('teclado'):
-                self.acima[0x38] = PCF8574()
             from . import pinos as sim_pinos
             for s in cliente.config['vl53']:
                 ch = sim_pinos.canal_mux(s['mux'])

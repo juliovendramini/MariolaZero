@@ -9,6 +9,8 @@ import time
 import numpy as np
 import pygame
 
+from .painel_brick import PainelBrick
+
 from . import ladrilhos as LT
 from . import mapa as M
 from .fisica import pino_num
@@ -82,9 +84,12 @@ class Interface:
         self.raiz = raiz or os.path.dirname(pasta_mapas)
         self.f12 = _fonte(12)
         self.f14 = _fonte(14)
+        self.f12b = _fonte(12, True)
+        self.f11 = _fonte(11)
         self.f16b = _fonte(16, True)
         self.f22b = _fonte(22, True)
         self.f30b = _fonte(30, True)
+        self.brick = PainelBrick()
         self.modo = 'simular'
         self.ferramenta = 'ladrilho'
         self.tipo_paleta = 'tile-0'
@@ -861,7 +866,8 @@ class Interface:
                 y = self._txt(linha[:66], x, y, self.f12)
         y += 4
         ajuda = ('Arraste o robô com o mouse (programa parado); Q/E giram 90°, roda do mouse 5°. '
-                 'Teclas: espaço pausa, B botão, L LoP, R raios, T trilha, P caminho, 1–5 velocidade, F5 inicia.')
+                 'Teclas: espaço pausa, B botão, L LoP, R raios, T trilha, P caminho, 1–5 velocidade, F5 inicia, '
+                 'O tela/teclado do brick (botões: clique ou F1–F4).')
         for linha in _quebra(ajuda, 70):
             y = self._txt(linha, x, y, self.f12, COR_TEXTO2)
 
@@ -1175,6 +1181,9 @@ class Interface:
             elif self.modo == 'simular' and self._area().collidepoint(pos) and not s.programa_rodando():
                 self._gira_robo(5 if ev.y > 0 else -5)
         elif ev.type == pygame.MOUSEBUTTONDOWN:
+            if (self.modo == 'simular' and ev.button == 1
+                    and self.brick.mouse_down(ev.pos, s.mundo, self._area())):
+                return
             if ev.button in (4, 5):
                 return
             linhas = self.bot_sim if self.modo == 'simular' else self.bot_ed
@@ -1200,6 +1209,7 @@ class Interface:
                     if math.hypot(x - rx, y - ry) < 120:
                         self.arrasta_robo = (x - rx, y - ry)
         elif ev.type == pygame.MOUSEBUTTONUP:
+            self.brick.mouse_up(s.mundo)
             self.arrasta_robo = None
         elif ev.type == pygame.MOUSEMOTION:
             if self.arrasta_robo is not None:
@@ -1229,6 +1239,8 @@ class Interface:
             elif k == pygame.K_t:
                 self.mostrar_trilha = not self.mostrar_trilha
                 self.trilha = []
+            elif k == pygame.K_o and self.modo == 'simular':
+                self.brick.visivel = not self.brick.visivel
             elif k == pygame.K_F5:
                 self._iniciar()
             elif k in (pygame.K_q, pygame.K_e) and self.modo == 'simular' and not s.programa_rodando():
@@ -1352,6 +1364,7 @@ class Interface:
             self._desenha_robo(snap)
             if snap['embaixo']:
                 self._redesenha_pontes(snap)
+            self.brick.desenha(self.tela, self.sim.mundo, self._area(), self.f12b, self.f11)
         lw, lh = self.tela.get_size()
         pygame.draw.rect(self.tela, COR_PAINEL, (lw - PAINEL, 0, PAINEL, lh))
         x = lw - PAINEL + 14

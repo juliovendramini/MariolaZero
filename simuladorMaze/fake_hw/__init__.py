@@ -36,6 +36,11 @@ def instalar(pasta_programa, pasta_libs):
     sys.modules['gpiod.line'] = fake_gpiod.line
     for nome, mod in sim_modulos.modulos().items():
         sys.modules[nome] = mod
+    # tela OLED (luma.oled) e a fonte DejaVu que a tela.py abre pelo caminho do Linux
+    from . import fake_luma
+    for nome, mod in fake_luma.modulos().items():
+        sys.modules[nome] = mod
+    fake_luma.instala_fontes()
 
     # caminho de import: pasta do programa primeiro, libs do Mariola como reserva
     sys.path.insert(0, pasta_programa)

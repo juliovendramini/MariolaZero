@@ -132,6 +132,13 @@ class Servidor:
                 for k in w.teclas_teclado:
                     v &= ~(1 << (k - 1))
                 return {'v': v}
+            if op == 'teclado_leds':
+                w.teclado_leds = int(r['v']) & 0x0F
+                return {}
+            if op == 'oled':
+                w.oled = bytes.fromhex(r['b']) if r.get('b') else None
+                w.oled_tam = (int(r.get('w', 128)), int(r.get('h', 64)))
+                return {}
             if op == 'debug':
                 self._debug(w, r)
                 return {}

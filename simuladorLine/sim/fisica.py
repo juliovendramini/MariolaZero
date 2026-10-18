@@ -304,6 +304,9 @@ class Mundo:
         self.gpio_saida = {}
         self.botoes_gui = set()
         self.teclas_teclado = set()
+        self.teclado_leds = 0x0F      # bits dos 4 LEDs do teclado (como saem do PCF8574)
+        self.oled = None              # imagem da tela OLED (1 bit por pixel) ou None = apagada
+        self.oled_tam = (128, 64)
         self.raios = {}
         self.debug = {'pose': None, 'texto': '', 'marcas': []}
         self.servos = {}

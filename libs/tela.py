@@ -43,6 +43,6 @@ class Tela:
 
     def _desenha(self):
         """Desenha o conteúdo na tela."""
-        with canvas(self.device) as draw:
+        with canvas(self.display) as draw:
             for i, linha in enumerate(self.linhas):
                 draw.text((0, i * 15), linha, font=self.font, fill="white")
