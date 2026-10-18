@@ -84,7 +84,8 @@ Três detalhes da placa atual (todos explicados na [referência](referencia/tecl
 
 * o teclado está no **barramento 0**, junto com a tela: `Teclado(i2c_bus=0)` (o padrão da lib, 1, é
   da placa antiga);
-* o **LED acende com 0** em `altera_led` (e os quatro acendem logo depois de `Teclado()`);
+* o **LED acende com 1** em `altera_led`. Ao ligar o brick os quatro ficam acesos, e
+  `Teclado()` apaga todos;
 * um aperto dura vários ciclos do laço: **espere soltar** para contar um aperto só.
 
 ```python

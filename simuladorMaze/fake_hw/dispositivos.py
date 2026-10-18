@@ -176,7 +176,13 @@ class PCF8574:
     """Teclado do brick (teclado.py): 4 botões nos bits 0..3 (0 = apertado), LEDs nos bits 4..7.
 
     Botões da esquerda para a direita: Voltar, Baixo, Cima, Enter (bits 0..3).
-    LEDs da esquerda para a direita: branco, vermelho, laranja, verde (bits 4..7)."""
+    LEDs da esquerda para a direita: branco, vermelho, laranja, verde (bits 4..7).
+
+    Na placa, é um ATtiny1616 emulando um PCF8574A (firmware tecladoMariola.ino): bit 1 = pino
+    em INPUT_PULLUP, bit 0 = pino em OUTPUT LOW; a leitura devolve o nível real dos pinos.
+    Os pinos dos LEDs vão à base de um NPN (LED entre o VCC e o coletor): o LED acende com 1
+    (o pull-up liga o transistor) e apaga com 0;
+    ao ligar, os 4 ficam acesos. E um botão cujo bit foi escrito com 0 lê sempre 0 ("apertado")."""
     def __init__(self):
         self.estado = 0xFF
         self._leds = None
@@ -191,7 +197,7 @@ class PCF8574:
 
     def le(self, n):
         v = cliente.conexao.chamar('teclado')['v']
-        return [((self.estado & 0xF0) | (v & 0x0F))] * n
+        return [((self.estado & 0xF0) | (v & self.estado & 0x0F))] * n
 
 
 class VL53L0X:

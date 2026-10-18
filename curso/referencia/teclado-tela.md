@@ -19,7 +19,7 @@ calibração sem computador e indicar estados com os LEDs.
 | Chip | Endereço I2C | Barramento | Lib |
 |---|---|---|---|
 | OLED SSD1306 128×64 | 0x3C | 0 (conector TELA) | `tela.py` (via `luma.oled`) |
-| PCF8574 (botões + LEDs) | 0x38 | 0 (conector TELA) | `teclado.py` |
+| ATtiny1616 emulando um PCF8574A (botões + LEDs) | 0x38 | 0 (conector TELA) | `teclado.py` |
 
 > Os conectores TELA e TECLADO são I2C **sem proteção** e a 3,3 V: use só para a tela e o teclado.
 > Bricks com a placa antiga têm o teclado separado, no conector TECLADO (barramento 1).
@@ -30,7 +30,22 @@ calibração sem computador e indicar estados com os LEDs.
 
 `from teclado import Teclado`
 
-Um expansor PCF8574: pinos 0–3 = botões, 4–7 = LEDs.
+Para o Raspberry/Banana Pi, o teclado é um expansor de I/O **PCF8574A**: um byte, um bit por
+pino; pinos 0–3 = botões, 4–7 = LEDs. Na placa, quem faz esse papel é um **ATtiny1616** com um
+firmware que imita o PCF8574A (`tecladoMariola.ino`):
+
+| Escreveu no bit | O pino fica | Serve para |
+|---|---|---|
+| **1** | entrada com pull-up | **ler um botão** (solto = 1, apertado = 0, o botão liga o pino ao GND) · LED **aceso** (o pull-up liga o transistor do LED) |
+| **0** | saída em nível baixo (GND) | LED **apagado** |
+
+A leitura devolve o nível **real** dos 8 pinos. Duas consequências:
+
+* os bits dos botões (0–3) têm que estar sempre em **1**. Se um deles for escrito com 0, o pino
+  vira saída em GND e aquele botão lê **sempre "apertado"**. A lib já cuida disso (`0x0F` no
+  início e `altera_led` só mexe nos bits 4–7);
+* o firmware não filtra o ruído do contato (*debounce*) nem guarda apertos: o que vale é o nível
+  do pino **no momento da leitura**. Um toque rápido entre duas leituras se perde.
 
 > **Atenção ao barramento:** o padrão da lib ainda é `i2c_bus=1` (placa antiga). Na placa atual,
 > tela e teclado juntos, use **`Teclado(i2c_bus=0)`**. O menu principal tenta o 1 e depois o 0;
@@ -57,13 +72,15 @@ Botão 1 a 4 (`ValueError` fora disso). Cada chamada lê o chip pelo I2C.
 ### `altera_led(led, valor)`
 Muda o pino do LED 1 a 4 (`ValueError` fora disso) para o nível `valor` (0 ou 1).
 
-> **Qual nível acende?** Na placa atual o PCF8574 **puxa o LED para o GND**: o LED **acende com
-> 0** e apaga com 1 (o comentário da lib diz o contrário). Por isso, logo depois de
-> `Teclado()`, que deixa os pinos dos LEDs em 0, **os quatro LEDs ficam acesos**. Confira no seu
-> brick e esconda o detalhe numa função:
+> **Qual nível acende?** O pino não liga o LED direto: ele vai à base de um **transistor NPN**,
+> e o LED fica entre o VCC e o coletor. Bit 1 (pull-up) liga o transistor e o LED, com o brilho
+> normal; bit 0 (GND) desliga. Então o LED **acende com 1** e apaga com 0, como diz a lib. Ao ligar o brick, o firmware deixa todos os bits em 1: **os quatro LEDs acendem** e ficam
+> assim até um programa iniciar o teclado. `Teclado()` escreve `0x0F` (LEDs em 0) e **apaga os
+> quatro**. Vale esconder o nível numa função, para o programa ficar legível e fácil de adaptar
+> a outra placa:
 >
 > ```python
-> LED_ACENDE_COM = 0
+> LED_ACENDE_COM = 1
 > def led(numero, aceso):
 >     teclado.altera_led(numero, LED_ACENDE_COM if aceso else 1 - LED_ACENDE_COM)
 > ```
@@ -143,6 +160,7 @@ Os dois simuladores mostram a **frente do brick** no canto de baixo à direita d
 * A `tela.py` e a `teclado.py` rodam sem mudar. A tela usa o Pillow (`pip install pillow`), como
   no robô; a fonte DejaVu, que no robô fica em `/usr/share/fonts`, vem junto com o simulador.
 * No `robo*.json`: `"tela": {"barramento": 0, "endereco": 60}` e
-  `"teclado": {"barramento": 0, "endereco": 56, "leds_acendem_com": 0}`. Para simular a placa
+  `"teclado": {"barramento": 0, "endereco": 56, "leds_acendem_com": 1}`. Para simular a placa
   antiga (teclado no barramento 1), use `"teclado": true`.
-* Quando o programa (re)começa, a tela apaga e os LEDs voltam ao estado de quando o robô liga.
+* Quando o programa (re)começa, a tela apaga e os LEDs voltam ao estado de quando o robô liga
+  (os quatro acesos).

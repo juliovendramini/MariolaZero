@@ -331,9 +331,9 @@
   "lop_sem_progresso_s": 0,
   "pula_checkpoint_apos_3_tentativas": true
  },
- "_tela_teclado": "Placa da tela + teclado no conector TELA (barramento I2C 0): OLED SSD1306 128x64 em 0x3C (tela.py) e PCF8574 em 0x38 (teclado.py, use Teclado(i2c_bus=0)). Botões, da esquerda para a direita: Voltar, Baixo, Cima, Enter (bits 0-3). LEDs: branco, vermelho, laranja, verde (bits 4-7). leds_acendem_com: nível do bit que acende o LED (0 = o PCF8574 puxa o LED para o GND). Placa antiga com o teclado no barramento 1: \"teclado\": true.",
+ "_tela_teclado": "Placa da tela + teclado no conector TELA (barramento I2C 0): OLED SSD1306 128x64 em 0x3C (tela.py) e o teclado em 0x38 (ATtiny1616 imitando um PCF8574A; teclado.py, use Teclado(i2c_bus=0)). Botões, da esquerda para a direita: Voltar, Baixo, Cima, Enter (bits 0-3). LEDs: branco, vermelho, laranja, verde (bits 4-7). leds_acendem_com: nível do bit que acende o LED (1 = o pino liga o transistor NPN do LED; ao ligar os 4 ficam acesos, Teclado() apaga). Placa antiga com o teclado no barramento 1: \"teclado\": true.",
  "tela": {"barramento": 0, "endereco": 60},
- "teclado": {"barramento": 0, "endereco": 56, "leds_acendem_com": 0},
+ "teclado": {"barramento": 0, "endereco": 56, "leds_acendem_com": 1},
  "_arquivos_rodada": "arquivos (na pasta do programa) apagados ao clicar em 'Nova rodada'",
  "arquivos_rodada": [
   "checkpoint_line.json"

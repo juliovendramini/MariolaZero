@@ -13,7 +13,7 @@ from teclado import Teclado
 
 OPCOES = ['Seguir linha', 'Calibrar cores', 'Testar garra', 'Sair']
 LED_BRANCO, LED_VERMELHO, LED_LARANJA, LED_VERDE = 1, 2, 3, 4
-LED_ACENDE_COM = 0      # na placa atual o LED acende com o bit em 0 (confira no seu brick)
+LED_ACENDE_COM = 1      # o LED acende com o bit em 1 (Teclado() começa com os 4 apagados)
 
 
 def abre_teclado():

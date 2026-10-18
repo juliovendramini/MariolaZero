@@ -99,7 +99,7 @@ Cima, Enter). Clique nos botões ou use F1–F4; **O** esconde o painel. A `tela
 rodam sem mudar: o simulador troca o `luma.oled` por uma tela virtual (o desenho é feito com o
 Pillow, como no robô) e traz a fonte DejaVu em `fake_hw/fontes/` para o caminho do Linux funcionar
 no Windows. No robo.json: `"tela"` (barramento e endereço) e `"teclado"` (barramento, endereço e
-`leds_acendem_com`: o nível do bit que acende o LED; na placa atual, 0). Use `Teclado(i2c_bus=0)`:
+`leds_acendem_com`: o nível do bit que acende o LED; na placa atual, 1: ao ligar os quatro ficam acesos e `Teclado()` apaga todos). Use `Teclado(i2c_bus=0)`:
 `"teclado": true` simula a placa antiga, com o teclado no barramento 1.
 
 ---

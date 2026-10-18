@@ -65,6 +65,7 @@ class Robo:
             'dir_frente': VL53L0X(Portas.I2C3),
             'dir_tras': VL53L0X(Portas.I2C4),
             'frente': VL53L0X(Portas.I2C5),
+            'tras': VL53L0X(Portas.I2C6),      # traseiro, mesma altura do da frente
         }
         self.botoes = Botoes()
         self.camera = DeteccaoVitimas()

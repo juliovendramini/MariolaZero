@@ -218,7 +218,7 @@ class Mundo:
         self.gpio_saida = {}
         self.botoes_gui = set()    # pinos "apertados" pela interface
         self.teclas_teclado = set()
-        self.teclado_leds = 0x0F      # bits dos 4 LEDs do teclado (como saem do PCF8574)
+        self.teclado_leds = 0x0F      # bits dos 4 LEDs (ao ligar, todos em 1 = acesos)
         self.oled = None              # imagem da tela OLED (1 bit por pixel) ou None = apagada
         self.oled_tam = (128, 64)
         self.kits = []             # {'x','y','t','lado'}

@@ -67,7 +67,7 @@ class PainelBrick:
         pygame.draw.rect(tela, (40, 44, 52), tr.inflate(4, 4), 2)
         # LEDs e botões
         cfg = mundo.cfg.get('teclado') or {}
-        acende = int(cfg.get('leds_acendem_com', 0)) if isinstance(cfg, dict) else 0
+        acende = int(cfg.get('leds_acendem_com', 1)) if isinstance(cfg, dict) else 1
         leds = getattr(mundo, 'teclado_leds', 0x0F)
         passo = tr.w / 4
         y_led = tr.bottom + 20
