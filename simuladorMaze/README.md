@@ -188,7 +188,8 @@ O comportamento das placas foi tirado de `placaBrickVendra.ino`, `placaControleM
 **Sensor de cor/reflexão Pro1616**
 * Lê a ~50 Hz e devolve o último valor; 30 s sem pedido ele para de ler e o primeiro pedido
   devolve valores velhos. Lê todos os bytes recebidos e usa só o último.
-* **IR: 0 = preto, ~100 = branco calibrado, acima de 100 = mais refletivo (prata).**
+* **IR: 0 = preto, ~100 = branco calibrado. A fita prata lê menos que o branco (~80):** quem vê o
+  prata é o TCS (passa de 127).
 * **TCS: calibrado no branco e enviado pela metade (branco ≈ 127).** Por isso
   A versão antiga de `CorReflexao.detecta_cor()` (que esperava branco > 230) classificava o branco como vermelho.
   Calibrar branco leva ~7 s; preto ~2 s.

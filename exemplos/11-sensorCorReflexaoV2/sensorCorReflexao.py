@@ -11,19 +11,21 @@ class CorReflexao:
 
     Layout dos 16 bytes recebidos do sensor (comando 0x61):
       [0-3]:   Reflexão IR dos 4 sensores. Escala do firmware: 0 = preto, ~100 = branco
-               calibrado, acima de 100 = mais refletivo que o branco (ex.: piso prateado).
+               calibrado. A fita prata lê MENOS que o branco no IR (~80): o IR não serve
+               para achar o prata.
       [4-7]:   Sensor de cor TCS1     (R, G, B, C)
       [8-11]:  Sensor de cor TCS meio (R, G, B, C)
       [12-15]: Sensor de cor TCS2     (R, G, B, C)
       O TCS é calibrado no branco e o firmware envia METADE do valor: branco ~127, o que
-      deixa folga até 255 para superfícies refletivas (prata).
+      deixa folga até 255 para superfícies refletivas: com os LEDs brancos de 5 mm da placa,
+      a fita prata passa de 127 (~200). É o TCS que vê o prata.
 
     Detecção de cor
     ---------------
     Cada cor é uma referência (média e desvio) de até cinco características:
       cromaticidade r/(r+g+b), g/(r+g+b), b/(r+g+b)  -> a cor em si, independe do brilho
       brilho C / 127                                  -> branco = 1, prata > 1, preto ~ 0
-      IR / 100 (só com usar_ir=True)                  -> branco = 1, prata > 1, preto ~ 0
+      IR / 100 (só com usar_ir=True)                  -> branco = 1, prata ~0,8, preto ~ 0
     O IR vem DESLIGADO por padrão: a fileira de IR fica uns 9 mm à frente dos TCS e, na borda da
     linha e nas curvas, o IR já está no branco enquanto o TCS ainda está no preto. Com essa mistura
     (escuro no TCS, claro no IR) a leitura caía em 'vermelho' ou 'verde'.
@@ -78,7 +80,7 @@ class CorReflexao:
     REFERENCIAS_PADRAO = {
         "branco":   ((127, 128, 126, 127), 100),
         "preto":    ((3, 3, 4, 5), 2),
-        "prata":    ((190, 195, 200, 205), 190),
+        "prata":    ((190, 195, 200, 205), 80),
         "azul":     ((20, 45, 115, 66), 70),
         "vermelho": ((115, 25, 22, 58), 85),
         "verde":    ((30, 85, 45, 62), 75),
@@ -171,7 +173,7 @@ class CorReflexao:
     # ── Reflexão IR (índices 0-3) ───────────────────────────────────────
 
     def le_reflexao(self):
-        """Lista com os 4 valores de reflexão IR (0 = preto, ~100 = branco, >100 = prata)."""
+        """Lista com os 4 valores de reflexão IR (0 = preto, ~100 = branco; prata ~80)."""
         return self.lista[0:4]
 
     def reflexao(self, sensor):

@@ -123,7 +123,7 @@ class Seguidor:
 
         def achou():
             ir = r.reflexao()
-            if eh_prata(ir):
+            if eh_prata(r, ir):
                 return True               # fita prata da área de resgate
             pos, soma = posicao_linha(ir)
             return pos is not None

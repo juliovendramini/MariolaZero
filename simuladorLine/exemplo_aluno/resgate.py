@@ -30,21 +30,35 @@ except ImportError:          # robô sem câmera
     Visao = None
 
 PRETO = 50
-PRATA = 140          # IR acima disso = fita prata (o branco fica ~100)...
-SATURADO = 235       # ...mas sem saturar: em cima da lombada o sensor quase encosta no chão e o IR estoura
+PRATA_C = 165        # claridade C do TCS: branco ~127, prata ~200 (os LEDs de 5 mm fazem o prata brilhar)
+IR_PRATA = (50, 120)  # no prata o IR lê ~80, MENOS que no branco. Fora disso não é prata:
+                      # abaixo = tem linha preta embaixo; acima = sensor perto do chão (lombada)
 
 
-def eh_prata(ir):
-    """Fita prata embaixo de pelo menos 3 canais (não confunde com a lombada, que satura o IR)."""
-    return sum(PRATA <= v <= SATURADO for v in ir) >= 3
+def eh_prata(r, ir=None):
+    """Fita prata embaixo do sensor: os 3 TCS muito claros (C acima do branco) e com a cor 'prata',
+    e os 4 canais de IR entre 50 e 120.
+
+    A fita prata da entrada é larga (atravessa o vão todo): os 3 TCS ficam em cima dela ao mesmo
+    tempo e não há linha preta embaixo. Em cima da lombada o sensor chega perto do chão e o branco
+    também fica muito claro no TCS (~200), mas aí a linha preta continua embaixo do sensor (TCS do
+    meio e canais do meio escuros). O IR sozinho não serve para achar o prata: ele lê ~80 no
+    prata, menos que no branco."""
+    ir = ir if ir is not None else r.reflexao()
+    if min(ir) < IR_PRATA[0] or max(ir) > IR_PRATA[1]:
+        return False
+    for k in (1, 2, 3):
+        if r.cor.le_rgbc(k)[3] < PRATA_C or r.cor.cor(k) != 'prata':
+            return False
+    return True
 
 
 def entrada_da_area(r, ir):
-    """Fita prata de verdade: IR claro (sem saturar), robô nivelado (no pé/topo de rampa o
-    sensor chega perto do chão e o branco fica mais claro) e os TCS também dizendo 'prata'."""
-    if not eh_prata(ir) or abs(r.inclinacao()) > 4:
-        return False
-    return r.cores().count('prata') >= 2
+    """Fita prata de verdade: eh_prata() com o robô nivelado (no pé/topo de rampa o sensor chega
+    perto do chão e o branco fica mais claro)."""
+    return abs(r.inclinacao()) <= 4 and eh_prata(r, ir)
+
+
 VEL = 32
 DIST_PAREDE = 60     # mm do VL53 da direita até a parede seguida
 FRENTE_PAREDE = 60   # mm do VL53 da frente: vira no canto (o robô ainda gira sem raspar)
@@ -76,7 +90,7 @@ class AreaResgate:
 
     # ------------------------------------------------------------------ sensores
     def prata(self, ir=None):
-        return eh_prata(ir or self.r.reflexao())
+        return eh_prata(self.r, ir)
 
     def preto_largo(self, ir=None):
         ir = ir or self.r.reflexao()

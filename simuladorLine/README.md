@@ -200,9 +200,10 @@ são estimativas** (ver `_comentario` no json).
    x = 71        y=+20     y=0      y=−20
 ```
 
-* **Bytes** iguais aos do firmware: 4 de reflexão (0 = preto, ~100 = branco calibrado, acima de 100 =
-  mais refletivo) + 3 x RGBC (TCS calibrado no branco e enviado pela metade, branco ≈ 127), na taxa do
-  firmware (`taxa_hz`, 50 Hz). A lib `sensorCorReflexao.py` não muda.
+* **Bytes** iguais aos do firmware: 4 de reflexão (0 = preto, ~100 = branco calibrado; a fita prata lê
+  menos que o branco, ~80) + 3 x RGBC (TCS calibrado no branco e enviado pela metade, branco ≈ 127;
+  com os LEDs brancos de 5 mm a fita prata passa de 127, ~200), na taxa do firmware (`taxa_hz`,
+  50 Hz). A lib `sensorCorReflexao.py` não muda.
 * Cada ITR8307 enxerga um disquinho de 2 mm de raio; cada TCS, 4 mm. Por isso a borda da linha e
   o verde aparecem "misturados", como no real.
 * **Altura:** se o piso fica mais longe que o normal (crista de rampa, robô inclinado de lado, beira
@@ -361,9 +362,12 @@ desligar o robô. Arquivos listados em `arquivos_rodada` são apagados a cada "N
   de esteira) vai direto para a saída: segue a parede pela direita até um vão com fita preta (a
   prata é a entrada: passa reto). As paredes da área são paralelas à direção em que o robô entrou, e
   o giroscópio guarda essa direção para o robô se alinhar.
-* Fita prata x lombada x rampa: em cima da lombada e no pé da rampa o sensor fica mais perto do chão
-  e o branco também lê "claro demais". O exemplo só aceita a entrada com 3 canais entre 140 e 235
-  (a lombada satura o IR), o robô nivelado e 2 TCS classificando "prata".
+* Fita prata x lombada x rampa: quem vê o prata é o TCS (C ~200, acima do branco); o IR lê menos no
+  prata (~80). Em cima da lombada e no pé da rampa o sensor fica mais perto do chão e tudo clareia.
+  No alto da lombada o branco também chega a ~200 no TCS, mas a linha preta continua embaixo do meio
+  do sensor. O exemplo só aceita a fita prata com os 3 TCS classificando "prata" e C acima de 165,
+  os 4 canais de IR entre 50 e 120 (sem linha preta, sem estourar) e, na entrada da área, o robô
+  nivelado.
 
 É um ponto de partida, não a solução. Nos mapas de exemplo ele completa a rodada às vezes sem LoP e
 às vezes com. Na área de resgate ele costuma pegar as três vítimas, mas às vezes perde uma. Use isso

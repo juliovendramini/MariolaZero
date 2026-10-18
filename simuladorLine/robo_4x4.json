@@ -94,7 +94,7 @@
   "tempo_calibra_preto_s": 2.2
  },
  "cores_piso": {
-  "_comentario": "Leitura de cada material JÁ na escala do firmware. TCS calibrado no branco e enviado pela metade (branco ~127). IR: 0 = preto, ~100 = branco calibrado. Troque pelos valores lidos no robô. ATENÇÃO ao verde no IR: fita/impressão verde costuma refletir bastante infravermelho.",
+  "_comentario": "Leitura de cada material JÁ na escala do firmware. TCS calibrado no branco e enviado pela metade (branco ~127). IR: 0 = preto, ~100 = branco calibrado; o prata lê MENOS que o branco no IR (~80), quem vê o prata é o TCS (com os LEDs de 5 mm ele passa de 127). Troque pelos valores lidos no robô. ATENÇÃO ao verde no IR: fita/impressão verde costuma refletir bastante infravermelho.",
   "branco": {
    "rgbc": [
     127,
@@ -138,7 +138,7 @@
     200,
     205
    ],
-   "ir": 190
+   "ir": 80
   },
   "madeira": {
    "rgbc": [

@@ -34,15 +34,28 @@ Mesmo sem resgatar ninguém, **sair da área e continuar** vale os pontos do res
 
 ## 15.3 Detectar a entrada
 
-Não é tão simples: o IR passa de 100 no prata, mas também em cima da lombada e no pé da rampa
-(sensor mais perto do chão). O exemplo só aceita a entrada se as três coisas concordarem:
+Quem vê a fita prata é o **TCS**: com os LEDs de 5 mm, a claridade C passa de 127 (o branco) e
+chega a ~200. O IR não ajuda a achar o prata, porque lê **menos** nele (~80) que no branco. Mas
+em cima da lombada o sensor chega mais perto do chão e **tudo** clareia: o branco também chega a
+~200 no TCS. A diferença é que a fita prata atravessa o vão inteiro (os 3 TCS e os 4 canais de IR
+ficam em cima dela, sem linha preta), enquanto na lombada a linha continua embaixo do meio do
+sensor. O exemplo só aceita a entrada se tudo concordar:
 
 ```python
-def eh_prata(ir):
-    return sum(140 <= v <= 235 for v in ir) >= 3        # claro, mas sem saturar (lombada satura)
+PRATA_C = 165          # claridade C do TCS: branco ~127, prata ~200
+IR_PRATA = (50, 120)   # no prata o IR lê ~80; abaixo = linha preta; acima = sensor perto do chão
+
+def eh_prata(r, ir=None):
+    ir = ir if ir is not None else r.reflexao()
+    if min(ir) < IR_PRATA[0] or max(ir) > IR_PRATA[1]:
+        return False                                     # linha preta embaixo, ou IR estourado
+    for k in (1, 2, 3):                                  # os 3 TCS muito claros e 'prata'
+        if r.cor.le_rgbc(k)[3] < PRATA_C or r.cor.cor(k) != 'prata':
+            return False
+    return True
 
 def entrada_da_area(r, ir):
-    return eh_prata(ir) and abs(r.inclinacao()) < 4 and r.cores().count('prata') >= 2
+    return abs(r.inclinacao()) <= 4 and eh_prata(r, ir)  # e o robô nivelado
 ```
 
 ## 15.4 Um referencial para a área inteira

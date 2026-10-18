@@ -91,10 +91,10 @@
     "tempo_calibra_preto_s": 2.2
   },
   "cores_piso": {
-    "_comentario": "Escala do firmware: o TCS é calibrado no branco e manda METADE (branco ~127, folga até 255). IR: 0 = preto, ~100 = branco calibrado, >100 = mais refletivo que o branco (prata). Valores estimados: troque pelos lidos no robô.",
+    "_comentario": "Escala do firmware: o TCS é calibrado no branco e manda METADE (branco ~127, folga até 255). IR: 0 = preto, ~100 = branco calibrado; o prata lê MENOS que o branco no IR (~80), quem vê o prata é o TCS (passa de 127). Valores estimados: troque pelos lidos no robô.",
     "branco":   {"rgbc": [127, 128, 126, 127], "ir": 100},
     "preto":    {"rgbc": [3, 3, 4, 5],         "ir": 2},
-    "prata":    {"rgbc": [190, 195, 200, 205], "ir": 190},
+    "prata":    {"rgbc": [190, 195, 200, 205], "ir": 80},
     "azul":     {"rgbc": [20, 45, 115, 66],    "ir": 70},
     "vermelho": {"rgbc": [115, 25, 22, 58],    "ir": 85}
   },

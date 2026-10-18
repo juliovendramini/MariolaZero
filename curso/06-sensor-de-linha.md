@@ -28,9 +28,11 @@ robô para cima:
  TCS:        [TCS 1]           [TCS 2 (meio)]          [TCS 3]
 ```
 
-* **IR (4 canais):** `0 = preto`, `~100 = branco`, `> 100 = prata`. Rápido (~50 leituras/s). É
+* **IR (4 canais):** `0 = preto`, `~100 = branco`. Na fita prata o IR lê **menos** que no branco
+  (~80): o IR não acha o prata. Rápido (~50 leituras/s). É
   com ele que se segue a linha.
-* **TCS (3 sensores de cor):** R, G, B, C com **branco ≈ 127**. É com eles que se veem as cores.
+* **TCS (3 sensores de cor):** R, G, B, C com **branco ≈ 127**. É com eles que se veem as cores,
+  inclusive o prata: com os LEDs de 5 mm, a fita prata passa de 127 (~200).
 
 Rode [`le_sensor.py`](codigos/04_linha/le_sensor.py) e arraste o robô (no simulador) por cima da
 linha, do verde, da fita prata e da vermelha:
@@ -188,9 +190,16 @@ def eh_verde(tcs):
 ```
 
 ### Prata x lombada x rampa
-O IR passa de 100 no prata, mas também quando o sensor chega **mais perto do chão** (em cima da
-lombada, no pé da rampa). O exemplo da Line só aceita a entrada da área com 3 canais entre 140 e
-235, o robô nivelado (giroscópio) e 2 TCS dizendo "prata".
+Quem vê o prata é o **TCS**: a claridade C passa de 127 (o branco) e chega a ~200. Só que, quando o
+sensor chega **mais perto do chão** (em cima da lombada, no pé da rampa), **tudo** fica mais claro,
+o branco também: no simulador, o TCS no branco chega a ~200 no alto da lombada, igual ao prata.
+O que separa os dois casos é a **linha preta**: a fita prata da entrada atravessa o vão inteiro,
+então os 3 TCS e os 4 canais de IR ficam em cima dela ao mesmo tempo; na lombada a linha continua
+embaixo do meio do sensor. O exemplo da Line só aceita a fita prata com:
+
+* os **3** TCS dizendo "prata", com C acima de 165;
+* os **4** canais de IR entre 50 e 120 (sem linha preta embaixo e sem o IR estourar);
+* e, para a entrada da área, o robô nivelado (giroscópio).
 
 ## Exercícios
 

@@ -113,7 +113,7 @@ gira 90°, anda até achar preto, procura a linha. Funciona para o obstáculo pa
   crista, o sensor muda de altura e tudo escurece: o passo 4 do `passo()` segue reto pelo
   giroscópio enquanto a leitura não tem contraste.
 * **Lombada:** o sensor sobe e desce; com o sensor perto do chão o branco satura (> 200) e o preto
-  fica cinza. Não confunda com prata (módulo 6).
+  fica cinza; os TCS também clareiam. Não confunda com prata (módulo 6).
 * **Detritos:** palitos que fazem o robô "pular". Velocidade menor ajuda.
 
 ## 14.7 Chegada

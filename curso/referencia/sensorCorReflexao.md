@@ -21,11 +21,12 @@ de reset da placa. Vista de baixo, a esquerda e a direita do robô aparecem troc
 É o "olho no chão" do robô da Rescue Line (e o leitor de piso da Maze). Uma placa com:
 
 * **12 sensores infravermelhos ITR8307** em fila, agrupados em **4 canais** de 3. Cada canal diz
-  o quanto aquele trecho do chão reflete: **0 = preto, ~100 = branco calibrado, acima de 100 =
-  mais brilhante que o branco (prata)**.
+  o quanto aquele trecho do chão reflete: **0 = preto, ~100 = branco calibrado**. A fita prata
+  lê **menos** que o branco no IR (~80).
 * **3 sensores de cor TCS34725** (esquerda = 1, meio = 2, direita = 3), um pouco atrás da fila de
   IR (no robô de exemplo, 9 mm), que dão R, G, B e C (claridade). Calibrados no branco e mandados
-  pela **metade**: **branco ≈ 127**, o que sobra até 255 é para o prata.
+  pela **metade**: **branco ≈ 127**, o que sobra até 255 é para o prata (~200, graças aos LEDs
+  de 5 mm).
 
 ```
               ← esquerda do robô                     direita →
@@ -37,7 +38,7 @@ Para que cada parte serve:
 
 | Parte | Use para |
 |---|---|
-| 4 canais IR | **seguir a linha** (rápido, ~50 leituras/s), achar interseção, gap, prata (IR > 100) |
+| 4 canais IR | **seguir a linha** (rápido, ~50 leituras/s), achar interseção, gap |
 | 3 TCS | **cores**: marcadores verdes, fita vermelha da chegada, prata, azul/preto da Maze |
 
 ## Como funciona
@@ -177,9 +178,11 @@ def eh_vermelho(tcs):
     return sensor.cor(tcs) == 'vermelho' and r > 1.8 * g and r > 1.8 * b and c > 20
 ```
 
-* **Prata x lombada x rampa:** o IR passa de 100 no prata, mas também quando o sensor chega
-  **mais perto** do chão (em cima da lombada, no pé da rampa). Confirme o prata com o TCS
-  (`'prata'`), com o giroscópio (robô nivelado) e com a faixa de valores.
+* **Prata x lombada x rampa:** o prata se vê pelo TCS (C ~200, acima do branco). Mas quando o
+  sensor chega **mais perto** do chão (em cima da lombada, no pé da rampa) tudo clareia, o branco
+  também (~200 no TCS). Confirme o prata com os **3** TCS ao mesmo tempo (a fita da entrada é
+  larga), com os 4 canais de IR sem linha preta e sem estourar (no prata ~80) e com o giroscópio
+  (robô nivelado). Veja `eh_prata()` no `resgate.py` do exemplo da Line.
 * **Altura importa muito:** o ITR8307 muda bastante com poucos milímetros. Fixe bem o sensor.
 
 ## Versão antiga (V1, `libs/sensorCorReflexao.py`)

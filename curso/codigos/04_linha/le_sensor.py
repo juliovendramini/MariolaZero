@@ -12,7 +12,7 @@ sensor = CorReflexao(Portas.SERIAL6)
 sensor.usa_cores(['branco', 'preto', 'verde', 'vermelho', 'prata'])   # cores da Rescue Line
 
 for _ in range(20):
-    ir = sensor.le_reflexao()           # 4 canais: 0 = preto, ~100 = branco, >100 = prata
+    ir = sensor.le_reflexao()           # 4 canais: 0 = preto, ~100 = branco (prata ~80: quem vê o prata é o TCS)
     rgbc = [sensor.le_rgbc(s) for s in (1, 2, 3)]
     print('IR', ir, '| TCS', rgbc, '| cores', sensor.cores())
     time.sleep(0.5)
