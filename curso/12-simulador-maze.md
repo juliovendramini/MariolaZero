@@ -18,6 +18,13 @@ python simulador.py --programa ../minhaMaze/main.py --sem-janela --velocidade 4 
 Opções: `--robo`, `--mapa`, `--programa`, `--sem-janela`, `--velocidade`, `--semente N` (aqui o
 padrão é **sortear**: passe uma semente para repetir a rodada), `--lop botao|reiniciar`, `--tempo`.
 
+Como na Line, o relógio é **sincronizado** (veja o [módulo 11.6](11-simulador-line.md)): com a
+mesma semente, a rodada sai igual em qualquer velocidade e em qualquer PC. Ponha um
+`time.sleep(0.01)` no laço principal.
+
+Para várias rodadas de uma vez e para os desafios M01–M06, use o `avalia.py` da mesma pasta
+(`python avalia.py --programa ../minhaMaze/main.py --sementes 1-3`; veja o [módulo 18](18-desafios.md)).
+
 ## 12.2 A janela
 
 Iguais à Line: **▶ Iniciar rodada** (F5), **■ Parar**, **↺ Nova rodada** (apaga também os arquivos

@@ -52,8 +52,7 @@
     {"nome": "esq_tras",   "mux": "I2C2", "x": -70, "y":  85, "angulo":  90},
     {"nome": "dir_frente", "mux": "I2C3", "x":  70, "y": -85, "angulo": -90},
     {"nome": "dir_tras",   "mux": "I2C4", "x": -70, "y": -85, "angulo": -90},
-    {"nome": "frente",     "mux": "I2C5", "x":  95, "y":   0, "angulo":   0},
-    {"nome": "tras",       "mux": "I2C6", "x": -95, "y":   0, "angulo": 180}
+    {"nome": "frente",     "mux": "I2C5", "x":  95, "y":   0, "angulo":   0}
   ],
   "vl53_params": {
     "alcance_mm": 1200,
@@ -115,6 +114,8 @@
   "deteccao": {
     "_comentario": "probabilidades por chamada, para testar robustez do algoritmo",
     "exige_iluminacao": true,
+  "_tempo_processamento_s": "quanto tempo a detecção leva no robô (foto + processamento). Meça no seu robô: no simulador o resultado chega esse tempo depois da foto",
+  "tempo_processamento_s": 0.1,
     "falso_negativo": 0.0,
     "falso_positivo": 0.0,
     "vitimas_falsas_enganam": 0.0

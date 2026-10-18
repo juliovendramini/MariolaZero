@@ -124,5 +124,6 @@ giroscópio** (o exemplo da Maze faz isso a cada ladrilho com parede).
    `erro = d_esquerda - d_direita`).
 3. Faça a função `tem_parede(lado)` que usa 3 leituras e devolve `True` se a maioria for menor que
    150 mm.
-4. Gire 90° e imprima a primeira leitura `leitura_mm()` depois do giro e a segunda. Elas diferem?
-   Por quê?
+4. **No robô**, peça uma medida (`solicita_leitura()`), gire 90° e imprima a primeira
+   `leitura_mm()` depois do giro e a segunda. Elas diferem? Por quê? (O simulador mede na hora em
+   que o resultado é lido, então lá a primeira leitura já é a nova: veja as limitações no módulo 11.)

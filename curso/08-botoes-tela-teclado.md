@@ -53,7 +53,8 @@ bateu depois de 10173 ms (esquerdo=False, direito=True)
 Usos:
 * **Line:** confirmar o obstáculo (se o VL53 falhou).
 * **Maze:** **alinhar** — andar devagar até os **dois** botões apertarem: o robô está reto contra
-  a parede, e o giroscópio pode ser corrigido. Se só um apertou, gire um pouco para o outro lado.
+  a parede, e o giroscópio pode ser corrigido. Se só um apertou, o robô está torto: gire um pouco
+  **para o lado do botão apertado** (só o esquerdo apertou = o robô está virado para a direita).
 
 ## 8.3 Medindo tempo
 
@@ -151,8 +152,9 @@ pinos.liga_pino(PinosDigitais.P5)
 ## Exercícios
 
 1. Faça o robô esperar o botão, andar até bater e voltar até o ponto de partida (encoder).
-2. No para-choque: se bateu só o esquerdo, gire 10° para a direita e tente de novo. Repita até os
-   dois apertarem (alinhamento).
+2. No para-choque: se bateu só o esquerdo, o robô está virado para a direita: gire 10° para a
+   **esquerda** e encoste de novo (e o contrário se bateu só o direito). Repita até os dois
+   apertarem (alinhamento).
 3. Crie um menu com 3 velocidades para o seguidor (30, 40, 50) e use a escolhida.
 4. Faça um "modo sensores" que mostra na tela os 4 IR e as 3 cores a cada 0,5 s, para conferir o
    sensor no campo. Baixo/Cima trocam de página (IR, cores, VL53).

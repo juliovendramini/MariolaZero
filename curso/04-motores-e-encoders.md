@@ -190,5 +190,6 @@ motores.atualiza_servos()                 # (com Motores(False))
    entre as rodas?). Compare com o resultado do módulo 5 (giroscópio).
 3. No 4x4, crie a função `encoder_mm()` que usa a média das 4 rodas (converta a contagem das
    placas).
-4. Faça o robô subir a rampa do mapa `completo.json` com `potencia_motores(40, 40)` e depois com
-   `velocidade_motores(40, 40)`. Compare o tempo de subida.
+4. **No robô**, suba uma rampa com `potencia_motores(40, 40)` e depois com
+   `velocidade_motores(40, 40)`. Meça a velocidade (encoder) no plano e na rampa nos dois casos.
+   (No simulador o motor é ideal e não perde rotação na subida: veja as limitações no módulo 11.)

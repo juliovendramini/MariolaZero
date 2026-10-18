@@ -37,8 +37,58 @@ python simulador.py --programa CAMINHO/DO/main.py --mapa mapas/exemplo1.json
 python simulador.py --programa CAMINHO/DO/main.py --mapa mapas/exemplo1.json --sem-janela --velocidade 4
 ```
 
-Opções: `--robo outro_robo.json`, `--semente N` (repete o mesmo ruído), `--lop botao|reiniciar`,
-`--tempo 480`.
+Opções: `--robo outro_robo.json`, `--semente N` (repete a mesma rodada), `--lop botao|reiniciar`,
+`--tempo 480`, `--resultado arq.json` (sem janela: grava o placar em JSON), `--tempo-real` (modo
+antigo do relógio, veja abaixo).
+
+## Desafios e avaliação automática (`avalia.py`)
+
+Uma rodada só não diz se o programa é bom: o ruído muda com a semente e uma rodada de sorte
+engana. O `avalia.py` roda o programa em várias sementes, sem janela, mostra uma tabela com cada
+rodada, a média e a pior, e confere a meta do desafio.
+
+```bash
+python avalia.py --lista                                        # os desafios (M01 a M06)
+python avalia.py --desafio M02 --programa CAMINHO/DO/main.py    # roda o desafio e confere a meta
+python avalia.py --programa CAMINHO/DO/main.py --mapa mapas/exemplo1.json --sementes 1-3
+python avalia.py --programa CAMINHO/DO/main.py --surpresa medio --mapas 3   # 3 labirintos sorteados
+```
+
+* Rodadas em paralelo (`--paralelo N`; padrão: metade dos núcleos do PC). Como o relógio é
+  sincronizado (abaixo), rodar em paralelo não muda o resultado.
+* Os desafios ficam em `desafios/desafios.json` e os mapas em `desafios/mapas/`.
+* Cada avaliação grava um relatório em `resultados/` (placar de cada rodada, se cumpriu a meta e
+  uma impressão digital dos `.py` do programa) e o log de cada rodada em `resultados/logs/`.
+* `--aluno "Nome"` põe o nome no relatório. `--semente-mapas N` troca os labirintos surpresa.
+
+**Labirinto surpresa:** `python ferramentas/labirinto_surpresa.py --nivel facil|medio|dificil
+--semente N` grava em `mapas/` um labirinto sorteado (paredes, buracos pretos, pratas, azuis,
+lombadas, detritos e vítimas de letra e cognitivas, conforme o nível). No difícil há ilhas e
+salas abertas: seguir a parede não visita tudo.
+
+### Relógio sincronizado: o resultado não depende da velocidade nem do PC
+
+O programa do aluno roda num processo separado e cada volta do laço gasta alguns milissegundos de
+PC (ler sensores pelo socket, calcular). Se o relógio simulado andasse junto com o relógio real,
+em 4x cada milissegundo de PC "custaria" 4 ms de robô, e o resultado mudaria com a velocidade, com
+o PC e com o que mais estivesse rodando nele.
+
+Por isso o padrão é o **relógio sincronizado** (o mesmo da Line): o tempo do programa só anda
+quando todas as threads dele estão esperando (`time.sleep`, espera da serial ou do I2C). Nessa
+hora o simulador avança a física exatamente até o primeiro despertar. O tempo que o PC gasta
+calculando não conta; as esperas contam como no robô.
+
+* Com a mesma semente, o mesmo mapa e o mesmo programa, a rodada sai **igual** em 0,25x, 1x ou 4x,
+  com ou sem janela, em paralelo, inclusive com LoP. Sem `--semente`, uma semente é sorteada e
+  repetida a cada "Nova rodada".
+* **Vel.** passa a ser um limite. Se o PC não acompanha, o botão mostra quanto conseguiu, por
+  exemplo `Vel. 4x (PC: 1.7x)`. O resultado não muda.
+* No robô o laço também gasta tempo calculando: um `time.sleep(0.01)` no laço principal deixa os
+  dois parecidos. A detecção de vítimas espera `deteccao.tempo_processamento_s` (no `robo.json`)
+  depois da foto, como o processamento da imagem no robô: meça no seu e ajuste.
+* Uma thread que fica calculando sem nunca esperar (laço sem `sleep`, ou presa num `Lock`) trava
+  esse esquema. Depois de 1 s real nessa situação, o tempo passa a andar pelo relógio real.
+* `--tempo-real` volta ao modo antigo: o programa usa o relógio real multiplicado pela velocidade.
 
 ### Na janela
 
@@ -51,7 +101,7 @@ Opções: `--robo outro_robo.json`, `--semente N` (repete o mesmo ruído), `--lo
 | **LoP: reinicia prog. / só botão** | o que acontece num LoP: desliga e liga o programa (testa o checkpoint salvo em arquivo) ou só aperta o botão de início |
 | **Botão do robô** (B) | aperta o botão de início (pino P3) |
 | **Auto-botão** | aperta o botão sozinho 1,5 s depois que o programa inicia |
-| **Pausar** (espaço) / **Vel.** (1–5) | pausa ou muda a velocidade (0,25x a 4x). O programa do aluno segue o mesmo relógio. |
+| **Pausar** (espaço) / **Vel.** (1–5) | pausa ou muda a velocidade (0,25x a 4x). O resultado é o mesmo em qualquer velocidade |
 | arrastar o robô / Q, E / roda do mouse | reposiciona o robô (com o programa parado) |
 | R, T, C, F | raios dos VL53, trilha, campo das câmeras, ladrilhos flutuantes (roxo) |
 | F1–F4 / clique | botões do teclado do brick (`teclado.py`): Voltar, Baixo, Cima, Enter |
@@ -257,8 +307,12 @@ gira pelo giroscópio, encosta no para-choque para alinhar, detecta preto/azul/p
 * Mundo 2D: sem rampas, pontes ou segundo andar; escadas e lombadas são efeitos (solavanco,
   inclinação, perda de tração), não geometria 3D. Obstáculos ainda não existem.
 * O BNO085 não é emulado.
+* O VL53 mede na hora em que o resultado é lido; no robô a medida é da hora em que foi pedida (a
+  primeira leitura depois de um giro é "velha" no robô, e não no simulador).
+* O motor é ideal: em potência a rotação não cai com a carga, e em velocidade o PID nunca satura.
 * Se o programa morre, os motores seguem o último comando até o timeout de 5 s do firmware, como no robô.
-* `threading.Event.wait(timeout)` e afins usam o relógio real (não seguem pausa/velocidade).
+* `threading.Event.wait(timeout)`, `Queue.get(timeout=...)` e afins usam o relógio real e não contam
+  como espera para o relógio sincronizado: prefira `time.sleep` em laço.
 
 ## Estrutura
 
@@ -272,4 +326,8 @@ libs_mariola/       cópia das libs do Mariola (reserva, se a pasta do programa 
 robo_real/          deteccaoVitimas.py, dispensadorKits.py e simdebug.py para o robô real
 mapas/              exemplo1.json (com zona de perigo, escada, lombadas) e treino.json
 exemplo_aluno/      programa de exemplo
+avalia.py           roda o programa em várias sementes e confere a meta dos desafios
+desafios/           desafios.json (a trilha M01-M06) e os mapas dos desafios
+resultados/         (criada pelo avalia.py) relatórios, logs e labirintos surpresa
+ferramentas/        labirinto_surpresa.py (gerador de labirintos sorteados)
 ```

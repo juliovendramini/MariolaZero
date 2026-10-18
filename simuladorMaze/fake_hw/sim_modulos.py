@@ -30,9 +30,13 @@ class DeteccaoVitimas:
         self.tempo = float(cliente.config.get('deteccao', {}).get('tempo_processamento_s', 0.03))
 
     def detecta_todas(self, camera=None):
+        # como no robô: a foto é do instante da chamada e o resultado sai depois do
+        # processamento (tempo_processamento_s no robo.json). Enquanto isso o robô continua
+        # se movendo, então o resultado é de onde ele ESTAVA.
+        v = cliente.conexao.chamar('vitimas', camera=camera)['v']
         if self.tempo > 0:
             time.sleep(self.tempo)
-        return cliente.conexao.chamar('vitimas', camera=camera)['v']
+        return v
 
     def detecta(self, camera=None):
         v = self.detecta_todas(camera)

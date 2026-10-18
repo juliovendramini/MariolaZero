@@ -1,0 +1,49 @@
+{
+  "formato": "maze-sim-1",
+  "nome": "exemplo1",
+  "linhas": 6,
+  "colunas": 8,
+  "inicio": {"linha": 5, "coluna": 0, "direcao": "N"},
+  "semente": 1,
+  "paredes_h": [
+    "11111111",
+    "01100000",
+    "00000011",
+    "00011000",
+    "00000011",
+    "01000000",
+    "11111111"
+  ],
+  "paredes_v": [
+    "100100001",
+    "100100001",
+    "110001001",
+    "110001001",
+    "100000001",
+    "100100101"
+  ],
+  "ladrilhos": [
+    {"linha": 0, "coluna": 5, "piso": "preto"},
+    {"linha": 1, "coluna": 4, "piso": "prata"},
+    {"linha": 2, "coluna": 0, "terreno": "escada", "direcao": "NS"},
+    {"linha": 2, "coluna": 3, "piso": "preto"},
+    {"linha": 2, "coluna": 6, "piso": "azul"},
+    {"linha": 3, "coluna": 2, "piso": "prata"},
+    {"linha": 4, "coluna": 3, "terreno": "lombada", "direcao": "LO"},
+    {"linha": 4, "coluna": 6, "zona": true, "piso": "vermelho"},
+    {"linha": 4, "coluna": 7, "zona": true, "terreno": "detritos"},
+    {"linha": 5, "coluna": 6, "zona": true},
+    {"linha": 5, "coluna": 7, "zona": true, "terreno": "lombada", "direcao": "LO"}
+  ],
+  "vitimas": [
+    {"linha": 0, "coluna": 0, "parede": "N", "tipo": "letra", "letra": "H", "posicao": 0.5},
+    {"linha": 0, "coluna": 2, "parede": "L", "tipo": "letra", "letra": "S", "posicao": 0.5},
+    {"linha": 2, "coluna": 1, "parede": "O", "tipo": "cognitivo", "aneis": ["azul", "preto", "azul", "preto", "azul"], "posicao": 0.5},
+    {"linha": 5, "coluna": 4, "parede": "S", "tipo": "letra", "letra": "U", "posicao": 0.5},
+    {"linha": 3, "coluna": 5, "parede": "O", "tipo": "cognitivo", "aneis": ["verde", "preto", "preto", "azul", "azul"], "posicao": 0.5},
+    {"linha": 0, "coluna": 7, "parede": "N", "tipo": "cognitivo", "aneis": ["amarelo", "amarelo", "amarelo", "azul", "verde"], "posicao": 0.5},
+    {"linha": 5, "coluna": 1, "parede": "S", "tipo": "letra", "letra": "X", "posicao": 0.5},
+    {"linha": 4, "coluna": 7, "parede": "L", "tipo": "letra", "letra": "H", "posicao": 0.5},
+    {"linha": 1, "coluna": 6, "parede": "S", "tipo": "cognitivo", "aneis": ["verde", "amarelo", "verde", "amarelo", "preto"], "posicao": 0.5}
+  ]
+}

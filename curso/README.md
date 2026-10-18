@@ -18,7 +18,7 @@ dicionários). Não precisa saber eletrônica: o que for preciso do hardware est
 * A [**referência das bibliotecas**](referencia/README.md) explica todos os métodos, quando usar
   cada um e os cuidados. Consulte sempre.
 * Os exercícios no fim de cada módulo são o que fixa o conteúdo. Os
-  [desafios](18-desafios.md) juntam vários módulos.
+  [desafios](18-desafios.md) juntam vários módulos e são conferidos pelo computador (`avalia.py`).
 
 ## Módulos
 
@@ -54,7 +54,7 @@ dicionários). Não precisa saber eletrônica: o que for preciso do hardware est
 | 15 | [Projeto área de resgate](15-projeto-area-de-resgate.md) | entrar, recolher, depositar nos triângulos, sair |
 | 16 | [Projeto Rescue Maze](16-projeto-rescue-maze.md) | mão direita, mapa interno, BFS, checkpoint |
 | 17 | [Do simulador para o robô](17-do-simulador-para-o-robo.md) | medir o robô, calibrar, checklist de competição |
-| 18 | [Desafios e projetos](18-desafios.md) | desafios por nível, projeto final, avaliação, cronograma |
+| 18 | [Desafios e projetos](18-desafios.md) | trilha de desafios com correção automática (`avalia.py`), pista e labirinto surpresa, projeto final, avaliação, cronograma |
 
 ## O que tem nesta pasta
 

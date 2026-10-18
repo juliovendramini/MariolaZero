@@ -136,9 +136,8 @@ class Robo:
     def cores(self):
         """Cor embaixo de cada TCS: [esquerda, meio, direita].
 
-        O classificador da lib também usa o IR do lado de cada TCS. Na borda da linha e nas curvas o
-        TCS (9 mm atrás) e o IR podem ver coisas diferentes e um TCS no preto vira "verde". Por isso
-        verde/vermelho só valem se o RGB também tiver a cor dominante."""
+        Na borda da linha, com pouca luz, uma leitura isolada pode ser classificada como verde ou
+        vermelho. Por isso verde/vermelho só valem se o RGB também tiver a cor dominante."""
         out = []
         for k, nome in enumerate(self.cor.cores(), start=1):
             if nome in ('verde', 'vermelho'):

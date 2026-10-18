@@ -1,0 +1,75 @@
+{
+ "_comentario": "Trilha de desafios da Rescue Maze. Rode com: python avalia.py --desafio ID --programa CAMINHO/main.py. Campos: robo, mapa (ou surpresa + mapas + semente_mapas), sementes, tempo, meta {rodada + minimo e/ou media}. Nas metas valem: total, lop, svi (vítimas identificadas), srd (kits certos), sbv (azuis), ssn (escadas), vitimas, saida, erros, tempo, erro_programa. O relógio é sincronizado: a mesma semente repete a rodada igual, e as rodadas podem rodar em paralelo.",
+ "M01": {
+  "nivel": "Nível 1: andar no labirinto",
+  "titulo": "Explorar sem cair",
+  "descricao": "Explorar o labirinto de exemplo sem cair no buraco preto e sem LoP.",
+  "modulos": "12, 16",
+  "mapa": "desafios/mapas/M01_exemplo.json",
+  "sementes": "1-3",
+  "tempo": 300,
+  "meta": {"rodada": "lop == 0 and sbv >= 1", "minimo": 3},
+  "meta_texto": "3 de 3 rodadas sem LoP, passando pelo azul (parada de 5 s)"
+ },
+ "M02": {
+  "nivel": "Nível 1: andar no labirinto",
+  "titulo": "Vítimas e kits",
+  "descricao": "Identificar as vítimas (letras e cognitivas) e entregar os kits certos, sem identificar errado.",
+  "modulos": "10, 16",
+  "mapa": "desafios/mapas/M01_exemplo.json",
+  "sementes": "1-3",
+  "tempo": 480,
+  "meta": {"rodada": "svi >= 5 and erros == 0", "minimo": 3},
+  "meta_texto": "3 de 3 rodadas com pelo menos 5 vítimas identificadas e nenhum erro"
+ },
+ "M03": {
+  "nivel": "Nível 1: andar no labirinto",
+  "titulo": "Voltar para casa",
+  "descricao": "Explorar e voltar ao ladrilho de início antes do tempo acabar (bônus de saída).",
+  "modulos": "16",
+  "mapa": "desafios/mapas/M01_exemplo.json",
+  "sementes": "1-3",
+  "tempo": 480,
+  "meta": {"rodada": "saida", "minimo": 3},
+  "meta_texto": "3 de 3 rodadas voltando ao início"
+ },
+ "M04": {
+  "nivel": "Nível 2: labirinto surpresa",
+  "titulo": "Labirinto surpresa (fácil)",
+  "descricao": "Três labirintos sorteados 4x5, só corredores: achar as vítimas e voltar.",
+  "modulos": "16",
+  "surpresa": "facil",
+  "mapas": 3,
+  "semente_mapas": 1,
+  "sementes": "1-3",
+  "tempo": 360,
+  "meta": {"rodada": "svi >= 3 and saida and lop == 0", "minimo": 3},
+  "meta_texto": "3 de 3 labirintos com pelo menos 3 vítimas, sem LoP, voltando ao início"
+ },
+ "M05": {
+  "nivel": "Nível 2: labirinto surpresa",
+  "titulo": "Labirinto surpresa (médio)",
+  "descricao": "Três labirintos sorteados 5x7, com ciclos, azul, lombada e uma vítima falsa.",
+  "modulos": "16",
+  "surpresa": "medio",
+  "mapas": 3,
+  "semente_mapas": 1,
+  "sementes": "1-3",
+  "tempo": 480,
+  "meta": {"rodada": "svi >= 4 and erros == 0 and saida", "minimo": 3},
+  "meta_texto": "3 de 3 labirintos com pelo menos 4 vítimas, sem erro, voltando ao início"
+ },
+ "M06": {
+  "nivel": "Nível 2: labirinto surpresa",
+  "titulo": "Labirinto surpresa (difícil)",
+  "descricao": "Três labirintos sorteados 6x8 com ilhas e salas abertas: seguir a parede não visita tudo.",
+  "modulos": "16",
+  "surpresa": "dificil",
+  "mapas": 3,
+  "semente_mapas": 1,
+  "sementes": "1-3",
+  "tempo": 480,
+  "meta": {"rodada": "svi >= 6 and erros == 0", "minimo": 3},
+  "meta_texto": "3 de 3 labirintos com pelo menos 6 das 7 vítimas verdadeiras, sem erro"
+ }
+}

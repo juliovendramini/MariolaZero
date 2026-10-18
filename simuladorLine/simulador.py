@@ -10,6 +10,7 @@ Uso:
 """
 
 import argparse
+import json
 import os
 import sys
 import time
@@ -37,6 +38,8 @@ def main():
                     help='modo antigo: o programa corre no relógio real (o resultado muda com a velocidade e o PC)')
     ap.add_argument('--porta', type=int, default=0, help='porta TCP local (0 = automática)')
     ap.add_argument('--lop', choices=['reiniciar', 'botao'], default='reiniciar')
+    ap.add_argument('--resultado', default=None,
+                    help='(sem janela) grava o placar da rodada neste arquivo JSON (usado pelo avalia.py)')
     ap.add_argument('--editor', action='store_true', help='abre direto no editor de mapas')
     a = ap.parse_args()
 
@@ -55,7 +58,7 @@ def main():
     sim.set_fator(a.velocidade)
 
     if a.sem_janela:
-        roda_sem_janela(sim, a.tempo)
+        roda_sem_janela(sim, a.tempo, a.resultado)
     else:
         from sim.gui import Interface
         ui = Interface(sim, os.path.join(RAIZ, 'mapas'), RAIZ)
@@ -64,11 +67,12 @@ def main():
         ui.rodar()
 
 
-def roda_sem_janela(sim, tempo):
+def roda_sem_janela(sim, tempo, arq_resultado=None):
     sim.nova_rodada()
     sim.iniciar_rodada()
     j = sim.juiz
     t_real = time.time()
+    motivo = None
     try:
         while not j.fim and j.tempo < tempo:
             time.sleep(0.2)
@@ -76,11 +80,25 @@ def roda_sem_janela(sim, tempo):
                 time.sleep(1.0)
                 if not sim.programa_rodando() and not sim.em_lop:
                     print('[simulador] o programa terminou')
+                    motivo = 'o programa terminou'
                     break
     except KeyboardInterrupt:
         pass
     total, partes, info = j.placar()
+    motivo = j.fim or motivo or ('acabou o tempo' if j.tempo >= tempo else 'interrompido')
     sim.encerrar()
+    if arq_resultado:
+        res = {
+            'total': total, 'partes': partes, 'info': info, 'tempo': round(j.tempo, 2), 'fim': motivo,
+            'lop': info.get('LoP', 0),
+            'passo': j.idx, 'passos': max(0, j.n - 1), 'chegou': j.fim == 'robô parou na chegada',
+            'vivas': sum(1 for t, _ in j.resgates if t == 'viva'),
+            'mortas': sum(1 for t, _ in j.resgates if t != 'viva'),
+            'area': j.idx_zona is not None,
+            'eventos': [[round(t, 2), txt, p] for (t, txt, p) in j.eventos],
+        }
+        with open(arq_resultado, 'w', encoding='utf-8') as f:
+            json.dump(res, f, ensure_ascii=False, indent=1)
     print('\n================ RESULTADO ================')
     for (t, txt, p) in j.eventos:
         print(f'{int(t // 60)}:{t % 60:05.2f}  {p:+4d}  {txt}' if p else f'{int(t // 60)}:{t % 60:05.2f}        {txt}')

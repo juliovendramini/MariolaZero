@@ -1,0 +1,263 @@
+{
+ "formato": "simuladorLine/1",
+ "regra": "RoboCupJunior Rescue Line 2026",
+ "nome": "L02_curvas",
+ "largura": 7,
+ "altura": 5,
+ "inicio": [
+  0,
+  4,
+  0
+ ],
+ "inicio_dir": "L",
+ "tempo": 480.0,
+ "ladrilhos": [
+  {
+   "x": 0,
+   "y": 0,
+   "z": 0,
+   "tipo": "tile-57",
+   "rot": 270
+  },
+  {
+   "x": 1,
+   "y": 0,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0,
+   "checkpoint": true
+  },
+  {
+   "x": 2,
+   "y": 0,
+   "z": 0,
+   "tipo": "tile-8",
+   "rot": 0
+  },
+  {
+   "x": 3,
+   "y": 0,
+   "z": 0,
+   "tipo": "tile-46",
+   "rot": 0
+  },
+  {
+   "x": 4,
+   "y": 0,
+   "z": 0,
+   "tipo": "tile-69",
+   "rot": 0
+  },
+  {
+   "x": 5,
+   "y": 0,
+   "z": 0,
+   "tipo": "tile-17",
+   "rot": 0
+  },
+  {
+   "x": 6,
+   "y": 0,
+   "z": 0,
+   "tipo": "tile-21",
+   "rot": 0
+  },
+  {
+   "x": 0,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 90
+  },
+  {
+   "x": 1,
+   "y": 1,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 2,
+   "y": 1,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 3,
+   "y": 1,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 4,
+   "y": 1,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 5,
+   "y": 1,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 6,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-75",
+   "rot": 0
+  },
+  {
+   "x": 0,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-51",
+   "rot": 180
+  },
+  {
+   "x": 1,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0
+  },
+  {
+   "x": 2,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0
+  },
+  {
+   "x": 3,
+   "y": 2,
+   "z": 0,
+   "tipo": "chegada",
+   "rot": 90
+  },
+  {
+   "x": 4,
+   "y": 2,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 5,
+   "y": 2,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 6,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 90,
+   "checkpoint": true
+  },
+  {
+   "x": 0,
+   "y": 3,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 1,
+   "y": 3,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 2,
+   "y": 3,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 3,
+   "y": 3,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 4,
+   "y": 3,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 5,
+   "y": 3,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 6,
+   "y": 3,
+   "z": 0,
+   "tipo": "tile-62",
+   "rot": 0
+  },
+  {
+   "x": 0,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0
+  },
+  {
+   "x": 1,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0
+  },
+  {
+   "x": 2,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-13",
+   "rot": 0
+  },
+  {
+   "x": 3,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0
+  },
+  {
+   "x": 4,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-9",
+   "rot": 0
+  },
+  {
+   "x": 5,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-14",
+   "rot": 0
+  },
+  {
+   "x": 6,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-6",
+   "rot": 90
+  }
+ ]
+}

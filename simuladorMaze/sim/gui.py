@@ -516,6 +516,10 @@ class Interface:
             for i, b in enumerate(linha):
                 if b.acao == self._velocidade:
                     b.texto = f'Vel. {self.sim.fator:g}x'
+                    vr = self.sim.vel_real
+                    if (self.sim.programa_rodando() and not self.sim.pausado and
+                            vr > 0.05 and vr < self.sim.fator * 0.85):
+                        b.texto += f' (PC: {vr:.1f}x)'
                 elif b.acao == self._modo_lop:
                     b.texto = 'LoP: reinicia prog.' if self.sim.modo_lop == 'reiniciar' else 'LoP: só botão'
                 elif b.acao == self._auto_botao:

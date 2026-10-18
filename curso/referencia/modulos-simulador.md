@@ -105,6 +105,11 @@ No simulador, a câmera só vê a vítima dentro do campo de visão, de frente e
 e (opção ligada) **só com os LEDs de iluminação acesos**. No robô, complete `_processa(nome)` em
 `robo_real/deteccaoVitimas.py` com a sua visão (letras Φ Ψ Ω e alvos cognitivos).
 
+**Tempo de processamento:** cada chamada leva `deteccao.tempo_processamento_s` (no `robo.json`,
+padrão 0,1 s) e devolve o que a câmera via **no começo** da chamada, como no robô, que tira a foto
+e depois processa. Se o robô estiver andando, a vítima já ficou um pouco para trás. Meça quanto
+a sua visão leva no Banana Pi e ponha esse valor no `robo.json`.
+
 ## `dispensadorKits` — kits de resgate (Maze)
 
 ```python

@@ -37,7 +37,35 @@ python simulador.py --mapa mapas/completo.json --sem-janela --velocidade 2
 ```
 
 Opções: `--semente N` (ruído dos sensores; padrão 1, `-1` sorteia a cada rodada), `--lop botao|reiniciar`,
-`--tempo 480`, `--tempo-real` (modo antigo do relógio, veja abaixo).
+`--tempo 480`, `--tempo-real` (modo antigo do relógio, veja abaixo), `--resultado arq.json` (sem
+janela: grava o placar em JSON).
+
+## Desafios e avaliação automática (`avalia.py`)
+
+Uma rodada só não diz se o programa é bom: o ruído muda com a semente e uma rodada de sorte
+engana. O `avalia.py` roda o programa em várias sementes, sem janela, mostra uma tabela com cada
+rodada, a média e a pior, e confere a meta do desafio.
+
+```bash
+python avalia.py --lista                                        # os desafios (L01 a L13)
+python avalia.py --desafio L04 --programa CAMINHO/DO/main.py    # roda o desafio e confere a meta
+python avalia.py --programa CAMINHO/DO/main.py --mapa mapas/completo.json --sementes 1-6
+python avalia.py --programa CAMINHO/DO/main.py --surpresa medio --mapas 6   # 6 pistas sorteadas
+```
+
+* Rodadas em paralelo (`--paralelo N`; padrão: metade dos núcleos do PC). Como o relógio é
+  sincronizado, rodar em paralelo não muda o resultado.
+* Os desafios ficam em `desafios/desafios.json` (mapa, robô, sementes, tempo e meta) e os mapas
+  em `desafios/mapas/`. O professor pode criar outros no mesmo formato.
+* Cada avaliação grava um relatório em `resultados/` (placar de cada rodada, se cumpriu a meta e
+  uma impressão digital dos `.py` do programa) e o log de cada rodada em `resultados/logs/`.
+* `--aluno "Nome"` põe o nome no relatório. `--semente-mapas N` troca as pistas surpresa (o
+  professor pode usar uma que os alunos não conhecem).
+
+**Pista surpresa:** `python ferramentas/pista_surpresa.py --nivel facil|medio|dificil --semente N`
+grava em `mapas/` uma pista sorteada dentro da regra (caminho, ladrilhos, interseções com verde,
+gaps, obstáculo, lombada e detritos, conforme o nível). Abra no simulador para treinar. A mesma
+semente gera sempre a mesma pista.
 
 ### Relógio sincronizado: o resultado não depende da velocidade nem do PC
 
@@ -406,7 +434,11 @@ fake_hw/            serial, smbus2, gpiod, firmware das placas, relógio virtual
 libs_mariola/       cópia das libs do Mariola (reserva)
 mapas/              treino.json, completo.json e resgate.json
 exemplo_aluno/      programa de exemplo
-ferramentas/        importa_ladrilhos.py (refaz os ladrilhos a partir do rcj-rescue-cms), gera_mapas.py
+avalia.py           roda o programa em várias sementes e confere a meta dos desafios
+desafios/           desafios.json (a trilha L01-L13) e os mapas dos desafios
+resultados/         (criada pelo avalia.py) relatórios, logs e pistas surpresa
+ferramentas/        importa_ladrilhos.py (refaz os ladrilhos a partir do rcj-rescue-cms), gera_mapas.py,
+                    gera_desafios.py, pista_surpresa.py (gerador de pistas sorteadas)
 ```
 
 ## Limitações conhecidas
@@ -420,6 +452,10 @@ ferramentas/        importa_ladrilhos.py (refaz os ladrilhos a partir do rcj-res
   estiver entre os dedos quando eles fecham.
 * O barramento dos servos e das placas de motor é ideal (no real a resposta de 8 bytes da placa de
   motor pode desalinhar o próximo pacote de servo).
+* O VL53 mede na hora em que o resultado é lido; no robô a medida é da hora em que foi pedida (a
+  primeira leitura depois de um giro é "velha" no robô, e não no simulador).
+* O motor é ideal: em potência (`potencia_motores`) a rotação não cai com a carga (rampa, empurrar
+  obstáculo), e em velocidade o PID nunca satura. No robô, potência fixa fica mais lenta na subida.
 * O BNO085 não é emulado.
 
 ## Créditos

@@ -1,0 +1,329 @@
+{
+ "formato": "simuladorLine/1",
+ "regra": "RoboCupJunior Rescue Line 2026",
+ "nome": "L06_terreno",
+ "largura": 8,
+ "altura": 5,
+ "inicio": [
+  0,
+  4,
+  0
+ ],
+ "inicio_dir": "L",
+ "tempo": 480.0,
+ "ladrilhos": [
+  {
+   "x": 0,
+   "y": 0,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 1,
+   "y": 0,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 2,
+   "y": 0,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 3,
+   "y": 0,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 4,
+   "y": 0,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 5,
+   "y": 0,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 6,
+   "y": 0,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 7,
+   "y": 0,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 0,
+   "y": 1,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 1,
+   "y": 1,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 2,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-6",
+   "rot": 270,
+   "checkpoint": true
+  },
+  {
+   "x": 3,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0
+  },
+  {
+   "x": 4,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0,
+   "rampa": {
+    "sobe": "L",
+    "graus": 20
+   }
+  },
+  {
+   "x": 5,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0,
+   "rampa": {
+    "sobe": "L",
+    "graus": 20
+   }
+  },
+  {
+   "x": 6,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0,
+   "checkpoint": true
+  },
+  {
+   "x": 7,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-6",
+   "rot": 0
+  },
+  {
+   "x": 0,
+   "y": 2,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 1,
+   "y": 2,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 2,
+   "y": 2,
+   "z": 0,
+   "tipo": "gangorra",
+   "rot": 90,
+   "gangorra": {
+    "graus": 15
+   }
+  },
+  {
+   "x": 3,
+   "y": 2,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 4,
+   "y": 2,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 5,
+   "y": 2,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 6,
+   "y": 2,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 7,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 90,
+   "rampa": {
+    "sobe": "N",
+    "graus": 20
+   }
+  },
+  {
+   "x": 0,
+   "y": 3,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 1,
+   "y": 3,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 2,
+   "y": 3,
+   "z": 0,
+   "tipo": "chegada",
+   "rot": 180
+  },
+  {
+   "x": 3,
+   "y": 3,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 4,
+   "y": 3,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 5,
+   "y": 3,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 6,
+   "y": 3,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 7,
+   "y": 3,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 90,
+   "rampa": {
+    "sobe": "N",
+    "graus": 20
+   }
+  },
+  {
+   "x": 0,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0
+  },
+  {
+   "x": 1,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0
+  },
+  {
+   "x": 2,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0,
+   "lombadas": [
+    {
+     "pos": 0.35,
+     "eixo": "LO"
+    },
+    {
+     "pos": 0.65,
+     "eixo": "LO"
+    }
+   ]
+  },
+  {
+   "x": 3,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0
+  },
+  {
+   "x": 4,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0,
+   "detritos": 5
+  },
+  {
+   "x": 5,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0
+  },
+  {
+   "x": 6,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0,
+   "checkpoint": true
+  },
+  {
+   "x": 7,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-6",
+   "rot": 90
+  }
+ ]
+}

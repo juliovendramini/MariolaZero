@@ -12,6 +12,7 @@ sem surpresas e chegar na competição com tudo calibrado e testado.
 | comportamento do encoder, do VL53, dos servos | bateria (velocidade máxima, leitura do IR) |
 | | folgas mecânicas, cabos, mau contato |
 | | a câmera (o stub × a sua IA de verdade) |
+| | o motor sob carga (o do simulador é ideal) e o instante da medida do VL53 (módulo 11.9) |
 
 Por isso: **lógica no simulador, ajuste fino no robô**.
 

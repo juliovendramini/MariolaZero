@@ -174,7 +174,8 @@ class Mundo:
     def __init__(self, mapa, cfg, semente=None):
         self.lock = threading.RLock()
         self.cfg = cfg
-        self.rng = random.Random(semente)
+        self.semente = semente
+        self.semear(semente)
         self.mapa = mapa
         self.t = 0.0
         self.space = None
@@ -227,6 +228,19 @@ class Mundo:
         self.debug = {'pose': None, 'texto': '', 'marcas': []}
         self.servos = {}
         self.construir()
+
+    def semear(self, semente=None):
+        """Um gerador de ruído para cada coisa: a ordem em que as threads do programa leem os
+        sensores não muda os números sorteados (mesmo resultado em qualquer velocidade)."""
+        base = semente if semente is not None else getattr(self, '_base_semente', None)
+        if base is None:
+            base = random.randrange(1 << 30)    # sem semente: sorteia uma e repete nas rodadas
+        self._base_semente = base
+        self.rng = random.Random(base)                  # terreno (solavancos, palitos)
+        self.rng_vl53 = random.Random(base * 7 + 1)
+        self.rng_giro = random.Random(base * 7 + 2)
+        self.rng_cor = random.Random(base * 7 + 3)
+        self.rng_cam = random.Random(base * 7 + 4)      # câmeras (falso positivo/negativo)
 
     # ---------------------------------------------------------------- construção
     def construir(self):
@@ -299,6 +313,20 @@ class Mundo:
         self.leds = [(0, 0, 0)] * 10
 
     def reset_rodada(self):
+        """Rodada nova: tudo como ao ligar (mesma semente + mesmo programa = mesma rodada)."""
+        self.semear(self.semente)
+        self.construir()                 # espaço físico novo (sem contatos da rodada anterior)
+        self.ordem = 0
+        self.no_ar = [0.0] * len(self.motores)
+        self.pos_ant_rodas = None
+        self.fw_mariola = FW.FirmwareMariola(self)
+        self.fw_placas = {}
+        for (porta, idp), m in self.por_placa.items():
+            self.fw_placas.setdefault(porta, {})[idp] = FW.FirmwarePlaca(self, m, idp)
+        self.cor_cache = None
+        self.cor_t = -1.0
+        self.cor_pedido = 0.0
+        self.raios = {}
         for m in self.motores:
             m.reset()
         self.leds = [(0, 0, 0)] * 10
@@ -479,7 +507,7 @@ class Mundo:
         if melhor is None or melhor > alcance:
             return int(pr['fora_alcance'])
         d = melhor + float(pr.get('offset_mm', 0))
-        d += self.rng.gauss(0, float(pr['ruido_mm']) + melhor * float(pr['ruido_percentual']) / 100.0)
+        d += self.rng_vl53.gauss(0, float(pr['ruido_mm']) + melhor * float(pr['ruido_percentual']) / 100.0)
         return max(0, int(round(d)))
 
     def vl53_por_canal(self, canal):
@@ -512,14 +540,14 @@ class Mundo:
     def giro(self):
         gc = self.cfg['giroscopio']
         ruido = float(gc['ruido_graus'])
-        z = math.degrees(self.corpo.angle - self.yaw_ref) + self.deriva + self.rng.gauss(0, ruido)
+        z = math.degrees(self.corpo.angle - self.yaw_ref) + self.deriva + self.rng_giro.gauss(0, ruido)
         if gc.get('z_horario_positivo'):
             z = -z
         if not gc.get('z_continuo', True):
             z = (z + 180.0) % 360.0 - 180.0
         pitch, roll = self._inclinacao()
-        pitch += self.rng.gauss(0, ruido)
-        roll += self.rng.gauss(0, ruido)
+        pitch += self.rng_giro.gauss(0, ruido)
+        roll += self.rng_giro.gauss(0, ruido)
         if gc.get('eixo_inclinacao_frente', 'x') == 'x':
             x, y = pitch, roll
         else:
@@ -558,10 +586,10 @@ class Mundo:
         out = []
         for s in cc['ir']:
             v = self._amostra_piso(s['x'], s['y'])[4]
-            out.append(v + self.rng.gauss(0, ruido))
+            out.append(v + self.rng_cor.gauss(0, ruido))
         for s in cc['tcs']:
             v = self._amostra_piso(s['x'], s['y'])[:4]
-            out.extend(x + self.rng.gauss(0, ruido) for x in v)
+            out.extend(x + self.rng_cor.gauss(0, ruido) for x in v)
         return [max(0, min(255, int(round(x)))) for x in out]
 
     def para_choque(self, pino):

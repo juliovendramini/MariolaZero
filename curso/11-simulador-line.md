@@ -119,20 +119,25 @@ se o seu programa **retoma** certo (checkpoint em arquivo, relógio da rodada).
   computador. **Consequência:** um laço sem nenhum `sleep` "congela" o tempo. Ponha
   `time.sleep(0.01)` no laço principal (no robô ele também ajuda).
 
-### Testando várias rodadas de uma vez
+### Testando várias rodadas de uma vez: `avalia.py`
 
-Um programa bom completa a pista com **várias** sementes, não com uma. No terminal (Linux/macOS,
-ou Git Bash no Windows):
+Um programa bom completa a pista com **várias** sementes, não com uma. O `avalia.py`, na mesma
+pasta, roda o programa nas sementes que você pedir (sem janela, em paralelo) e resume:
+
 ```bash
-for s in 1 2 3 4 5 6; do
-  python simulador.py --programa ../meuSeguidor/main.py --mapa mapas/completo.json \
-         --sem-janela --velocidade 4 --semente $s | grep TOTAL
-done
+python avalia.py --programa ../meuSeguidor/main.py --mapa mapas/completo.json --sementes 1-3
 ```
-No PowerShell:
-```powershell
-foreach ($s in 1..6) { python simulador.py --programa ..\meuSeguidor\main.py --sem-janela --velocidade 4 --semente $s | Select-String TOTAL }
 ```
+  sem.  total  LoP  passo   chegou  vítim.   tempo  mapa                      fim
+     1    295    0   25/25     sim     -      73.1  completo.json             robô parou na chegada
+     2    295    0   25/25     sim     -      73.3  completo.json             robô parou na chegada
+     3    278    1   25/25     sim     -      81.3  completo.json             robô parou na chegada
+
+  média 289.3   pior 278   melhor 295   desvio 8.0   LoPs 1   (110 s)
+```
+
+Ele também confere as metas da **trilha de desafios** (`--desafio L04`) e sorteia **pistas
+surpresa** (`--surpresa medio`). Tudo isso está no [módulo 18](18-desafios.md).
 
 ## 11.7 O editor de mapas
 
@@ -171,6 +176,11 @@ estimativas**: o módulo 17 mostra como medir o seu robô e ajustar o arquivo.
 * A câmera não gera imagem (stub).
 * O BNO085 não existe no simulador (a tela OLED e o teclado existem: veja 11.3).
 * O barramento serial é "perfeito" (no real pode haver erro de comunicação).
+* O VL53 mede na hora em que o resultado é **lido**; no robô a medida é da hora em que foi
+  **pedida** (a leitura "velha" do módulo 7 não aparece no simulador).
+* O motor é "ideal": com `potencia_motores` ele não perde rotação com a carga (rampa, empurrar
+  obstáculo), e com `velocidade_motores` o PID nunca satura. No robô, potência fixa fica mais lenta
+  na subida.
 * `threading.Event.wait(timeout)` e afins usam o relógio real.
 
 ## Exercícios

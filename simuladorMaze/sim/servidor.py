@@ -54,6 +54,9 @@ class Servidor:
         finally:
             self.clientes -= 1
             c.close()
+            if getattr(self, '_sinc_con', None) == threading.get_ident():
+                self._sinc_con = None
+                self.sim.sinc_fim()     # programa saiu: a física volta a andar sozinha
             # programa morreu: como no robô, os motores seguem o último comando até o
             # timeout de 5 s do firmware (Mariola e placas de motor)
 
@@ -63,9 +66,24 @@ class Servidor:
         sim = self.sim
         w = sim.mundo
         if op == 'relogio':
-            return {'t': w.t, 'f': sim.fator_efetivo(), 'parar': sim.pedido_parar}
+            return {'t': sim.t_virtual, 'f': sim.fator_efetivo(), 'parar': sim.pedido_parar}
         if op == 'ola':
-            return {'cfg': w.cfg, 't': w.t, 'f': sim.fator_efetivo(), 'epoca': sim.epoca}
+            return {'cfg': w.cfg, 't': sim.t_virtual, 'f': sim.fator_efetivo(), 'epoca': sim.epoca,
+                    'sinc': sim.sincronizado}
+        if op == 'sinc_inicio':
+            self._sinc_con = threading.get_ident()
+            sim.sinc_inicio()
+            return {'t': sim.t_virtual}
+        if op == 'avanca':
+            t = sim.avanca_sinc(r.get('ate'), bool(r.get('livre')))
+            return {'t': t, 'parar': sim.pedido_parar}
+        if sim._lop_ate is not None:
+            # LoP: o programa antigo está sendo encerrado e não pode mexer no robô nem gastar
+            # o ruído dos sensores (senão a rodada deixa de se repetir igual)
+            with sim._cv:
+                while sim._lop_ate is not None and sim.rodando:
+                    sim._cv.wait(0.05)
+            return {'erro': 'programa encerrado pelo LoP'}
         with w.lock:
             if op == 'mariola_quadro':
                 res = w.fw_mariola.quadro(bytes(r['f']), w.t)
@@ -124,7 +142,7 @@ class Servidor:
 
     def _vitimas(self, w, camera):
         dc = w.cfg.get('deteccao', {})
-        rng = w.rng
+        rng = w.rng_cam
         res = []
         for dist, cam, idx, v in w.vitimas_visiveis(camera):
             st = M.status_vitima(v)

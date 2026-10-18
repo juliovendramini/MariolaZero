@@ -50,7 +50,7 @@ def eh_vermelho(tcs):
 try:
     erro_anterior = 0.0
     ultimo_lado = 1
-    fim = time.time() + 60
+    fim = time.time() + 180          # no máximo 3 min (para não ficar rodando para sempre)
     while time.time() < fim:
         if sum(eh_vermelho(k) for k in (1, 2, 3)) >= 2:   # fita vermelha da chegada
             print('Chegada!')

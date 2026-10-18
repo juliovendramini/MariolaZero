@@ -179,6 +179,12 @@ class Seguidor:
         # pé e topo da rampa, lombada: o sensor sai da altura normal e TUDO fica escuro por
         # igual (ou claro demais). Leitura escura e sem contraste não é linha: segura a direção.
         sem_contraste = max(ir) < 70 and max(ir) - min(ir) < 30
+        if sem_contraste and abs(incl) < 3 and any(self.verde_recente()):
+            # robô nivelado, tudo preto e verde visto há pouco: é a faixa de uma interseção
+            # (cruzamento atravessado), não rampa. Trata como interseção.
+            self.intersecao('esq' if self.verde_recente()[0] else 'dir')
+            self.erro_ant = 0.0
+            return
         if sem_contraste:
             if self.z_reto is None:
                 self.z_reto = r.z()
