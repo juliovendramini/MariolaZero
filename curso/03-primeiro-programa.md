@@ -141,6 +141,63 @@ TypeError: Motores.velocidade_motores() missing 1 required positional argument: 
 ```
 No robô (rodando pelo menu), o traceback vai para `~/logs/NNNNNN_erro.log`.
 
+## 3.7 Threads: coisas acontecendo "ao mesmo tempo"
+
+Até aqui o programa faz **uma coisa de cada vez**, de cima para baixo. Uma **thread** é uma função
+que roda **ao lado** do programa principal: enquanto o seu laço segue a linha, uma thread pode
+ficar perguntando o ângulo ao giroscópio sem parar.
+
+Pense numa cozinha: o forno assa o bolo **enquanto** você lava a louça. Você não fica parado olhando
+o forno; de vez em quando só olha o resultado.
+
+Código: [`codigos/01_ola_mariola/threads.py`](codigos/01_ola_mariola/threads.py)
+
+```python
+import threading
+import time
+
+contador = 0
+
+def conta():                     # esta função vai rodar na thread
+    global contador
+    while True:
+        contador += 1
+        time.sleep(0.1)
+
+threading.Thread(target=conta, daemon=True).start()   # começa a rodar conta() "ao lado"
+
+for i in range(5):
+    print(f'volta {i}: contador = {contador}')         # o principal só LÊ o valor
+    time.sleep(0.5)
+```
+```
+volta 0: contador = 1
+volta 1: contador = 6
+volta 2: contador = 11
+...
+```
+
+O programa principal nunca chama `conta()`, e mesmo assim o contador sobe: ela está rodando na
+thread.
+
+* **"Ao mesmo tempo", entre aspas:** no Python as threads se **revezam** muito rápido. Quando uma
+  espera (um `sleep`, uma resposta do sensor), outra aproveita. Por isso toda thread com laço
+  precisa de um `time.sleep`: sem ele, ela não dá a vez para as outras.
+* **`daemon=True`:** a thread termina quando o programa principal termina. Sem isso, o programa
+  não fecha.
+* **Variável compartilhada:** a thread escreve e o principal lê. É o jeito mais simples de
+  conversar entre os dois.
+* **Erro numa thread não aparece sozinho:** se `conta()` der erro, a thread morre e o contador
+  para, mas o programa principal continua como se nada tivesse acontecido.
+
+**Você já usa threads sem saber:** o giroscópio (módulo 5) e o sensor de linha (módulo 6) criam
+uma thread que lê a placa o tempo todo; quando você chama `le_angulo_z()`, recebe na hora o último
+valor que ela leu.
+
+**O cuidado mais importante:** duas threads **não podem usar o mesmo equipamento** (o mesmo
+barramento I2C, a mesma porta serial) ao mesmo tempo: as conversas se misturam. O módulo 7 (item
+7.3) mostra como organizar isso com uma thread só para os sensores.
+
 ## Exercícios
 
 1. Faça o robô andar 1 s para frente, 1 s para trás e piscar os LEDs em vermelho no fim.

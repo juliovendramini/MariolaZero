@@ -633,6 +633,8 @@ dist/               (criada pelo monta_portatil.py, fora do git) o zip para o la
   motor pode desalinhar o próximo pacote de servo).
 * O VL53 mede na hora em que o resultado é lido; no robô a medida é da hora em que foi pedida (a
   primeira leitura depois de um giro é "velha" no robô, e não no simulador).
+* Uma conversa I2C não gasta tempo simulado (no robô, cada uma leva uma fração de milissegundo):
+  ler o TCS no meio da espera dos VL53 só economiza tempo no robô.
 * O motor é ideal: em potência (`potencia_motores`) a rotação não cai com a carga (rampa, empurrar
   obstáculo), e em velocidade o PID nunca satura. No robô, potência fixa fica mais lenta na subida.
 * O BNO085 não é emulado.

@@ -1,57 +1,30 @@
-# Imports necessários para a comunicação serial
-import serial
-from motores import Movimento
-from sensorCorReflexao import CorReflexao
-from time import time, sleep
-from cronometro import Cronometro
+# Para tudo no brick: motores, servos e LEDs do Mariola (e as placas de controle de motor da lista abaixo).
+# O stop.sh chama este script. Serve para quando o programa travou ou foi morto sem parar o robô.
+# Obs.: a ventoinha (set_ventoinha) não é desligada aqui: mandar o comando dela num brick que não
+# estava com a ventoinha ligada desativaria os servos até reiniciar o brick.
+from portas import Portas
+from motores import Motores
 
-# Função que será executada antes do script fechar
-def finalizar():
-    print("\nParando os motores e encerrando...")
-    # Parar os motores
-    motores.velocidadeMotor(1, 0)
-    motores.velocidadeMotor(2, 0)
-    motores.velocidadeMotor(3, 0)
-    motores.velocidadeMotor(4, 0)
-    motores.desativaServo(1)
-    motores.desativaServo(2)
-    motores.desativaServo(3)
-    motores.desativaServo(4)
-    motores.desativaServo(5)
-    motores.desativaServo(6)
-    # Fechar conexões seriais
-    if ser is not None:
-        ser.close()
-    if serCor is not None:
-        serCor.close()
-    print("Programa encerrado com segurança.")
+# IDs das placas de controle de motor usadas neste projeto (vazio = não usa placa de motor)
+IDS_PLACAS_MOTOR = [8, 51]  # as mesmas do main.py
 
+print("Parando os motores e encerrando...")
+motores = Motores()  # ao conectar, a lib já manda os motores parados e todos os servos desativados
+motores.para_motores()
+for servo in range(1, 7):
+    motores.desativa_servo(servo)
+motores.atualiza_servos()
+motores.set_led_rgb_all(0, 0, 0)
 
-portaSerial = '/dev/ttyUSB0'
-portaSerialSensorCor = '/dev/ttyUSB1'
-ser = None
-serCor = None
-# Conecta com a porta serial do brick
-# Retorna True se a conexão foi estabelecida com sucesso
-def conectar_serial(portaSerial,baud_rate=115200):
-    ser=None
-    try:
-        # Inicializa a comunicação serial
-        ser = serial.Serial(portaSerial, baud_rate, timeout=1)
-        print(f"Comunicação estabelecida com sucesso na porta {portaSerial}.")
-        return ser
-    
-    # Caso ocorra algum erro na comunicação serial
-    except serial.SerialException as e:
-        print(f"Erro ao tentar se comunicar com a porta {portaSerial}: {e}")
-        return None
-    
-# Envia uma mensagem para o brick
-def enviarMensagem(mensagem):
-    ser.write(mensagem.encode())
-    print(f"Mensagem enviada: {mensagem}")
+if IDS_PLACAS_MOTOR:
+    from placaControleMotor import PlacaControleMotor
+    porta = Portas().abre_porta_serial(Portas.SERIAL1, 250000, timeout=0.005)
+    placas = []  # guardadas até o fim: o __del__ de cada placa fecha a porta serial que todas usam
+    for id_placa in IDS_PLACAS_MOTOR:
+        try:
+            placas.append(PlacaControleMotor(porta, id_equipamento=id_placa))
+            placas[-1].para_motor()
+        except Exception as e:
+            print(f"Placa de motor {id_placa}: {e}")
 
-
-ser = conectar_serial(portaSerial)
-motores = Movimento(ser, True)
-finalizar()
+print("Brick parado.")

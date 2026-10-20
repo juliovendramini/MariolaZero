@@ -7,9 +7,11 @@ equipes Titãs da Robótica). Tudo em português: código, comentários, commits
 
 | pasta / arquivo | o que é |
 |---|---|
-| `README.md`, `*.md` da raiz, `*.sh`, `*.dts` | instalação do Armbian, boot, Wi-Fi, ventoinha. Material do robô real, não dos simuladores |
+| `README.md` | apresentação do repositório (reescrito em 20/10/2026; o antigo era o guia de instalação) |
+| `INSTALACAO.md` + `instalacao/` | instalação do Linux do brick num arquivo só (Armbian Bookworm + kernel 6.18 com overlays, Python, permissões, menu, rede, câmeras, áudio, cooler, raiz somente leitura, Samba, boot rápido, recuperação, build) e os arquivos de apoio. **Duas imagens:** Line/Maze = Bookworm Minimal no BPI-M4 Zero de 8 GB (sem cooler); @Work = Armbian Noble/Ubuntu 24.04 + ROS2 no de 32 GB (com cooler `fancontrol`, NetworkManager). O apêndice C é a conferência de um brick em 20/10/2026 |
+| `_instalacao_antiga/` | os `.md`, scripts, `.dts`/`.dtb` e o `ScriptsIA/` antigos, movidos em 20/10/2026. O Julio vai apagar depois de revisar o `INSTALACAO.md`; não use como fonte (o apêndice B do `INSTALACAO.md` diz o que ficou só lá) |
 | `libs/` | bibliotecas **reais** do Mariola (Python, rodam no robô): motores, placaControleMotor, placaControleServo, giroscopio, vl53, sensorCorReflexao, teclado, tela, botoes... |
-| `exemplos/`, `menuPrincipal/`, `telemetria/`, `ScriptsIA/` | programas do robô real |
+| `exemplos/`, `menuPrincipal/`, `telemetria/` | programas do robô real |
 | `simuladorLine/` | simulador da RoboCupJunior Rescue Line (tem `CLAUDE.md` próprio) |
 | `simuladorMaze/` | simulador da RoboCupJunior Rescue Maze (tem `CLAUDE.md` próprio) |
 | `curso/` | curso para os alunos (público): 18 módulos em Markdown, `referencia/`, `codigos/`, `curso-mariola.html` (tem `CLAUDE.md` próprio) |
@@ -99,17 +101,24 @@ Os simuladores emulam estes firmwares byte a byte. Na dúvida sobre um comportam
   `z()` positivo = esquerda e troca o sinal numa função só.
 * Servos inteligentes do Julio (lib `placaControleServo`) no mesmo barramento serial (SERIAL1) das
   placas de motor.
+* Conectores: `documentação/Conectores.pdf`/`.odp` (fonte, o Julio edita) e `documentação/Conectores.md`
+  (texto). Header amarelo = 6 colunas (SINAL, 5V, GND): SERVOS 1–4 (pinos 14–17; o 4 pode ser a 2ª
+  fita de LEDs), LEDs (pino 12, os 10 RGB) e DEBUG/PWM (pino 11: TX do serialDebug do ATmega ou PWM
+  da ventoinha). REDE (RXN, RXP, TXN, TXP; virado 180° em relação ao USB) e AUDIO (GND, L_OUT,
+  L_IN, 5V) são do Banana Pi. A imagem do mapa no curso (`curso/imagens/conectores.jpg`) sai da
+  página 1 do PDF.
 
 ## Curso (`curso/`)
 
 * 18 módulos (`01-...md` a `18-desafios.md`), `referencia/` (uma página por lib), `codigos/`
-  (16 programas testados nos simuladores, sem janela, 4x), `mapas/` (`curso_pista.json`,
+  (18 programas testados nos simuladores, sem janela, 4x), `mapas/` (`curso_pista.json`,
   `curso_area.json`, também em `simuladorLine/mapas/`).
 * Convenções: velocidades -100 a 100, distâncias em mm, ângulos em graus, canal 0 do sensor de linha e
   TCS 1 à esquerda.
 * `curso-mariola.html` é o site gerado a partir dos `.md` (também publicado como artifact "Curso
   Mariola" no app do Claude). Gerador: `python curso/site/monta.py` (usa `curso/site/modelo.html`).
-  Rode depois de mudar qualquer módulo e avise que o artifact do app ficou desatualizado.
+  Rode depois de mudar qualquer módulo; o artifact do app fica desatualizado até ser republicado
+  (como republicar: `curso/CLAUDE.md`).
 * Detalhes (estrutura, testes dos códigos, tabela de referência do módulo 18): `curso/CLAUDE.md`.
 * Ao mudar a API de um simulador ou de uma lib, confira os módulos e os `codigos/` que usam aquilo.
 

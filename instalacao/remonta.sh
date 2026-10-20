@@ -1,0 +1,3 @@
+#!/bin/bash
+# Remonta a raiz como gravavel (ate o proximo boot). Use antes de apt, dpkg, systemctl enable...
+sudo mount -o remount,rw /

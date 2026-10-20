@@ -1,0 +1,16 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "allwinner,sun50i-h616", "allwinner,sun50i-h618";
+
+	fragment@0 {
+		target = <&cpu_opp_table>;
+		__overlay__ {
+			opp-1512000000 {
+				opp-microvolt-speed0 = <1100000>;
+				opp-supported-hw = <0x2b>;
+			};
+		};
+	};
+};

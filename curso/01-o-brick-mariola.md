@@ -29,17 +29,41 @@ exemplo, se o Python travar, a plaquinha percebe que ficou **5 s sem ordens** e 
 |---|---|---|---|
 | **MOTOR 1, MOTOR 2** | 2 | PWM1, PWM2, GND, 5V, ENCODER_DIR, ENCODER_CLK | motores **com encoder** |
 | **MOTOR 3, MOTOR 4** | 2 | 2 fios | motores **sem encoder** |
-| **SERVOS 1–4** | 4 | SINAL, 5V, GND | servos comuns de hobby |
+| **SERVOS 1–4** | 4 | SINAL, 5V, GND | servos comuns de hobby (o 4 também pode ser uma 2ª fita de LEDs: [`set_led_rgb_*_porta4`](referencia/motores.md)) |
+| **LEDs** | 1 | SINAL, 5V, GND | a fita dos **10 LEDs RGB** (WS2812B) do Mariola (`set_led_rgb_all/one`) |
+| **DEBUG/PWM** | 1 | SINAL, 5V, GND | do ATmega: o **TX do serial de debug** dele (115200 bps) ou o **PWM da ventoinha** (`set_ventoinha`) |
 | **SERIAIS 1, 2, 3** | 3 | TX, RX, GND, 5V | placas e sensores seriais (conversores USB dentro do brick) |
 | **SERIAIS 4, 5, 6** | 3 | TX, RX, GND, 5V | placas e sensores seriais (UART do Banana Pi) |
 | **I2C1 … I2C8** | 8 | SDA, SCL, GND, 5V | sensores I2C, um por conector (passam por um multiplexador) |
 | **PINOS DIGITAIS 1–8** | 8 | GND, PINO | botões, chaves, LEDs; entrada ou saída, aceitam 5 V, com proteção |
 | **TELA**, **TECLADO** | 2 | SDA, SCL, GND, 3,3V | a placa da tela + teclado vai no TELA; o TECLADO é da placa antiga (**sem proteção!**) |
 | **USB** | 1 | GND, DP, DM, 5V | câmera, pendrive, adaptador Wi-Fi |
+| **REDE** | 1 | RXN, RXP, TXN, TXP | rede **Ethernet cabeada** do Banana Pi. O conector está **virado 180°** em relação ao USB |
+| **AUDIO** | 1 | GND, L_OUT, L_IN, 5V | saída e entrada de áudio do Banana Pi |
 | **VOLTÍMETRO** | 1 | GND, VBAT+ | mede a bateria |
 | **RESET**, **BOTÃO 1** | 2 botões na placa | | |
 
 O arquivo `documentação/Conectores.pdf` tem a foto de cada conector com a pinagem.
+
+**O header amarelo** tem 6 colunas de 3 pinos (de cima para baixo: SINAL, 5V, GND). Da esquerda
+para a direita: **SERVOS 1, 2, 3, 4**, **LEDs** e **DEBUG/PWM**. Os LEDs RGB do Mariola já vêm
+ligados na coluna LEDs. A DEBUG/PWM é uma coisa **ou** outra: enquanto a ventoinha não é ligada, é o
+debug do ATmega; depois do primeiro `set_ventoinha`, vira o PWM dela até o brick reiniciar (e os
+servos param: veja a [referência](referencia/motores.md)). Não confunda com a porta de debug do
+Banana Pi, que fica na lateral (abaixo).
+
+### A lateral do brick
+
+![Lateral do Mariola: porta de debug, mini HDMI e duas USB-C](imagens/lateral_portas.jpg)
+
+Da esquerda para a direita:
+
+| Porta | Para quê |
+|---|---|
+| **DEBUG** (3 pinos, no canto) | terminal serial do **Banana Pi**, para entrar no robô quando ele **não tem IP** ([módulo 2, item 2.3](02-ambiente-e-envio.md)). O pino mais externo, na borda da caixa, é o **GND**. (A coluna DEBUG/PWM do header amarelo é outra coisa: é do ATmega.) |
+| **mini HDMI** | monitor |
+| **furinho quadrado** | os dois LEDs do Banana Pi M4 Zero (verde e vermelho), que mostram o estado da placa |
+| **USB-C** (2) | as duas USB-C do Banana Pi: dados e alimentação |
 
 ### A placa da tela e do teclado
 
@@ -104,12 +128,11 @@ são **exatamente os mesmos** no robô e no simulador.
 
 ## 1.6 Cuidados com o hardware
 
-* Bateria: confira a tensão antes de treinar e de cada rodada. Bateria fraca muda tudo (velocidade
-  máxima, leitura dos sensores IR).
+* Bateria: confira a tensão antes de treinar e de cada rodada. Bateria muito fraca pode mudar tudo
+  (velocidade máxima, leitura dos sensores IR).
 * Nunca ligue nada nos conectores TELA/TECLADO além da tela e do teclado.
-* Desligue o robô antes de ligar ou tirar cabos.
 * Ao desligar, use o menu (Desligar Brick) ou `sudo shutdown -h now`: cortar a energia com o Linux
-  gravando pode estragar o cartão (o README do brick explica como deixar a partição principal
+  gravando pode estragar o cartão (o `INSTALACAO.md` do brick explica como deixar a partição principal
   somente leitura para evitar isso).
 
 ## Exercícios

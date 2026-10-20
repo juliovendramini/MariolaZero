@@ -254,7 +254,8 @@ class MenuPrincipal:
                     texto = f"Particao\nliberada"
                     draw.rectangle(self.display.bounding_box, outline="black", fill="black")
                     draw.text((0, 0), texto, font=self.font, fill="white")
-                    subprocess.run(["sudo", "mount", "-o", "remount,rw", "/dev/mmcblk2p1", "/"])
+                    # so o ponto de montagem: o numero do mmcblk muda (com ou sem cartao SD)
+                    subprocess.run(["sudo", "mount", "-o", "remount,rw", "/"])
                 sleep(2)
                 self.limpa_tela()
             elif self.opcao_selecionada == self.INICIAR_X:

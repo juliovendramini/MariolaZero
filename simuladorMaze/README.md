@@ -313,6 +313,7 @@ gira pelo giroscópio, encosta no para-choque para alinhar, detecta preto/azul/p
 * O BNO085 não é emulado.
 * O VL53 mede na hora em que o resultado é lido; no robô a medida é da hora em que foi pedida (a
   primeira leitura depois de um giro é "velha" no robô, e não no simulador).
+* Uma conversa I2C não gasta tempo simulado (no robô, cada uma leva uma fração de milissegundo).
 * O motor é ideal: em potência a rotação não cai com a carga, e em velocidade o PID nunca satura.
 * Se o programa morre, os motores seguem o último comando até o timeout de 5 s do firmware, como no robô.
 * `threading.Event.wait(timeout)`, `Queue.get(timeout=...)` e afins usam o relógio real e não contam

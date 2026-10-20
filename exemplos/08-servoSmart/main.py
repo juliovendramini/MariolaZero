@@ -1,10 +1,8 @@
 #Atualmente ainda é necessário inserir os arquivos python das bibliotecas que serão utilizadas dentro do projeto
 #Futuramente, quando tudo estiver estável, isso não será mais necessário
-#Exemplo de uso do giroscopio
-import random
+#Exemplo de uso do servo inteligente (placaControleServo): vai de 0 a 1023 em passos de 5
 from time import sleep
 from portas import Portas
-from motores import Motores
 from placaControleServo import PlacaControleServo
 print("comecou:")
 # servos = PlacaControleServo.buscar_servos("COM10")
@@ -62,7 +60,7 @@ try:
 #Essa parte do código é responsável por lidar com a interrupção do programa quando no terminal apertamos Ctrl+C 
 #ou interrompemos o programa pelo teclado do brick
 except KeyboardInterrupt as e:
-    motores.para_motores()
-    print("\nInterrupção detectada! Parando os motores e encerrando...")
+    servo1.para_servo()
+    print("\nInterrupção detectada! Parando o servo e encerrando...")
     print("Programa encerrado com segurança.")
 

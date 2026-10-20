@@ -1,0 +1,28 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "sinovoip,bpi-m4-zero", "allwinner,sun50i-h616", "allwinner,sun50i-h618";
+
+	/* Porta USB-C como host, e nao como peripheral (OTG) */
+	fragment@0 {
+		target = <&usbotg>;
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	fragment@1 {
+		target = <&ehci0>;
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@2 {
+		target = <&ohci0>;
+		__overlay__ {
+			status = "okay";
+		};
+	};
+};

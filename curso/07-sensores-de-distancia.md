@@ -54,7 +54,117 @@ O `robo.py` do exemplo da Line faz isso no método `distancia(nome)`.
 > **Leitura velha:** a medida descreve o mundo **de quando foi pedida**. Depois de girar 90°, a
 > primeira leitura ainda é da parede antiga. Descarte-a ou use `read_range_single_millimeters()`.
 
-## 7.3 Tutorial: parar a 8 cm da parede
+## 7.3 Uma thread só para os sensores I2C
+
+[`thread_sensores.py`](codigos/05_distancia/thread_sensores.py) (simulador da Line, robô 4x4)
+
+Se você ainda não sabe o que é uma thread, leia antes o [módulo 3, item 3.7](03-primeiro-programa.md).
+
+### A regra: o I2C só pode ser usado por uma thread
+
+Todos os VL53L0X e TCS34725 do Mariola estão no **mesmo barramento** (I2C 1), atrás do **mesmo
+multiplexador**. Cada leitura é uma conversa em vários passos: escolher o canal no mux, escrever
+um registrador, ler a resposta. Se duas threads usam o I2C ao mesmo tempo, os passos se misturam:
+
+```
+thread A: escolhe o canal 1 (VL53 da esquerda)
+thread B: escolhe o canal 6 (TCS da frente)
+thread A: lê a distância          ← está lendo do canal 6: valor errado ou OSError
+```
+
+O erro não acontece sempre, só quando as duas se cruzam: é o tipo de problema que some na bancada
+e aparece na competição. Por isso: **todos os sensores I2C são lidos por uma thread só.** O mesmo
+vale para a tela e o teclado (outro barramento, o I2C 0) e para a serial dos motores.
+
+### A solução: uma thread lê tudo e guarda em atributos
+
+Uma classe cria os sensores, e uma thread dela lê **todos em sequência**, sem parar, e guarda os
+valores em atributos. O resto do programa (seguir linha, decidir, mexer os motores) **só lê os
+atributos** e nunca chama um método do VL53 ou do TCS:
+
+```python
+class SensoresI2C:
+    def __init__(self):
+        self.vl53 = {'esquerda': VL53L0X(Portas.I2C1), 'frente': VL53L0X(Portas.I2C5), ...}
+        self.tcs = {'frente': TCS34725(Portas.I2C6), ...}
+        self.dist = {nome: 8190 for nome in self.vl53}   # o que o programa lê
+        self.cor = {nome: (0, 0, 0, 0) for nome in self.tcs}
+        self.t_leitura = 0.0
+        self.erro = None
+
+    def le_tudo(self):
+        t = time.time()
+        for s in self.vl53.values():               # 1) pede a medida em TODOS os VL53
+            s.solicita_leitura()
+        cor = {n: s.le_valores() for n, s in self.tcs.items()}    # 2) lê os TCS enquanto eles medem
+        dist = {n: s.leitura_mm() for n, s in self.vl53.items()}  # 3) pega os resultados
+        self.dist = dist                            # troca o dicionário inteiro de uma vez
+        self.cor = cor
+        self.t_leitura = t
+
+    def _laco(self):                                # roda na thread
+        while self.rodando:
+            try:
+                self.le_tudo()
+            except (OSError, TimeoutError) as e:
+                self.erro = e
+                time.sleep(0.05)
+            time.sleep(0.002)
+```
+
+E no programa:
+
+```python
+sensores = SensoresI2C()
+sensores.inicia()                       # cria e começa a thread
+while True:
+    if sensores.dist['frente'] < 100:   # só lê o atributo: instantâneo
+        desvia()
+    segue_linha()
+    time.sleep(0.01)
+```
+
+Por que cada detalhe:
+
+* **Trocar o dicionário inteiro** (`self.dist = dist`) em vez de mudar uma chave de cada vez: quem
+  lê nunca pega metade velha e metade nova.
+* **`t_leitura`** diz de quando é a medida. Se você precisa de uma leitura **depois** de um giro,
+  espere `t_leitura` passar do momento em que o giro acabou.
+* **`try/except` dentro da thread:** um erro numa thread não para o programa nem aparece na tela;
+  a thread simplesmente morre e os valores congelam. Guarde o erro num atributo e olhe por ele.
+* **`time.sleep` no laço da thread:** sem ele, a thread ocupa o processador e atrapalha o resto
+  (e, no simulador, o relógio não anda).
+
+### O truque do VL53: pedir, fazer outra coisa, pegar
+
+Uma medida do VL53 leva ~33 ms, e quase todo esse tempo é o sensor trabalhando **sozinho**: o
+programa só fica esperando. A função que pede e espera (`read_range_single_millimeters()`) joga
+esse tempo fora. Por isso a volta da thread é **partida em três**:
+
+1. `solicita_leitura()` em **todos** os VL53: os sensores começam a medir juntos;
+2. **enquanto eles medem, faz outra coisa**: no exemplo, ler os TCS; poderia ser outro sensor
+   I2C, uma conta, filtrar as leituras anteriores... qualquer coisa que não dependa dessa medida;
+3. `leitura_mm()` em cada VL53, em sequência: a essa altura a medida já está pronta (se não
+   estiver, ela espera só o que falta).
+
+Tempo de uma volta com os 4 VL53 e os 2 TCS do robô 4x4 (simulador, que imita os 33 ms do VL53):
+
+| Jeito | Tempo por volta |
+|---|---|
+| `read_range_single_millimeters()` um de cada vez, depois os TCS | ~152 ms |
+| pede todos, pega todos, depois os TCS | ~54 ms |
+| pede todos, **TCS no meio**, pega todos | ~54 ms no simulador |
+
+A grande diferença está entre a primeira e a segunda linha: em vez de quatro esperas de 33 ms, uma
+só. A terceira mostra **onde** pôr o resto do trabalho: dentro da espera, ele sai "de graça". Ler um
+TCS é rápido (só algumas leituras de registrador), então no simulador, onde a conversa I2C não gasta
+tempo, a terceira linha dá igual à segunda; no robô ela fica um pouco menor. Quanto mais trabalho você
+puser no meio, mais ganha.
+
+Com a thread, o laço principal do exemplo dá ~100 voltas por segundo enquanto a thread lê todos os
+sensores ~20 vezes por segundo, cada um no seu ritmo.
+
+## 7.4 Tutorial: parar a 8 cm da parede
 
 [`para_na_parede.py`](codigos/05_distancia/para_na_parede.py) (simulador da **Maze**, que tem
 paredes por todo lado)
@@ -76,7 +186,7 @@ anda(0, 0)
 parei a 79 mm da parede
 ```
 
-## 7.4 Seguir uma parede
+## 7.5 Seguir uma parede
 
 Com um sensor do lado, o mesmo controle proporcional mantém o robô a uma distância da parede:
 
@@ -96,7 +206,7 @@ Cuidados que o exemplo da área de resgate teve que resolver:
   evento ("acabou a parede"), não como erro grande.
 * **Parede na frente:** pare e gire antes de bater (sensor da frente).
 
-## 7.5 Dois sensores do mesmo lado: o ângulo da parede
+## 7.6 Dois sensores do mesmo lado: o ângulo da parede
 
 Na Maze, com um VL53 na frente e outro atrás do mesmo lado, separados por `D` mm:
 
@@ -107,7 +217,7 @@ angulo = math.degrees(math.atan2(d_tras - d_frente, D))   # + = robô girado par
 Isso diz se o robô está torto em relação à parede, e serve para **corrigir a deriva do
 giroscópio** (o exemplo da Maze faz isso a cada ladrilho com parede).
 
-## 7.6 Limites do sensor
+## 7.7 Limites do sensor
 
 | Limite | Consequência | O que fazer |
 |---|---|---|
@@ -127,3 +237,7 @@ giroscópio** (o exemplo da Maze faz isso a cada ladrilho com parede).
 4. **No robô**, peça uma medida (`solicita_leitura()`), gire 90° e imprima a primeira
    `leitura_mm()` depois do giro e a segunda. Elas diferem? Por quê? (O simulador mede na hora em
    que o resultado é lido, então lá a primeira leitura já é a nova: veja as limitações no módulo 11.)
+5. Faça o erro do 7.3 de propósito: deixe a thread da `SensoresI2C` rodando e, no programa
+   principal, leia o VL53 da frente direto com `read_range_single_millimeters()` durante 3 s (com
+   `try/except`). Compare com a thread sozinha: quantas voltas por segundo ela dá e quantos erros
+   aparecem nas duas threads?

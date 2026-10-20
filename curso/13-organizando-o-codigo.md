@@ -95,6 +95,10 @@ Ao depurar, separe as três perguntas:
 `print` do que foi visto e decidido (com o tempo), `simdebug.pose()` do que ele acha e o painel do
 simulador com o que realmente é: na maioria das vezes o erro aparece na hora.
 
+A percepção também pode virar uma **parte separada do código**: uma thread que lê todos os
+sensores I2C e guarda os valores em atributos ([módulo 7, item 7.3](07-sensores-de-distancia.md)).
+A decisão e a ação só leem esses atributos, e cada leitura tem a hora em que foi feita.
+
 ```python
 def log(*a):
     print(f'{time.time() - T0:7.2f}', *a, flush=True)

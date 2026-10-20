@@ -3,7 +3,9 @@
 Exemplo de uso da classe PinosDigitais
 Demonstra como usar os 8 pinos digitais como entrada e saída
 """
-from libs.pinosDigitais import PinosDigitais
+import time
+
+from pinosDigitais import PinosDigitais
 from gpiod.line import Direction
 
 

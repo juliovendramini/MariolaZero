@@ -48,6 +48,8 @@ meuSeguidor/
 
 ## 2.3 Conectando no robô
 
+### Pela rede (SSH), quando o robô tem IP
+
 1. Ligue o robô e espere o menu aparecer na tela. A **primeira linha mostra o IP** e a temperatura
    da CPU (ex.: `192.168.2.151 48°C`).
 2. O computador precisa estar na **mesma rede** (mesmo Wi-Fi).
@@ -55,10 +57,56 @@ meuSeguidor/
    ```bash
    ssh banana@192.168.2.151
    ```
-4. Para não digitar senha toda vez, configure a **chave SSH** (passo a passo no `README.md` do
-   brick: `ssh-keygen` no PC e a chave pública em `~/.ssh/authorized_keys` no robô).
+4. Para não digitar senha toda vez, configure a **chave SSH** (passo a passo no `INSTALACAO.md` do
+   brick, seção 8: `ssh-keygen` no PC e a chave pública em `~/.ssh/authorized_keys` no robô).
 
 Usuário: `banana`. Os projetos ficam em `/home/banana/<nome-da-pasta>/`.
+
+### Sem IP: pela porta de debug (serial)
+
+Se a tela não mostra IP (o robô não está em nenhuma rede, o Wi-Fi é outro, o menu não subiu), o
+SSH não funciona. Aí o caminho é o **terminal serial** do Banana Pi, pela **porta de debug** do
+brick. Ela funciona mesmo sem rede e mostra até as mensagens do boot.
+
+**O que precisa:** um conversor **USB-serial** (TTL de **3,3 V**, como os de CH340, CP2102 ou FTDI)
+e três fios.
+
+A porta de debug são os **3 pinos no canto da lateral** do brick, ao lado da mini HDMI. O pino
+mais externo (na borda da caixa) é o **GND**. (Não é a coluna DEBUG/PWM do header amarelo: aquela é
+do ATmega, não dá acesso ao Linux.)
+
+![Porta de debug sem cabo](imagens/lateral_portas.jpg)
+
+![Porta de debug com o cabo ligado: o fio marrom, no pino da borda, é o GND](imagens/lateral_debug_cabo.jpg)
+
+1. Com o robô **desligado**, ligue o conversor na **porta de debug**:
+
+   | Conversor | Porta de debug do brick |
+   |---|---|
+   | **GND** | **GND: o pino mais externo da placa** |
+   | **RX** | TX da placa |
+   | **TX** | RX da placa |
+
+   * O TX de um vai no RX do outro (é cruzado).
+   * **Não ligue o VCC/5V do conversor**: o brick tem a própria alimentação.
+2. Ligue o conversor no PC e descubra a porta: no Windows, **Gerenciador de Dispositivos → Portas
+   (COM e LPT)** (ex.: `COM5`); no Linux, `/dev/ttyUSB0`.
+3. Abra um terminal serial a **115200 bps** (8N1, sem controle de fluxo):
+   * Windows: **PuTTY** (Connection type: *Serial*, Serial line `COM5`, Speed `115200`). O
+     `putty.exe` roda sem instalar.
+   * Linux: `screen /dev/ttyUSB0 115200` (sai com `Ctrl+A` e depois `K`).
+4. Ligue o robô. As mensagens do boot aparecem; no fim, aperte **Enter** para ver o `login:`.
+   Entre com o usuário `banana` e a senha do robô.
+   * **Não apareceu nada?** Confira o GND e **troque o TX com o RX**: é o erro mais comum.
+   * Apareceram caracteres estranhos? A velocidade não está em 115200.
+5. Já dentro do robô:
+   * `hostname -I` mostra o IP (se ele tiver um). Com o IP, volte a usar o SSH, que é mais
+     confortável.
+   * Para ligar o Wi-Fi: libere a partição do sistema (`sudo mount -o remount,rw /`,
+     veja o item 2.6) e use `sudo armbian-config` → Network.
+
+O terminal serial é bom para consertar o robô, não para trabalhar: para mandar programas, use a
+rede (2.4).
 
 ## 2.4 Mandando o programa
 
@@ -143,12 +191,12 @@ sistema** pode estar montada **somente leitura**. A pasta `/home/banana` fica em
 continua gravável: seus projetos, logs e arquivos de calibração funcionam normalmente.
 
 Para instalar pacotes (`apt`, `pip` no sistema), libere antes: menu → **Desbloquear** (ou
-`sudo mount -o remount,rw /dev/mmcblk2p1 /`). Reiniciando, volta a ser somente leitura.
+`sudo mount -o remount,rw /`). Reiniciando, volta a ser somente leitura.
 
 ## 2.7 Outras formas de mexer nos arquivos do robô
 
 * **Samba:** o brick pode compartilhar a pasta do usuário na rede (abre no Windows Explorer como
-  `\\IP\home`). Configuração no `README.md` do brick.
+  `\\IP\home`). Configuração no `INSTALACAO.md` do brick, seção 15.
 * **VS Code Remote-SSH:** abre a pasta do robô direto no VS Code (bom para ajustes rápidos no
   campo; lembre de trazer as mudanças de volta para o PC).
 

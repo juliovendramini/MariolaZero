@@ -212,12 +212,38 @@ Envia a lista dos servos.
 
 ### `set_led_rgb_all(r, g, b)` · `set_led_rgb_one(indice, r, g, b)`
 Acende todos os LEDs, ou um (índice 0 a 9), com a cor (0 a 255 cada). Enviam na hora (não
-dependem de `atualiza_instantaneo`).
+dependem de `atualiza_instantaneo`). A fita fica na coluna **LEDs** do header amarelo (a 5ª, depois
+dos 4 servos).
 
 * **Quando usar:** indicar estado do programa (ótimo para depurar sem tela!), iluminar as
   câmeras, sinalizar vítima na Maze.
 * **Cuidado:** o timeout de 5 s apaga os LEDs. Se o programa fica parado esperando o botão, os
   LEDs apagam: reacenda depois.
+
+### `set_led_rgb_all_porta4(r, g, b)` · `set_led_rgb_one_porta4(indice, r, g, b)`
+Uma **segunda fita de LEDs** (WS2812B, 10 LEDs, índice 0 a 9) ligada na coluna **SERVO 4** do
+header amarelo.
+Funcionam como as de cima. Precisam do firmware do Mariola de 19/10/2026 ou mais novo.
+
+* A porta 4 é servo **ou** fita de LEDs, conforme o último comando: o primeiro comando de LED
+  desliga o servo 4; `move_servo(4, angulo)` apaga a fita e a porta volta a ser servo.
+* **Cuidado:** não ligue um servo e uma fita na porta 4 ao mesmo tempo.
+
+## Ventoinha
+
+### `set_ventoinha(potencia)` · `desliga_ventoinha()`
+Liga a ventoinha com potência de 0 a 100 (%). Ela vai na coluna **DEBUG/PWM** do header amarelo
+(a 6ª, a última; é o pino 11 do ATmega). `desliga_ventoinha()` é o mesmo que `set_ventoinha(0)`.
+
+* Antes do primeiro `set_ventoinha`, essa coluna é o **TX do serial de debug do ATmega** (115200
+  bps): dá para ver as mensagens do firmware com um conversor USB-serial. Depois, vira PWM até o
+  brick reiniciar.
+
+* **Cuidado 1:** com a ventoinha ligada, **os servos comuns do Mariola param de funcionar** até
+  o brick reiniciar (os dois usam o mesmo timer do ATmega). Depois de `set_ventoinha`,
+  `move_servo` dá erro. Os [servos inteligentes](placaControleServo.md) não são afetados.
+* **Cuidado 2:** o timeout de 5 s **não** desliga a ventoinha. A lib desliga quando o objeto
+  `Motores` é destruído (fim normal do programa), mas se o programa travar ela continua girando.
 
 ## Erros comuns
 
@@ -233,4 +259,5 @@ dependem de `atualiza_instantaneo`).
 ## No simulador
 
 Emulado byte a byte (PID a 40 Hz, encoder ×2, timeout de 5 s, LEDs). Os motores e LEDs ligados em
-cada canal estão no `robo*.json` (`motores`, `leds`).
+cada canal estão no `robo*.json` (`motores`, `leds`). A fita da porta 4 responde como no robô, mas
+não aparece na tela do simulador.

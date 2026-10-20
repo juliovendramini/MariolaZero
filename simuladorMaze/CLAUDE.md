@@ -141,6 +141,13 @@ regravado a partir de uma cópia antiga. O `robo.json` certo tem os 6 sensores e
   quadro são descartados. `CALIBRA_MOTORES` deixa o Mariola ~26 s sem responder.
 * Mariola: timeout de 5 s sem pacote solta os motores e apaga **todos** os LEDs. Giro por ângulo em
   int16; ângulo 0 mantém o alvo; um novo `atualiza_motores()` depois de chegar no alvo volta a girar.
+* Mariola (firmware de 19/10): 0xF1/0xF0 = LEDs da porta 4 (segunda fita, 10 LEDs; o primeiro desliga
+  o servo 4), servo 4 com ângulo ≤ 180 volta a porta para servo. Emulado nos dois simuladores
+  (`FirmwareMariola.leds_porta4`, só o estado: não é desenhado), e `fake_hw` aceita de 0xF0 a 0xFD.
+* Mariola, ventoinha (0xF2, PWM 0-255 no pino 11 pelo Timer2): o primeiro comando desliga todos os
+  servos; o timeout não desliga a ventoinha; um servo com ângulo ≤ 180 depois disso religa o Timer2
+  e o PWM para (`FirmwareMariola.ventoinha`, só o estado). Na lib: `set_ventoinha(0-100)`,
+  `desliga_ventoinha()`, e `move_servo` dá erro com a ventoinha ativa.
 * Placa de motor: giro em uint16; giro 0 **cancela** o alvo (diferente do Mariola); 5 s sem pacote
   para os motores; ~12 s sem pacote (10 s + watchdog de 2 s) a placa reinicia e a contagem volta a 0.
   Comandos de ajuste (KP etc.) devolvem o valor ajustado, não a contagem. Calibração ~14 s, zera a

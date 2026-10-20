@@ -179,6 +179,8 @@ estimativas**: o módulo 17 mostra como medir o seu robô e ajustar o arquivo.
 * O barramento serial é "perfeito" (no real pode haver erro de comunicação).
 * O VL53 mede na hora em que o resultado é **lido**; no robô a medida é da hora em que foi
   **pedida** (a leitura "velha" do módulo 7 não aparece no simulador).
+* Uma conversa I2C não gasta tempo (no robô, cada uma leva uma fração de milissegundo). Por isso
+  ler o TCS no meio da espera dos VL53 (módulo 7, item 7.3) só fica mais rápido no robô.
 * O motor é "ideal": com `potencia_motores` ele não perde rotação com a carga (rampa, empurrar
   obstáculo), e com `velocidade_motores` o PID nunca satura. No robô, potência fixa fica mais lenta
   na subida.

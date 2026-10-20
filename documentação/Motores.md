@@ -200,6 +200,68 @@ Obtém o estado atual de um motor.
 
 ---
 
+### `potencia_motor(self, motor, potencia)`
+Define a potência (PWM direto, sem PID) de um motor.
+
+- **Parâmetros**:
+  - `motor` (int): Número do motor (1 a 4).
+  - `potencia` (int): Potência (-100 a 100).
+
+---
+
+### Tração 4x4: `velocidade_motores_4x4(v1, v2)` · `potencia_motores_4x4(p1, p2)` · `move_motores_4x4(v1, angulo1, v2, angulo2)`
+Iguais a `velocidade_motores`, `potencia_motores` e `move_motores`, mas o motor 3 (sem encoder)
+recebe o mesmo comando do motor 1 e o motor 4 o do motor 2, dentro do firmware. No modo velocidade,
+os motores 3 e 4 seguem o PID dos motores 1 e 2.
+
+- **Parâmetros**: velocidades de -100 a 100 (-120 a 120 no `move_motores_4x4`), potências de -100
+  a 100, ângulos (contagens do encoder) de 0 a 65535.
+
+---
+
+## LEDs RGB
+
+O Mariola tem uma fita de **10 LEDs RGB** (WS2812B) ligada na coluna **LEDs** do header amarelo (a
+5ª coluna, depois dos 4 servos). Os comandos de LED são enviados na hora (não dependem de
+`atualiza_instantaneo`). O timeout de 5 s sem comando apaga os LEDs.
+
+### `set_led_rgb_all(self, r, g, b)`
+Acende todos os LEDs com a mesma cor (0 a 255 cada).
+
+### `set_led_rgb_one(self, index, r, g, b)`
+Acende um LED (`index` de 0 a 9) com a cor dada.
+
+### `set_led_rgb_all_porta4(self, r, g, b)` · `set_led_rgb_one_porta4(self, index, r, g, b)`
+Uma **segunda fita** de 10 LEDs na coluna **SERVO 4** do header (firmware de 19/10/2026 ou mais
+novo). O primeiro comando desliga o servo 4 e liga a fita; `move_servo(4, angulo)` apaga a fita e a
+porta volta a ser servo.
+
+---
+
+## Ventoinha
+
+### `set_ventoinha(self, potencia)` · `desliga_ventoinha(self)`
+Liga a ventoinha na coluna **DEBUG/PWM** do header amarelo (a 6ª, pino 11 do ATmega) com potência
+de 0 a 100 (%). `desliga_ventoinha()` = `set_ventoinha(0)`.
+
+- O primeiro comando desliga **todos os servos** do Mariola e o serial de debug do ATmega (os servos
+  e o PWM da ventoinha usam o mesmo timer). Os servos só voltam depois de reiniciar o brick; com a
+  ventoinha ativa, `move_servo` lança exceção.
+- O timeout de 5 s **não** desliga a ventoinha. A classe desliga no `__del__`.
+
+---
+
+## Calibração
+
+### `obtem_calibracao_motores(self)`
+Retorna `(calibracao_motor1, calibracao_motor2)`: a velocidade (contagens a cada 25 ms) que vale 100.
+
+### `calibra_motores(self)`
+Manda a placa medir a velocidade máxima dos motores e gravar a calibração. Os motores giram sozinhos
+e a placa fica ~26 s sem responder: faça com o robô suspenso.
+
+---
+
 ## Exceções
 A classe pode lançar exceções em várias situações, como:
 - Erros de comunicação serial.
@@ -213,14 +275,18 @@ A classe pode lançar exceções em várias situações, como:
 from motores import Motores
 
 # Inicializa a classe Motores
-motores = Motores(atualizaInstantaneo=True)
+motores = Motores(atualiza_instantaneo=True)
 
 # Define a velocidade dos motores
-motores.velocidadeMotor(1, 100)
-motores.velocidadeMotor(2, -100)
+motores.velocidade_motor(1, 100)
+motores.velocidade_motor(2, -100)
 
 # Move o motor 1 para um ângulo específico
-motores.moveMotor(1, 50, 360)
+motores.move_motor(1, 50, 360)
+
+# LEDs: todos verdes, o LED 9 vermelho
+motores.set_led_rgb_all(0, 80, 0)
+motores.set_led_rgb_one(9, 255, 0, 0)
 
 # Para todos os motores
-motores.paraMotores()
+motores.para_motores()

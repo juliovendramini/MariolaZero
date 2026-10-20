@@ -1,6 +1,6 @@
 #Atualmente ainda é necessário inserir os arquivos python das bibliotecas que serão utilizadas dentro do projeto
 #Futuramente, quando tudo estiver estável, isso não será mais necessário
-#Exemplo de uso do giroscopio
+#Exemplo dos LEDs RGB do Mariola: pisca o LED 0 e depois sorteia cores nos LEDs 0 a 7
 import random
 from time import sleep
 from portas import Portas

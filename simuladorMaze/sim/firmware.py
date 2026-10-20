@@ -39,6 +39,8 @@ class FirmwareMariola:
         self.desativado = False
         self.ocupado_ate = -1.0
         self.velocidades = [0, 0, 0, 0]
+        self.leds_porta4 = None      # porta 4 como fita de LEDs (None = servo); não aparece na tela
+        self.ventoinha = None        # PWM da ventoinha (0-255) depois do primeiro ATIVA_VENTOINHA
 
     def motor(self, canal):
         return self.w.por_mariola.get(canal)
@@ -64,7 +66,7 @@ class FirmwareMariola:
         if t < self.ocupado_ate:          # calibrando: não atende a serial
             return None
         cmd = f[0]
-        if cmd < 0xF2 or cmd > 0xFD:
+        if cmd < 0xF0 or cmd > 0xFD:
             return None
         self.ultimo = t
         if self.desativado:
@@ -73,6 +75,10 @@ class FirmwareMariola:
                 m.desligado = False
         if cmd == 0xFD:                                      # ENVIA_SERVOS
             self.w.servos = {str(i): f[i] for i in range(1, 5)}
+            if f[4] <= 180:                                  # ângulo no servo 4: a porta volta a ser servo
+                self.leds_porta4 = None
+            if self.ventoinha is not None and min(f[1:5]) <= 180:
+                self.ventoinha = 0                           # o servo religa o Timer2 e o PWM do pino 11 para
             return (b'\xFD', 0.0002)
         if cmd in (0xFC, 0xF8):                              # ENVIA_MOTORES / 4X4 (PID)
             modo4x4 = cmd == 0xF8
@@ -140,7 +146,16 @@ class FirmwareMariola:
                 leds[f[4]] = (f[1], f[2], f[3])
                 self.w.leds = leds
             return (b'\xF5', 0.0005)
-        if cmd == 0xF4:                                      # OBTEM_CALIBRACAO_MOTORES
+        if cmd in (0xF1, 0xF0):                              # LED_RGB_ALL_PORTA4 / LED_RGB_ONE_PORTA4
+            if self.leds_porta4 is None:                     # ativaPorta4ComoLed: desliga o servo 4, apaga
+                self.leds_porta4 = [(0, 0, 0)] * NUM_LEDS
+                self.w.servos = dict(self.w.servos, **{'4': 200})
+            if cmd == 0xF1:
+                self.leds_porta4 = [(f[1], f[2], f[3])] * NUM_LEDS
+            elif f[4] < NUM_LEDS:
+                self.leds_porta4[f[4]] = (f[1], f[2], f[3])
+            return (bytes([cmd]), 0.0005)
+        if cmd == 0xF4:                                     # OBTEM_CALIBRACAO_MOTORES
             m1, m2 = self.motor(1), self.motor(2)
             c1 = m1.cal[0] if m1 else 0
             c2 = m2.cal[0] if m2 else 0
@@ -149,6 +164,9 @@ class FirmwareMariola:
             self.ocupado_ate = t + 26.0
             return (b'\xF3', 0.0002)
         if cmd == 0xF2:                                      # ATIVA_VENTOINHA
+            if self.ventoinha is None:                       # configuraTimer2PWMVentoinha: desliga os servos
+                self.w.servos = {str(i): 200 for i in range(1, 5)}
+            self.ventoinha = f[1]                            # o timeout de 5 s não desliga a ventoinha
             return (b'\xF2', 0.0002)
         return None
 
@@ -161,6 +179,8 @@ class FirmwareMariola:
                 m.alvo = None
                 m.desligado = True
             self.w.leds = [(0, 0, 0)] * NUM_LEDS       # sem comando os LEDs também apagam
+            if self.leds_porta4 is not None:
+                self.leds_porta4 = [(0, 0, 0)] * NUM_LEDS
 
 
 class FirmwarePlaca:

@@ -34,8 +34,10 @@ python curso/site/monta.py        # da raiz do repositório; grava curso/curso-m
   página de pasta quando o link aponta para uma pasta sem README, tema escuro conforme o sistema. Carrega
   `marked@12.0.2` e `highlight.js@11.9.0` do cdnjs: o site precisa de internet para abrir.
 * O mesmo `modelo.html` é usado pelo `../professor/monta_professor.py`: teste os dois se mudar o modelo.
-* No app do Claude o site está publicado como artifact "Curso Mariola". Depois de regenerar, avise o
-  Julio que o artifact ficou desatualizado (daqui não dá para republicar).
+* No app do Claude o site está publicado como artifact "Curso Mariola"
+  (`https://claude.ai/artifact/T86jjJubDKDdahemc7T1Pa`, privado). Dá para republicar daqui com a
+  ferramenta Artifact (`url` = esse link, `file_path` = `curso/curso-mariola.html`); leia a versão
+  publicada antes. Pergunte ao Julio antes de republicar, ou republique se ele pedir.
 
 ## Testar os códigos do curso
 

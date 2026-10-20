@@ -1,6 +1,6 @@
 #Atualmente ainda é necessário inserir os arquivos python das bibliotecas que serão utilizadas dentro do projeto
 #Futuramente, quando tudo estiver estável, isso não será mais necessário
-#Exemplo de uso do giroscopio
+#Exemplo das placas de controle de motor (expansão, ids 8 e 51) junto com os motores do Mariola
 import random
 from time import sleep
 from portas import Portas

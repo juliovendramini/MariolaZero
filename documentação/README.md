@@ -4,6 +4,9 @@ Este diretório contém a documentação completa de todas as classes disponíve
 
 ---
 
+## 🔌 Hardware
+- **[Conectores](Conectores.md)** - Mapa e pinagem de todos os conectores (versão com fotos: [Conectores.pdf](Conectores.pdf))
+
 ## 📚 Índice das Classes
 
 ### 🔧 Controle e I/O
@@ -57,8 +60,8 @@ Este diretório contém a documentação completa de todas as classes disponíve
 ## 🔗 Links Úteis
 
 - [README Principal](../README.md)
+- [Instalação do brick](../INSTALACAO.md)
 - [Exemplos de Código](../exemplos/)
-- [Tutoriais](../tutoriais.md)
 
 ---
 

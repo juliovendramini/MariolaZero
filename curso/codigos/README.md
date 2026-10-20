@@ -11,6 +11,7 @@ python simulador.py --programa ../curso/codigos/PASTA/ARQUIVO.py [--robo ...] [-
 | Pasta / arquivo | Módulo | Simulador, robô, mapa | O que faz |
 |---|---|---|---|
 | `01_ola_mariola/main.py` | 3 | Line, `robo_esteira.json` | LEDs, anda 1,5 s, lê encoders, para no `finally` |
+| `01_ola_mariola/threads.py` | 3 | qualquer um (não usa hardware) | o que é uma thread: um contador que sobe "ao lado" do programa |
 | `02_motores/anda_mm.py` | 4 | Line, `robo_esteira.json` | anda 300 mm e volta 150 mm pelo encoder |
 | `02_motores/move_motor_angulo.py` | 4 | Line, `robo_esteira.json` | `move_motores` e a armadilha da velocidade guardada |
 | `02_motores/tracao_4x4.py` | 4 | Line, `robo_4x4.json` | Mariola + 2 placas de motor; encoder ×2 × ×4 |
@@ -20,6 +21,7 @@ python simulador.py --programa ../curso/codigos/PASTA/ARQUIVO.py [--robo ...] [-
 | `04_linha/seguidor_p.py` | 6 | Line, `robo_esteira.json`, `curso_pista.json` | seguidor PD; para na fita vermelha |
 | `05_distancia/le_distancias.py` | 7 | Line ou Maze | 3 VL53, leitura simples × rápida |
 | `05_distancia/para_na_parede.py` | 7 | Maze | para a 80 mm da parede |
+| `05_distancia/thread_sensores.py` | 7 | Line, `robo_4x4.json` | thread só para os sensores I2C (4 VL53 + 2 TCS, TCS no meio da espera); compara os 3 jeitos de ler |
 | `06_interface/botao_e_cronometro.py` | 8 | Maze | botão de início, anda até o para-choque |
 | `06_interface/menu_teclado.py` | 8 | Line ou Maze | menu na tela OLED com o teclado (clique ou F1–F4) e os LEDs |
 | `07_servos/busca_servos.py` | 9 | Line, `robo_4x4.json` | lista os servos do barramento |

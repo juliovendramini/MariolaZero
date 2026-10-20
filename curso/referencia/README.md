@@ -55,6 +55,11 @@ mesmas bibliotecas sendo usadas passo a passo.
    cópia `libs_mariola/`.
 3. **Os sensores na serial têm thread**: a leitura é instantânea, devolve o último valor. Os
    sensores I2C (VL53, TCS, BNO085) leem **quando você chama** e demoram.
-4. **5 segundos sem comando** e o Mariola e as placas desligam os motores (o Mariola também apaga
+4. **O I2C é de uma thread só.** Os sensores I2C dividem o barramento e o multiplexador: se duas
+   threads os usam, as conversas se misturam (valor de outro sensor, `OSError`, timeout). Ponha
+   **todas** as leituras I2C numa thread e deixe o resto do programa ler os atributos dela
+   ([módulo 7, item 7.3](../07-sensores-de-distancia.md)). Vale também para a tela/teclado e para
+   cada porta serial (motores, servos).
+5. **5 segundos sem comando** e o Mariola e as placas desligam os motores (o Mariola também apaga
    os LEDs). Espere em laço, mandando comando.
-5. **Pare tudo no `finally`**, para o robô não sair andando se o programa der erro.
+6. **Pare tudo no `finally`**, para o robô não sair andando se o programa der erro.

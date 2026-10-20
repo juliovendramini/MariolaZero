@@ -37,7 +37,7 @@ class Mariola:
         self.buf += dados
         out = []
         while len(self.buf) >= 10:
-            if self.buf[0] < 0xF2 or self.buf[0] > 0xFD:
+            if self.buf[0] < 0xF0 or self.buf[0] > 0xFD:
                 del self.buf[0]          # firmware: byte desconhecido é descartado um a um
                 continue
             f = bytes(self.buf[:10])
