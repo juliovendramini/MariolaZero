@@ -34,6 +34,9 @@ python curso/site/monta.py        # da raiz do repositório; grava curso/curso-m
   página de pasta quando o link aponta para uma pasta sem README, tema escuro conforme o sistema. Carrega
   `marked@12.0.2` e `highlight.js@11.9.0` do cdnjs: o site precisa de internet para abrir.
 * O mesmo `modelo.html` é usado pelo `../professor/monta_professor.py`: teste os dois se mudar o modelo.
+* **GitHub Pages** (branch `main`, pasta raiz; `.nojekyll` na raiz do repositório): o site fica em
+  `https://juliovendramini.github.io/MariolaZero/curso/`. O `curso/index.html` só redireciona para o
+  `curso-mariola.html` (mantém o `#` do link). Para atualizar: regenerar, o Julio commita e dá push.
 * No app do Claude o site está publicado como artifact "Curso Mariola"
   (`https://claude.ai/artifact/T86jjJubDKDdahemc7T1Pa`, privado). Dá para republicar daqui com a
   ferramenta Artifact (`url` = esse link, `file_path` = `curso/curso-mariola.html`); leia a versão

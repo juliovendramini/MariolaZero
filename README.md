@@ -16,12 +16,13 @@ Usado pelas equipes Titãs da Robótica (Ifes Colatina) na RoboCupJunior Rescue 
 | [`libs/`](libs/) | bibliotecas Python do Mariola (rodam no robô) |
 | [`exemplos/`](exemplos/) | programas de exemplo de cada biblioteca |
 | [`menuPrincipal/`](menuPrincipal/) | o menu da tela e do teclado, que inicia os programas no robô |
-| [`curso/`](curso/) | curso para os alunos (abra `curso/curso-mariola.html`) |
+| [`curso/`](curso/) | curso para os alunos: site em https://juliovendramini.github.io/MariolaZero/curso/ |
 | [`simuladorLine/`](simuladorLine/), [`simuladorMaze/`](simuladorMaze/) | simuladores da Rescue Line e da Rescue Maze que rodam os programas do robô sem alteração |
 | [`telemetria/`](telemetria/) | telemetria pela rede |
 
 ## Por onde começar
 
 * **Montar um brick novo:** [`INSTALACAO.md`](INSTALACAO.md).
-* **Programar o robô:** o [curso](curso/README.md), a partir do módulo 1.
+* **Programar o robô:** o [curso](https://juliovendramini.github.io/MariolaZero/curso/), a partir
+  do módulo 1.
 * **Testar sem o robô:** os simuladores (`simuladorLine/README.md`, `simuladorMaze/README.md`).

@@ -3,6 +3,9 @@
 Do primeiro motor girando até a prova completa da **RoboCupJunior Rescue Line** (com a área de
 resgate) e da **Rescue Maze**, usando as bibliotecas do Mariola e os simuladores.
 
+**Para ler no navegador:** https://juliovendramini.github.io/MariolaZero/curso/ (com busca e
+navegação entre os módulos; o mesmo site está no repositório em `curso/curso-mariola.html`).
+
 ![Mariola](imagens/mariolaZero.jpg)
 
 ## Para quem é

@@ -44,7 +44,7 @@ Os simuladores emulam estes firmwares byte a byte. Na dúvida sobre um comportam
 |---|---|
 | `placaBrickVendra` | ATmega328PB dentro do Mariola (2 motores com encoder, 10 LEDs RGB, botões) |
 | `placaControleMotor` | placa de controle de motor independente do Julio (barramento serial, endereço por placa) |
-| `sensorLinhaPro1616` | sensor de linha/cor Pro1616 (ATtiny1616). Tem uma cópia **velha** do `sensorCorReflexao.py` V2 (anterior à reescrita): não use |
+| `sensorLinhaPro1616` | sensor de linha/cor Pro1616 (ATtiny1616). O `sensorCorReflexao.py` de lá é cópia da V2 atual (atualizado em 20/10). O `sensorLinhaPro1616.py` é a lib do EV3 (pybricks), igual à de `scriptsEv3dev`, com o mesmo classificador de cor da V2 |
 | `brickSimples` | libs do brick Paçoca (copiadas em `simuladorLine/pacoca/libs_pacoca/`) |
 | `sensorLinhaPro` | versão **antiga** do sensor de linha do Paçoca (ATmega328P, não controla os LEDs dos TCS). Só curiosidade: o Paçoca usa o Pro1616 |
 
@@ -66,8 +66,9 @@ Os simuladores emulam estes firmwares byte a byte. Na dúvida sobre um comportam
 * `libs/sensorCorReflexao.py` ainda é a V1 (protocolo de 32 bytes; documentada em
   `documentação/CorReflexao.md`). A V2 (Pro1616, cores aprendidas no campo, `usar_ir=False`
   por padrão) está em `exemplos/11-sensorCorReflexaoV2/` e é **idêntica** às cópias em
-  `simuladorMaze/libs_mariola/` e `simuladorLine/libs_mariola/` (conferido em 19/10): mudou uma, copie
-  para as outras. Documentação: `documentação/CorReflexaoV2.md`. O IR desligado na classificação de cor é
+  `simuladorMaze/libs_mariola/` e `simuladorLine/libs_mariola/` (conferido em 19/10) e à da pasta
+  `sensorLinhaPro1616` (desde 20/10): mudou uma, copie para as outras. Mudou o classificador de cor?
+  Leve também para o `sensorLinhaPro1616.py` do EV3 (nas pastas `sensorLinhaPro1616` e `scriptsEv3dev`). Documentação: `documentação/CorReflexaoV2.md`. O IR desligado na classificação de cor é
   provisório: ele quer analisar melhor (o IR fica 9 mm à frente dos TCS e dava falso vermelho/verde na
   borda da linha).
 * A V2 foi reescrita em 15/10 porque o `detecta_cor()` original esperava branco > 230 e, com o
