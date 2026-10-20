@@ -29,7 +29,7 @@ Para várias rodadas de uma vez e para os desafios M01–M06, use o `avalia.py` 
 
 Iguais à Line: **▶ Iniciar rodada** (F5), **■ Parar**, **↺ Nova rodada** (apaga também os arquivos
 de checkpoint listados em `arquivos_rodada`), **LoP** (L), **Botão do robô** (B), **Auto-botão**,
-**Pausar**, **Vel.**, arrastar/Q/E para reposicionar, a **tela e o teclado do brick** no canto do
+**Pausar**, **Vel.**, **Programa** (troca o programa sem fechar o simulador), arrastar/Q/E para reposicionar, a **tela e o teclado do brick** no canto do
 mapa (botões com o mouse ou F1–F4; **O** esconde). Específicas da Maze:
 
 | Tecla | Mostra |

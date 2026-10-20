@@ -111,6 +111,7 @@ class Interface:
             [Botao('', self._modo_lop),
              Botao('', self._auto_botao),
              Botao('Editar mapa', lambda: self._muda_modo('editar'))],
+            [Botao('', self._escolhe_programa)],
         ]
         self.bot_ed = [
             [Botao(n, (lambda k=k: self._set_ferramenta(k)), ligado=(lambda k=k: self.ferramenta == k))
@@ -151,6 +152,38 @@ class Interface:
 
     def _auto_botao(self):
         self.sim.auto_botao = not self.sim.auto_botao
+
+    def _escolhe_programa(self):
+        """Abre o seletor de arquivo e troca o programa do robô (sem fechar o simulador)."""
+        atual = self.sim.programa
+        pasta = os.path.dirname(atual) if atual else os.path.dirname(self.pasta_mapas)
+        try:
+            import tkinter as tk
+            from tkinter import filedialog
+            raiz = tk.Tk()
+            raiz.withdraw()
+            raiz.attributes('-topmost', True)
+            c = filedialog.askopenfilename(initialdir=pasta, filetypes=[('Programa Python', '*.py')],
+                                           title='Escolha o programa do robô')
+            raiz.destroy()
+        except Exception:
+            self._aviso('sem tkinter: use --programa ao abrir o simulador')
+            return
+        if not c:
+            return
+        if not c.lower().endswith('.py'):
+            self._aviso(f'{os.path.basename(c)}: o programa tem de ser um .py')
+            return
+        self.sim.troca_programa(c)
+        self.trilha = []
+        self._aviso(f'programa: {self._nome_programa()}')
+
+    def _nome_programa(self):
+        """'pasta/arquivo' do programa atual (a pasta ajuda quando todos se chamam main.py)."""
+        p = self.sim.programa
+        if not p:
+            return 'nenhum'
+        return f'{os.path.basename(os.path.dirname(p))}/{os.path.basename(p)}'
 
     def _set_ferramenta(self, k):
         self.ferramenta = k
@@ -524,6 +557,8 @@ class Interface:
                     b.texto = 'LoP: reinicia prog.' if self.sim.modo_lop == 'reiniciar' else 'LoP: só botão'
                 elif b.acao == self._auto_botao:
                     b.texto = 'Auto-botão: ' + ('sim' if self.sim.auto_botao else 'não')
+                elif b.acao == self._escolhe_programa:
+                    b.texto = 'Programa: ' + self._nome_programa() + '  (trocar)'
                 b.rect = pygame.Rect(int(x + i * (bw + 6)), y, int(bw), 30)
                 on = b.ligado() if b.ligado else False
                 hover = b.rect.collidepoint(pygame.mouse.get_pos())

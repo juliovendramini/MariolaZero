@@ -27,7 +27,8 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 NUCLEO = os.path.join(AQUI, 'nucleo')
 TROCA = os.path.join(AQUI, 'troca')
 LIBS = os.path.join(AQUI, 'libs_pacoca')
-CACHE_NUCLEO = os.path.join(AQUI, '.cache')
+# .o do núcleo (mudam pouco): ficam guardados aqui; PACOCA_CACHE troca a pasta
+CACHE_NUCLEO = os.environ.get('PACOCA_CACHE') or os.path.join(AQUI, '.cache')
 VERSAO = '1'          # muda quando o núcleo muda de um jeito que invalida os .o antigos
 
 # .cpp da lib que o simulador troca (o .h da pasta troca/ tem a implementação)
@@ -43,11 +44,17 @@ class ErroCompilacao(Exception):
 
 
 # ------------------------------------------------------------------ compilador
+# g++ que vem junto com o simulador (pacote portátil, montado por ferramentas/monta_portatil.py)
+GXX_PORTATIL = os.path.join(os.path.dirname(AQUI), 'portatil', 'gcc', 'bin', 'g++.exe')
+
+
 def acha_gxx():
-    """g++ do PATH, ou um dos lugares comuns no Windows (MSYS2, w64devkit)."""
+    """Ordem: variável PACOCA_GXX, g++ do pacote portátil, g++ do PATH, lugares comuns no Windows."""
     env = os.environ.get('PACOCA_GXX')
     if env:
         return env
+    if os.name == 'nt' and os.path.exists(GXX_PORTATIL):
+        return GXX_PORTATIL
     achado = shutil.which('g++')
     if achado:
         return achado
@@ -60,22 +67,47 @@ def acha_gxx():
             os.path.join(home, 'msys64', 'ucrt64', 'bin', 'g++.exe'),
             os.path.join(home, 'w64devkit', 'bin', 'g++.exe'),
             r'C:\w64devkit\bin\g++.exe',
-            os.path.join(AQUI, 'w64devkit', 'bin', 'g++.exe'),
         ]
         for c in candidatos:
             if os.path.exists(c):
                 return c
     raise ErroCompilacao(
-        'não achei o g++. No Windows, instale o MSYS2 (pacote mingw-w64-ucrt-x86_64-gcc) ou o '
-        'w64devkit e ponha a pasta bin no PATH (ou defina a variável PACOCA_GXX com o caminho do g++.exe).')
+        'não achei o g++. Use o pacote portátil do simulador (pasta portatil/), ou instale o MSYS2 '
+        '(pacote mingw-w64-ucrt-x86_64-gcc) ou o w64devkit e ponha a pasta bin no PATH (ou defina a '
+        'variável PACOCA_GXX com o caminho do g++.exe).')
+
+
+def _env_gxx(gxx):
+    """Ambiente para chamar o g++: a pasta dele na frente do PATH.
+
+    O g++ chama cc1plus/as/ld, e no MSYS2 eles precisam das DLLs que ficam na pasta bin. Sem isso,
+    um g++ achado fora do PATH falha sem mensagem."""
+    env = dict(os.environ)
+    pasta = os.path.dirname(os.path.abspath(gxx)) if os.path.dirname(gxx) else ''
+    if pasta:
+        env['PATH'] = pasta + os.pathsep + env.get('PATH', '')
+    return env
 
 
 def _versao_gxx(gxx):
     try:
-        r = subprocess.run([gxx, '--version'], capture_output=True, text=True, timeout=20)
+        r = subprocess.run([gxx, '--version'], capture_output=True, text=True, timeout=20, env=_env_gxx(gxx))
         return r.stdout.splitlines()[0] if r.stdout else gxx
     except Exception:
         return gxx
+
+
+def _alvo_windows(gxx):
+    """O g++ gera programa de Windows? (pergunta ao compilador, não ao sistema: serve para
+    testar o build de Windows com um compilador cruzado do Linux)."""
+    try:
+        r = subprocess.run([gxx, '-dumpmachine'], capture_output=True, text=True, timeout=20, env=_env_gxx(gxx))
+        maq = r.stdout.strip().lower()
+        if maq:
+            return 'mingw' in maq or 'windows' in maq or 'cygwin' in maq
+    except Exception:
+        pass
+    return os.name == 'nt'
 
 
 # ------------------------------------------------------------------ transformações de texto
@@ -293,7 +325,8 @@ def _escreve_se_mudou(caminho, txt):
 
 
 def _roda_gxx(cmd, origem_de, log):
-    r = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='replace')
+    r = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='replace',
+                       env=_env_gxx(cmd[0]))
     saida = (r.stdout or '') + (r.stderr or '')
     for de, para in origem_de.items():
         saida = saida.replace(de, para)
@@ -313,7 +346,9 @@ def compila(ino, log=print, forcar=False):
     os.makedirs(build, exist_ok=True)
     gxx = acha_gxx()
     versao = _versao_gxx(gxx)
-    flags = FLAGS + (['-pthread'] if os.name != 'nt' else [])
+    windows = _alvo_windows(gxx)
+    # Windows: sem as funções inline do math.h do MinGW (a lib do TCS34725 define a powf dela)
+    flags = FLAGS + (['-D__CRT__NO_INLINE'] if windows else ['-pthread'])
 
     # 1) arquivos: libs_pacoca < pasta do programa < troca
     fontes = {}
@@ -407,12 +442,12 @@ def compila(ino, log=print, forcar=False):
                 pass
 
     # 3) liga
-    exe = os.path.join(build, 'programa' + ('.exe' if os.name == 'nt' else ''))
+    exe = os.path.join(build, 'programa' + ('.exe' if windows else ''))
     h_link = _hash(*[os.path.basename(o) for o in objs])
     marca = exe + '.hash'
     if forcar or not os.path.exists(exe) or not os.path.exists(marca) or open(marca).read() != h_link:
         cmd = [gxx] + objs + ['-o', exe]
-        if os.name == 'nt':
+        if windows:
             cmd += ['-static', '-lws2_32']
         else:
             cmd += ['-pthread']

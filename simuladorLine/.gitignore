@@ -5,3 +5,6 @@ __pycache__/
 .sim_build/
 pacoca/.cache/
 eeprom_pacoca.bin
+# pacote portátil (Python + g++ para Windows) e o zip: montados por ferramentas/monta_portatil.py
+portatil/
+dist/

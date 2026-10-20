@@ -99,6 +99,7 @@ calculando não conta; as esperas contam como no robô.
 | **↺ Nova rodada** | para tudo, volta o robô ao início e apaga os arquivos de `arquivos_rodada` (o checkpoint salvo) |
 | **LoP** (L) | falta de progresso: robô volta ao último checkpoint visitado |
 | **LoP: reinicia prog. / só botão** | o que acontece num LoP: desliga e liga o programa (testa o checkpoint salvo em arquivo) ou só aperta o botão de início |
+| **Programa: pasta/arquivo (trocar)** | escolhe outro `.py` sem fechar o simulador: para o que está rodando, volta à rodada nova (apaga os `arquivos_rodada` da pasta do programa novo) e o próximo ▶ Iniciar já roda o escolhido |
 | **Botão do robô** (B) | aperta o botão de início (pino P3) |
 | **Auto-botão** | aperta o botão sozinho 1,5 s depois que o programa inicia |
 | **Pausar** (espaço) / **Vel.** (1–5) | pausa ou muda a velocidade (0,25x a 4x). O resultado é o mesmo em qualquer velocidade |
@@ -236,6 +237,9 @@ O comportamento das placas foi tirado de `placaBrickVendra.ino`, `placaControleM
   Calibração automática leva ~14 s e zera a contagem.
 
 **Sensor de cor/reflexão Pro1616**
+* Geometria igual à do simuladorLine: 4 canais IR (12 ITR8307 de 3 em 3, 65 mm do 1º ao 12º; no
+  `robo.json` vai o centro de cada grupo, y = ±26,6 e ±8,9 mm) e 3 TCS a 20 mm um do outro, 9 mm
+  atrás da fileira IR. Cada ponto lê a média de uma cruz de ±5 mm no piso.
 * Lê a ~50 Hz e devolve o último valor; 30 s sem pedido ele para de ler e o primeiro pedido
   devolve valores velhos. Lê todos os bytes recebidos e usa só o último.
 * **IR: 0 = preto, ~100 = branco calibrado. A fita prata lê menos que o branco (~80):** quem vê o

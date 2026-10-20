@@ -27,7 +27,17 @@ mexer no simulador.
 3. Os `.ino` viram `_programa.ino.cpp`: `#include <Arduino.h>`, protótipos das funções antes da
    primeira função e `#line` para os erros apontarem para o `.ino`.
 4. `g++ -std=gnu++17 -O1 -fsigned-char`, um `.o` por arquivo com hash no nome (só recompila o que
-   mudou); o núcleo fica em cache em `pacoca/.cache/`. No Windows liga com `-static -lws2_32`.
+   mudou); o núcleo fica em cache em `pacoca/.cache/` (ou na pasta da variável `PACOCA_CACHE`).
+   Programa de Windows (o g++ responde `-dumpmachine` com mingw): liga com `-static -lws2_32` e
+   compila com `-D__CRT__NO_INLINE` (o `math.h` do MinGW define `powf` inline e o `TCS34725.cpp`
+   define a dele).
+
+Qual g++: `PACOCA_GXX`, depois o do pacote portátil (`portatil/gcc/bin/g++.exe`, montado por
+`ferramentas/monta_portatil.py`), depois o do PATH, depois MSYS2/w64devkit nos lugares comuns. A
+pasta do g++ entra na frente do PATH na hora de chamar (o cc1plus do MSYS2 precisa das DLLs dela).
+
+Teste do build de Windows no Linux: `PACOCA_GXX=x86_64-w64-mingw32-g++-posix` gera o `.exe`, que
+roda pelo Wine (deu o mesmo placar do Linux no mapa de treino).
 
 ## Relógio
 

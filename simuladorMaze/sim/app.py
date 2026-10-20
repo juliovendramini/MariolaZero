@@ -234,7 +234,9 @@ class Simulacao:
 
     def _le_saida(self, proc):
         for linha in iter(proc.stdout.readline, b''):
-            self._log(linha.decode('utf-8', 'replace').rstrip('\n'))
+            # no Windows o print do programa termina em \r\n (o \r virava um quadradinho no console);
+            # um \r no meio (barra de progresso) deixa só o que foi escrito por último
+            self._log(linha.decode('utf-8', 'replace').rstrip('\r\n').split('\r')[-1])
         proc.wait()
         self._log(f'---- programa terminou (código {proc.returncode}) ----')
         if self.proc is proc or self.proc is None or self.proc.poll() is not None:
@@ -367,6 +369,13 @@ class Simulacao:
                 self.juiz.falta_progresso('declarado pelo capitão')
             else:
                 self._lop('manual')
+
+    def troca_programa(self, caminho):
+        """Troca o programa do aluno sem fechar o simulador: para o que estiver rodando e prepara
+        uma rodada nova (o próximo 'Iniciar rodada' já roda o programa escolhido)."""
+        self.parar_programa()
+        self.programa = os.path.abspath(caminho)
+        self.nova_rodada()
 
     def encerrar(self):
         self.parar_programa(espera=1.0)

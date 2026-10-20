@@ -18,6 +18,14 @@ import time
 RAIZ = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, RAIZ)
 
+# Windows: com a saída redirecionada (arquivo, pipe) o Python escreve em cp1252, que não tem todos
+# os símbolos que o programa do aluno pode imprimir. No terminal já sai Unicode.
+for _f in (sys.stdout, sys.stderr):
+    try:
+        _f.reconfigure(errors='replace', **({} if _f.isatty() else {'encoding': 'utf-8'}))
+    except Exception:
+        pass
+
 from sim.app import Simulacao, carregar_cfg, eh_pacoca, programa_do_robo  # noqa: E402
 from sim.mapa import Mapa  # noqa: E402
 

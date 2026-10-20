@@ -1,0 +1,463 @@
+<title>Curso Mariola</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: trilha de módulos à esquerda (como a linha de um seguidor, com os marcadores de cada
+   módulo), texto do módulo ao centro, largura de leitura ~70ch. No celular a trilha vira gaveta. */
+:root {
+  --bg: #f5f7f4;
+  --surface: #ffffff;
+  --fg: #19201c;
+  --muted: #5a665f;
+  --border: #d6ddd7;
+  --linha: #141815;
+  --accent: #17804a;
+  --accent-fg: #ffffff;
+  --accent-soft: #e2f2e8;
+  --alerta: #b3262f;
+  --alerta-soft: #fbe9ea;
+  --code-bg: #eef2ef;
+  --code-fg: #1d2521;
+  --k1: #8a3ffc;
+  --k2: #0b6e99;
+  --k3: #a35a00;
+  --k4: #6b7570;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --barra: 56px;
+  --lateral: 300px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111513; --surface: #171c19; --fg: #e4eae6; --muted: #98a59d; --border: #2b342f;
+    --linha: #dfe6e1; --accent: #4cc27f; --accent-fg: #0d1a12; --accent-soft: #1b3326;
+    --alerta: #ff7a7f; --alerta-soft: #3a1c1f; --code-bg: #0c100e; --code-fg: #dfe7e2;
+    --k1: #c39bff; --k2: #6cc4ec; --k3: #f0b46a; --k4: #8b968f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111513; --surface: #171c19; --fg: #e4eae6; --muted: #98a59d; --border: #2b342f;
+  --linha: #dfe6e1; --accent: #4cc27f; --accent-fg: #0d1a12; --accent-soft: #1b3326;
+  --alerta: #ff7a7f; --alerta-soft: #3a1c1f; --code-bg: #0c100e; --code-fg: #dfe7e2;
+  --k1: #c39bff; --k2: #6cc4ec; --k3: #f0b46a; --k4: #8b968f; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 30; background: var(--surface);
+}
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- barra superior ---------- */
+.topo {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  height: var(--barra); display: flex; align-items: center; gap: 12px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.marca { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--fg); min-width: 0; }
+.marca svg { flex: none; }
+.marca b { font-family: var(--font-display); font-weight: 800; font-size: 19px; letter-spacing: -0.01em; white-space: nowrap; }
+.marca span { color: var(--muted); font-size: 13px; white-space: nowrap; }
+.busca { margin-left: auto; position: relative; flex: 0 1 320px; min-width: 0; }
+.busca input {
+  width: 100%; height: 36px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--fg); font: inherit; font-size: 14px; padding: 0 12px;
+}
+.resultados {
+  position: absolute; right: 0; top: 42px; width: min(440px, calc(100vw - 32px));
+  max-height: 70vh; overflow: auto; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; box-shadow: 0 12px 32px rgb(0 0 0 / 0.18); padding: 6px;
+}
+.resultados a { display: block; padding: 8px 10px; border-radius: 6px; text-decoration: none; color: var(--fg); }
+.resultados a:hover, .resultados a:focus-visible { background: var(--accent-soft); }
+.resultados small { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.4; }
+.resultados .vazio { padding: 10px; color: var(--muted); font-size: 14px; }
+.botao-menu {
+  display: none; width: 40px; height: 36px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--fg); cursor: pointer; flex: none;
+}
+
+/* ---------- estrutura ---------- */
+.corpo { display: grid; grid-template-columns: var(--lateral) minmax(0, 1fr); }
+.trilha {
+  position: sticky; top: calc(var(--barra) + env(safe-area-inset-top, 0px));
+  height: calc(100vh - var(--barra) - env(safe-area-inset-top, 0px));
+  overflow-y: auto; border-right: 1px solid var(--border); background: var(--surface);
+  padding: 20px 14px 40px max(14px, env(safe-area-inset-left, 0px));
+}
+.parte { margin: 0 0 18px; }
+.parte h3 {
+  margin: 0 0 6px 6px; font-size: 11.5px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--muted);
+}
+.itens { list-style: none; margin: 0; padding: 0; position: relative; }
+.itens.trilho::before {
+  /* a "linha preta" que liga os módulos */
+  content: ""; position: absolute; left: 19px; top: 14px; bottom: 14px; width: 3px;
+  background: var(--linha); border-radius: 2px; opacity: 0.85;
+}
+.itens a {
+  position: relative; display: flex; align-items: center; gap: 10px; padding: 5px 8px;
+  border-radius: 8px; text-decoration: none; color: var(--fg); font-size: 14.5px; line-height: 1.3;
+}
+.itens a:hover { background: var(--bg); }
+.itens .n {
+  flex: none; width: 26px; height: 26px; border-radius: 6px; display: grid; place-items: center;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+  background: var(--surface); color: var(--fg); border: 2px solid var(--linha); position: relative; z-index: 1;
+}
+.itens .ponto { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); margin: 0 9px; }
+.itens a[aria-current="page"] { background: var(--accent-soft); font-weight: 600; }
+.itens a[aria-current="page"] .n { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.itens a[aria-current="page"] .ponto { background: var(--accent); }
+
+.conteudo {
+  min-width: 0;
+  padding-block: 32px 64px;
+  padding-left: max(24px, env(safe-area-inset-left, 0px));
+  padding-right: max(24px, env(safe-area-inset-right, 0px));
+}
+.texto { max-width: 76ch; margin: 0 auto; }
+
+/* ---------- tipografia do texto ---------- */
+.texto h1, .texto h2, .texto h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.2; }
+.texto h1 { font-size: clamp(28px, 4vw, 38px); font-weight: 800; letter-spacing: -0.02em; margin: 0 0 18px; }
+.texto h2 { font-size: 24px; font-weight: 800; margin: 40px 0 12px; padding-top: 18px; border-top: 1px solid var(--border); }
+.texto h3 { font-size: 18.5px; font-weight: 600; margin: 28px 0 8px; }
+.texto h4 { font-size: 16px; margin: 22px 0 6px; }
+.texto p, .texto ul, .texto ol { margin: 0 0 14px; }
+.texto li { margin: 3px 0; }
+.texto img { display: block; max-width: 100%; height: auto; margin: 16px auto; border-radius: 10px; border: 1px solid var(--border); }
+.texto hr { border: 0; border-top: 1px solid var(--border); margin: 28px 0; }
+.texto strong { font-weight: 600; }
+.texto code {
+  font-family: var(--font-mono); font-size: 0.88em; background: var(--code-bg); color: var(--code-fg);
+  padding: 1px 5px; border-radius: 5px;
+}
+.texto blockquote {
+  margin: 18px 0; padding: 12px 16px; background: var(--accent-soft); border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.texto blockquote p:last-child { margin-bottom: 0; }
+.texto blockquote.atencao { background: var(--alerta-soft); border-color: color-mix(in srgb, var(--alerta) 40%, transparent); }
+.texto :not(pre) > code { overflow-wrap: anywhere; }
+.texto h1, .texto h2, .texto h3, .texto h4 { overflow-wrap: anywhere; }
+.texto input[type="checkbox"] { accent-color: var(--accent); margin-right: 6px; }
+
+.tabela { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.tabela table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+.tabela th, .tabela td { padding: 8px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
+.tabela tr:last-child td { border-bottom: 0; }
+.tabela th { font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 600; background: var(--bg); }
+
+.codigo { position: relative; margin: 0 0 18px; border-radius: 10px; background: var(--code-bg); border: 1px solid var(--border); }
+.codigo .rotulo {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 6px 8px 6px 14px; border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+}
+.codigo button {
+  font: 500 12px var(--font-body); color: var(--fg); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; cursor: pointer;
+}
+.codigo pre { margin: 0; overflow-x: auto; padding: 12px 14px; }
+.codigo pre code { background: none; padding: 0; font-size: 13.5px; line-height: 1.55; color: var(--code-fg); white-space: pre; }
+.hljs-keyword, .hljs-built_in, .hljs-literal { color: var(--k1); }
+.hljs-string, .hljs-number { color: var(--k2); }
+.hljs-title, .hljs-title.function_, .hljs-title.class_, .hljs-attr, .hljs-meta { color: var(--k3); }
+.hljs-comment { color: var(--k4); font-style: italic; }
+
+/* ---------- navegação no fim ---------- */
+.passos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 48px; }
+.passos a {
+  display: block; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px;
+  text-decoration: none; color: var(--fg); background: var(--surface);
+}
+.passos a:hover { border-color: var(--accent); }
+.passos small { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+.passos .prox { text-align: right; grid-column: 2; }
+.caminho { font-size: 13px; color: var(--muted); margin-bottom: 10px; font-family: var(--font-mono); overflow-wrap: anywhere; }
+
+/* ---------- celular ---------- */
+@media (max-width: 860px) {
+  .botao-menu { display: grid; place-items: center; }
+  .marca span { display: none; }
+  .corpo { grid-template-columns: minmax(0, 1fr); }
+  .trilha {
+    position: fixed; z-index: 25; left: 0; top: calc(var(--barra) + env(safe-area-inset-top, 0px));
+    width: min(320px, 86vw); height: calc(100% - var(--barra) - env(safe-area-inset-top, 0px));
+    transform: translateX(-102%); transition: transform 0.2s ease; box-shadow: 8px 0 24px rgb(0 0 0 / 0.2);
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+  }
+  body.menu-aberto .trilha { transform: none; }
+  .conteudo { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 22px 48px; }
+  .passos { grid-template-columns: 1fr; }
+  .passos .prox { grid-column: 1; }
+}
+@media (max-width: 440px) { .marca b { display: none; } .busca { flex: 1 1 auto; } }
+@media (prefers-reduced-motion: reduce) { .trilha { transition: none; } }
+</style>
+
+<header class="topo">
+  <button class="botao-menu" id="botao-menu" aria-label="Abrir a lista de módulos" aria-expanded="false">
+    <svg width="18" height="14" viewBox="0 0 18 14" fill="none" aria-hidden="true"><path d="M1 1h16M1 7h16M1 13h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+  <a class="marca" href="#README">
+    <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
+      <rect x="1" y="1" width="26" height="26" rx="5" fill="var(--surface)" stroke="var(--linha)" stroke-width="2"/>
+      <path d="M1 18 C 9 18, 11 8, 27 8" fill="none" stroke="var(--linha)" stroke-width="4"/>
+      <rect x="16" y="13" width="7" height="7" rx="1" fill="var(--accent)"/>
+    </svg>
+    <b>Curso Mariola</b><span>Rescue Line · Rescue Maze</span>
+  </a>
+  <div class="busca">
+    <input id="busca" type="search" placeholder="Buscar no curso (ex.: consulta_posicao)" autocomplete="off" aria-label="Buscar no curso">
+    <div class="resultados" id="resultados" hidden></div>
+  </div>
+</header>
+
+<div class="corpo">
+  <nav class="trilha" id="trilha" aria-label="Módulos do curso"></nav>
+  <main class="conteudo"><article class="texto" id="texto"></article></main>
+</div>
+
+<script type="application/json" id="dados">/*__DADOS__*/</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(function () {
+  const DADOS = JSON.parse(document.getElementById('dados').textContent);
+  const ARQ = DADOS.arquivos;          // caminho -> texto
+  const IMG = DADOS.imagens;           // caminho -> data URI
+  const PARTES = DADOS.partes;         // [{titulo, trilho, itens:[{caminho, titulo, n}]}]
+
+  // ordem de leitura (anterior / próximo)
+  const ORDEM = [];
+  PARTES.forEach(p => p.itens.forEach(i => ORDEM.push(i)));
+  const TITULO = {};
+  ORDEM.forEach(i => { TITULO[i.caminho] = i.titulo; });
+
+  const idDe = c => c.replace(/\.md$/, '').replace(/\//g, '~');
+  const caminhoDe = id => {
+    const c = id.replace(/~/g, '/').replace(/\/$/, '');
+    if (ARQ[c + '.md'] !== undefined) return c + '.md';
+    if (ARQ[c] !== undefined) return c;
+    if (ARQ[c + '/README.md'] !== undefined) return c + '/README.md';
+    if (c && Object.keys(ARQ).some(k => k.startsWith(c + '/'))) return c + '/';   // pasta sem README
+    return 'README.md';
+  };
+  const pasta = c => c.includes('/') ? c.slice(0, c.lastIndexOf('/') + 1) : '';
+  function resolve(base, rel) {
+    const partes = (pasta(base) + rel).split('/');
+    const out = [];
+    for (const p of partes) {
+      if (p === '..') out.pop(); else if (p !== '.' && p !== '') out.push(p);
+    }
+    let r = out.join('/');
+    if (rel.endsWith('/')) r += '/';
+    return r;
+  }
+  const esc = s => s.replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+
+  // ---------------- trilha (menu lateral) ----------------
+  const trilha = document.getElementById('trilha');
+  trilha.innerHTML = PARTES.map(p => `
+    <section class="parte"><h3>${esc(p.titulo)}</h3>
+      <ul class="itens${p.trilho ? ' trilho' : ''}">
+        ${p.itens.map(i => `<li><a href="#${idDe(i.caminho)}" data-c="${i.caminho}">
+          ${i.n ? `<span class="n">${i.n}</span>` : '<span class="ponto"></span>'}
+          <span>${esc(i.titulo)}</span></a></li>`).join('')}
+      </ul></section>`).join('');
+
+  // ---------------- markdown ----------------
+  marked.use({ gfm: true });
+  const texto = document.getElementById('texto');
+
+  function linguagem(c) {
+    if (c.endsWith('.py')) return 'python';
+    if (c.endsWith('.json')) return 'json';
+    return '';
+  }
+
+  function blocoCodigo(codigo, ling, rotulo) {
+    let html;
+    try {
+      html = (ling && hljs.getLanguage(ling)) ? hljs.highlight(codigo, { language: ling }).value
+                                               : esc(codigo);
+    } catch (e) { html = esc(codigo); }
+    return `<div class="codigo"><div class="rotulo"><span>${esc(rotulo || ling || 'texto')}</span>
+      <button type="button" class="copiar">Copiar</button></div>
+      <pre><code>${html}</code></pre></div>`;
+  }
+
+  function renderMarkdown(c, md) {
+    const div = document.createElement('div');
+    div.innerHTML = marked.parse(md);
+    // tabelas com rolagem própria
+    div.querySelectorAll('table').forEach(t => {
+      const w = document.createElement('div'); w.className = 'tabela';
+      t.replaceWith(w); w.appendChild(t);
+    });
+    // blocos de código
+    div.querySelectorAll('pre > code').forEach(code => {
+      const m = /language-(\w+)/.exec(code.className || '');
+      const ling = m ? m[1] : '';
+      const tmp = document.createElement('div');
+      tmp.innerHTML = blocoCodigo(code.textContent.replace(/\n$/, ''), ling, ling);
+      code.parentElement.replaceWith(tmp.firstElementChild);
+    });
+    // avisos de atenção
+    div.querySelectorAll('blockquote').forEach(b => {
+      if (/^\s*(Atenção|Cuidado|Correção)/i.test(b.textContent)) b.classList.add('atencao');
+    });
+    // imagens
+    div.querySelectorAll('img').forEach(img => {
+      const src = img.getAttribute('src');
+      if (src && !/^(https?:|data:)/.test(src)) {
+        const r = resolve(c, src);
+        if (IMG[r]) img.src = IMG[r];
+      }
+      img.loading = 'lazy';
+    });
+    // links internos
+    div.querySelectorAll('a[href]').forEach(a => {
+      const h = a.getAttribute('href');
+      if (/^(https?:|mailto:)/.test(h)) { a.target = '_blank'; a.rel = 'noopener'; return; }
+      if (h.startsWith('#')) return;
+      const r = resolve(c, h.split('#')[0]);
+      a.href = '#' + idDe(r.replace(/\/$/, ''));
+    });
+    return div.innerHTML;
+  }
+
+  function listaPasta(p) {
+    const arquivos = Object.keys(ARQ).filter(k => k.startsWith(p) && k !== p + 'README.md').sort();
+    return arquivos.map(k => `- [\`${k.slice(p.length)}\`](${k.slice(p.length)})`).join('\n');
+  }
+
+  // ---------------- páginas ----------------
+  function mostra(c) {
+    let html = '';
+    let titulo = TITULO[c];
+    if (c.endsWith('.md')) {
+      let md = ARQ[c];
+      if (c.endsWith('README.md') && c !== 'README.md' && c !== 'referencia/README.md' && c !== 'codigos/README.md') {
+        md += '\n\n' + listaPasta(pasta(c));
+      }
+      html = renderMarkdown(c, md);
+      if (!titulo) { const m = /^#\s+(.+)$/m.exec(md); titulo = m ? m[1] : c; }
+    } else if (ARQ[c] !== undefined) {
+      titulo = c.split('/').pop();
+      const voltar = ARQ[pasta(c) + 'README.md'] !== undefined ? pasta(c) + 'README.md'
+                   : (ARQ['codigos/README.md'] !== undefined ? 'codigos/README.md' : pasta(c));
+      html = `<div class="caminho">${esc(c)}</div><h1>${esc(titulo)}</h1>
+        <p>Programa testado no simulador. Copie para uma pasta de projeto junto com as bibliotecas que ele importa.
+        <a href="#${idDe(voltar)}">Ver os outros programas</a>.</p>` + blocoCodigo(ARQ[c], linguagem(c), c);
+    } else {
+      // pasta sem README: lista os arquivos
+      const p = c.endsWith('/') ? c : c + '/';
+      html = renderMarkdown(p + 'x.md', `# ${p}\n\n` + listaPasta(p));
+      titulo = p;
+    }
+    // anterior / próximo (só para módulos e referência)
+    const k = ORDEM.findIndex(i => i.caminho === c);
+    if (k >= 0) {
+      const ant = ORDEM[k - 1], prox = ORDEM[k + 1];
+      html += `<nav class="passos" aria-label="Navegação entre páginas">
+        ${ant ? `<a href="#${idDe(ant.caminho)}"><small>Anterior</small>${esc(ant.titulo)}</a>` : '<span></span>'}
+        ${prox ? `<a class="prox" href="#${idDe(prox.caminho)}"><small>Próximo</small>${esc(prox.titulo)}</a>` : ''}
+      </nav>`;
+    }
+    texto.innerHTML = html;
+    document.title = (titulo && c !== 'README.md') ? `${titulo.replace(/^Módulo \d+ — /, '')} · Curso Mariola` : 'Curso Mariola';
+    trilha.querySelectorAll('a').forEach(a => {
+      if (a.dataset.c === c) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    const atual = trilha.querySelector('a[aria-current]');
+    if (atual) atual.scrollIntoView({ block: 'nearest' });
+    window.scrollTo(0, 0);
+    fechaMenu();
+  }
+
+  function rota() {
+    const id = decodeURIComponent((location.hash || '#README').slice(1));
+    mostra(caminhoDe(id));
+  }
+  window.addEventListener('hashchange', rota);
+
+  // copiar código
+  texto.addEventListener('click', ev => {
+    const b = ev.target.closest('button.copiar');
+    if (!b) return;
+    const code = b.closest('.codigo').querySelector('code');
+    const ok = () => { b.textContent = 'Copiado'; setTimeout(() => { b.textContent = 'Copiar'; }, 1400); };
+    const seleciona = () => {
+      const r = document.createRange(); r.selectNodeContents(code);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      b.textContent = 'Selecionado: Ctrl+C';
+    };
+    try { navigator.clipboard.writeText(code.textContent).then(ok, seleciona); } catch (e) { seleciona(); }
+  });
+
+  // ---------------- menu no celular ----------------
+  const botaoMenu = document.getElementById('botao-menu');
+  function fechaMenu() { document.body.classList.remove('menu-aberto'); botaoMenu.setAttribute('aria-expanded', 'false'); }
+  botaoMenu.addEventListener('click', () => {
+    const aberto = document.body.classList.toggle('menu-aberto');
+    botaoMenu.setAttribute('aria-expanded', String(aberto));
+  });
+
+  // ---------------- busca ----------------
+  const busca = document.getElementById('busca');
+  const resultados = document.getElementById('resultados');
+  const indice = Object.keys(ARQ).map(c => {
+    const t = ARQ[c];
+    const m = c.endsWith('.md') ? /^#\s+(.+)$/m.exec(t) : null;
+    return { c, titulo: TITULO[c] || (m ? m[1] : c), texto: t, baixo: t.toLowerCase() };
+  });
+  function procura(q) {
+    q = q.trim().toLowerCase();
+    if (q.length < 2) { resultados.hidden = true; return; }
+    const achados = [];
+    for (const d of indice) {
+      const i = d.baixo.indexOf(q);
+      const noTitulo = d.titulo.toLowerCase().includes(q);
+      if (i < 0 && !noTitulo) continue;
+      let trecho = '';
+      if (i >= 0) {
+        const ini = Math.max(0, i - 50);
+        trecho = (ini > 0 ? '…' : '') + d.texto.slice(ini, i + q.length + 70).replace(/[#*`|>\n]+/g, ' ') + '…';
+      }
+      const n = d.baixo.split(q).length - 1;
+      achados.push({ d, trecho, peso: (noTitulo ? 100 : 0) + n });
+    }
+    achados.sort((a, b) => b.peso - a.peso);
+    resultados.innerHTML = achados.length
+      ? achados.slice(0, 12).map(a => `<a href="#${idDe(a.d.c)}">${esc(a.d.titulo)}<small>${esc(a.trecho)}</small></a>`).join('')
+      : '<div class="vazio">Nada encontrado. Tente o nome de um método (ex.: le_reflexao).</div>';
+    resultados.hidden = false;
+  }
+  busca.addEventListener('input', () => procura(busca.value));
+  busca.addEventListener('focus', () => procura(busca.value));
+  resultados.addEventListener('click', () => { resultados.hidden = true; busca.value = ''; });
+  document.addEventListener('click', ev => { if (!ev.target.closest('.busca')) resultados.hidden = true; });
+  busca.addEventListener('keydown', ev => {
+    if (ev.key === 'Escape') { resultados.hidden = true; busca.blur(); }
+    if (ev.key === 'Enter') { const a = resultados.querySelector('a'); if (a) { location.hash = a.getAttribute('href'); resultados.hidden = true; busca.value = ''; } }
+  });
+
+  rota();
+})();
+</script>

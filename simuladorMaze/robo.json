@@ -85,8 +85,9 @@
   },
 
   "cor_reflexao": {
-    "tcs": [ {"x": 75, "y": 40}, {"x": 75, "y": 0}, {"x": 75, "y": -40} ],
-    "ir":  [ {"x": 80, "y": 45}, {"x": 80, "y": 15}, {"x": 80, "y": -15}, {"x": 80, "y": -45} ],
+    "_comentario": "Pro1616 (V2), mesma geometria do simuladorLine: 12 ITR8307 com 65 mm do centro do 1º ao 12º (passo 5,9 mm), de 3 em 3 = 4 canais IR (canal 0 = esquerda; aqui vai o centro de cada grupo: ±26,6 e ±8,9 mm). 3 TCS34725 a 20 mm um do outro (TCS1 = esquerda), 9 mm atrás da fileira IR. x = distância à frente do centro do robô (A MEDIR). Cada ponto lê a média de uma cruz de ±5 mm.",
+    "tcs": [ {"x": 71, "y": 20}, {"x": 71, "y": 0}, {"x": 71, "y": -20} ],
+    "ir":  [ {"x": 80, "y": 26.6}, {"x": 80, "y": 8.9}, {"x": 80, "y": -8.9}, {"x": 80, "y": -26.6} ],
     "ruido": 3,
     "tempo_calibra_branco_s": 7.0,
     "tempo_calibra_preto_s": 2.2

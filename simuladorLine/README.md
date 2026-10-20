@@ -34,6 +34,42 @@ Para o **brick Paçoca** é preciso também um **g++** (compilador C++ do PC):
   [w64devkit](https://github.com/skeeto/w64devkit) também serve.
 * **Linux:** `sudo apt install g++`.
 
+### Pacote portátil para Windows (laboratório sem administrador)
+
+Para PC onde não dá para instalar nada, o simulador vai junto com o Python, as bibliotecas e o g++,
+tudo dentro da pasta `portatil/`. Não instala nada no Windows nem mexe no PATH.
+
+Para montar o pacote, num PC com internet (de preferência Windows, que aí ele é testado no fim):
+
+```bash
+python ferramentas/monta_portatil.py
+```
+
+* Baixa o Python 3.12 ([python-build-standalone](https://github.com/astral-sh/python-build-standalone)),
+  as bibliotecas do `requirements.txt` para Windows e o g++ do [w64devkit](https://github.com/skeeto/w64devkit),
+  e deixa só o que o simulador usa (sem gdb, make, Fortran, testes do Python, pip...).
+* Testa: abre o Python, roda o exemplo em Python e compila e roda o exemplo do Paçoca, sem janela.
+* Gera `dist/SimuladorLine-portatil-AAAAMMDD.zip`: o simulador inteiro + `portatil/` + o núcleo do
+  Paçoca já compilado. É esse zip que vai para o laboratório.
+* `portatil/` e `dist/` estão no `.gitignore` (são programas, não vão para o git). O que foi baixado
+  fica em `portatil/_baixados/`; `--so-zip` refaz só o zip e `--help` mostra como usar arquivos já
+  baixados (sem internet).
+
+No laboratório: descompacte o zip e dê dois cliques em **`Simulador.bat`** (`Avaliar.bat` roda o
+`avalia.py`; os dois aceitam as mesmas opções, ex.: `Simulador.bat --programa ..\equipe\equipe.ino`).
+Os `.bat` usam o Python de `portatil/` e o `.ino` compila com o g++ de `portatil/gcc`, mesmo que
+o PC tenha outro Python ou g++ instalado. Sem a pasta `portatil/` eles usam o Python do PC.
+
+Cuidados no laboratório:
+
+* Se o zip veio da internet, antes de descompactar: botão direito > Propriedades > **Desbloquear**.
+  Senão o Windows pergunta "deseja executar?" a cada `.bat`.
+* O programa do Paçoca vira um `.exe` na pasta `.sim_build/` ao lado do `.ino`: a pasta do aluno
+  precisa permitir escrita. O antivírus às vezes segura esse `.exe` novo por alguns segundos na
+  primeira vez.
+* Se o Windows bloqueia programas fora de `C:\Program Files` (AppLocker), nem o Python portátil roda:
+  aí é preciso pedir ao TI para liberar a pasta do simulador.
+
 ## Uso rápido
 
 ```bash
@@ -118,6 +154,7 @@ como no robô.
 | **LoP: reinicia prog. / só botão** | num LoP, desliga e liga o programa ou só aperta o botão de início |
 | **Botão do robô** (B), **Auto-botão** | aperta o botão de início (P3); o auto-botão aperta 1,5 s depois que o programa sobe |
 | **Robô: 4x4 / esteira / Paçoca** | troca o robô (os `robo_*.json` da pasta). Robô do Paçoca roda `.ino`; os do Mariola, `.py`: ao trocar, o programa troca junto (o último usado com aquele brick ou o exemplo) |
+| **Programa: pasta/arquivo (trocar)** | escolhe outro programa sem fechar o simulador (`.py` nos robôs do Mariola, `.ino` no Paçoca): para o que está rodando, volta à rodada nova e o próximo ▶ Iniciar já roda o escolhido |
 | **Caminho (P)** | mostra o número de cada passo do caminho esperado, como no editor oficial |
 | **Pausar** (espaço) / **Vel.** (1–5) | pausa ou muda a velocidade (0,25x a 4x). O resultado é o mesmo em qualquer velocidade |
 | arrastar o robô / Q, E / roda do mouse | reposiciona o robô (com o programa parado) |
@@ -575,7 +612,12 @@ avalia.py           roda o programa em várias sementes e confere a meta dos des
 desafios/           desafios.json (a trilha L01-L13) e os mapas dos desafios
 resultados/         (criada pelo avalia.py) relatórios, logs e pistas surpresa
 ferramentas/        importa_ladrilhos.py (refaz os ladrilhos a partir do rcj-rescue-cms), gera_mapas.py,
-                    gera_desafios.py, pista_surpresa.py (gerador de pistas sorteadas)
+                    gera_desafios.py, pista_surpresa.py (gerador de pistas sorteadas),
+                    monta_portatil.py (pacote portátil para Windows)
+Simulador.bat       abre o simulador no Windows (com o Python de portatil/, se existir)
+Avaliar.bat         roda o avalia.py no Windows (idem)
+portatil/           (criada pelo monta_portatil.py, fora do git) python/ e gcc/ para Windows
+dist/               (criada pelo monta_portatil.py, fora do git) o zip para o laboratório
 ```
 
 ## Limitações conhecidas

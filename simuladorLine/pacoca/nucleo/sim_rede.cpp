@@ -25,7 +25,9 @@ typedef int sock_t;
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <thread>
+#ifndef _WIN32
+#include <pthread.h>
+#endif
 
 #include "sim_ponte.h"
 
@@ -101,7 +103,7 @@ static sock_t abre(int porta, char tipo) {
     return s;
 }
 
-static void vigia_vida() {
+static void vigia_vida(void) {
     // se a ponte morrer (simulador fechou, botão Parar), o programa morre junto
     uint8_t b;
     while (true) {
@@ -110,6 +112,28 @@ static void vigia_vida() {
         if (b == 'P') encerra(0);      // pedido de parar
     }
 }
+
+// thread do sistema (e não std::thread): funciona com qualquer g++ de Windows, seja qual for o
+// modelo de threads com que ele foi compilado
+#ifdef _WIN32
+static DWORD WINAPI vigia_vida_thread(LPVOID) {
+    vigia_vida();
+    return 0;
+}
+static void inicia_vigia(void) {
+    HANDLE h = CreateThread(NULL, 0, vigia_vida_thread, NULL, 0, NULL);
+    if (h) CloseHandle(h);
+}
+#else
+static void *vigia_vida_thread(void *) {
+    vigia_vida();
+    return NULL;
+}
+static void inicia_vigia(void) {
+    pthread_t t;
+    if (pthread_create(&t, NULL, vigia_vida_thread, NULL) == 0) pthread_detach(t);
+}
+#endif
 
 bool sim_rede_conecta(void) {
     const char *p = getenv("PACOCA_PONTE");
@@ -125,7 +149,7 @@ bool sim_rede_conecta(void) {
         exit(3);
     }
     s_vida = abre(porta, 'V');
-    if (s_vida != SOCK_INVALIDO) std::thread(vigia_vida).detach();
+    if (s_vida != SOCK_INVALIDO) inicia_vigia();
     ativa = true;
     return true;
 }

@@ -7,18 +7,22 @@ Lib `exemplos/11-sensorCorReflexaoV2/sensorCorReflexao.py` para o sensor de linh
 
 | Índices | Conteúdo | Escala |
 |---|---|---|
-| 0–3 | reflexão IR dos 4 sensores | 0 = preto, ~100 = branco calibrado, > 100 = mais refletivo (prata) |
-| 4–7 | TCS1 (R, G, B, C) | calibrado no branco e enviado pela **metade**: branco ~127, prata até 255 |
+| 0–3 | reflexão IR dos 4 sensores | 0 = preto, ~100 = branco calibrado; a fita prata lê **menos** que o branco (~80) |
+| 4–7 | TCS1 (R, G, B, C) | calibrado no branco e enviado pela **metade**: branco ~127, prata passa de 127 (~200) |
 | 8–11 | TCS do meio (R, G, B, C) | idem |
 | 12–15 | TCS2 (R, G, B, C) | idem |
 
 ## Detecção de cor
 
-Cada cor é uma **referência** (média e desvio) de cinco características:
+Cada cor é uma **referência** (média e desvio) de até cinco características:
 
 * cromaticidade `r/(r+g+b)`, `g/(r+g+b)`, `b/(r+g+b)`: a cor em si, independe do brilho;
 * brilho `C/127`: branco = 1, prata > 1, preto ~ 0;
-* IR `/100`, do IR que fica ao lado daquele TCS: branco = 1, prata > 1, preto ~ 0.
+* IR `/100`, do IR que fica ao lado daquele TCS (só com `usar_ir=True`): branco = 1, prata ~0,8, preto ~ 0.
+
+O IR vem **desligado** por padrão (`usar_ir=False`): a fileira de IR fica 9 mm à frente dos TCS e, na borda
+da linha, o IR já está no branco enquanto o TCS ainda está no preto (dava falso vermelho/verde). Quem vê
+o prata é o TCS.
 
 A leitura vai para a referência mais próxima (distância em desvios). Se nenhuma está a menos de
 `limiar` (padrão 6), o resultado é `'desconhecida'`. No preto a cromaticidade não pesa (é ruído).

@@ -13,6 +13,7 @@ from .painel_brick import PainelBrick
 
 from . import ladrilhos as LT
 from . import mapa as M
+from .app import eh_pacoca
 from .fisica import pino_num
 from .ladrilhos import TAM
 
@@ -132,8 +133,9 @@ class Interface:
             [Botao('Editar mapa', lambda: self._muda_modo('editar')),
              Botao('Abrir mapa', self._abrir),
              Botao('Caminho (P)', self._alterna_caminho, ligado=lambda: self.mostrar_caminho)],
+            [Botao('', self._escolhe_programa)],
         ]
-        fer = [Botao(n, (lambda k=k: self._set_ferramenta(k)), ligado=(lambda k=k: self.ferramenta == k))
+        fer =[Botao(n, (lambda k=k: self._set_ferramenta(k)), ligado=(lambda k=k: self.ferramenta == k))
                for k, n, _ in FERRAMENTAS]
         self.bot_ed = [
             fer[:4], fer[4:8], fer[8:],
@@ -198,6 +200,42 @@ class Interface:
         self.sim.troca_robo(cfg)
         self.trilha = []
         self._aviso(f'robô: {cfg.get("nome", os.path.basename(robos[i]))}')
+
+    def _escolhe_programa(self):
+        """Abre o seletor de arquivo e troca o programa do robô (sem fechar o simulador)."""
+        pacoca = eh_pacoca(self.sim.cfg)
+        ext = '.ino' if pacoca else '.py'
+        atual = self.sim.programa
+        pasta = os.path.dirname(atual) if atual else self.raiz
+        try:
+            import tkinter as tk
+            from tkinter import filedialog
+            raiz = tk.Tk()
+            raiz.withdraw()
+            raiz.attributes('-topmost', True)
+            tipos = [('Programa do Paçoca', '*.ino')] if pacoca else [('Programa Python', '*.py')]
+            c = filedialog.askopenfilename(initialdir=pasta, filetypes=tipos,
+                                           title='Escolha o programa do robô')
+            raiz.destroy()
+        except Exception:
+            self._aviso('sem tkinter: use --programa ao abrir o simulador')
+            return
+        if not c:
+            return
+        if not c.lower().endswith(ext):
+            outro = 'o Paçoca roda .ino' if pacoca else 'o Mariola roda .py'
+            self._aviso(f'{os.path.basename(c)}: {outro} (troque o robô no botão "Robô")')
+            return
+        self.sim.troca_programa(c)
+        self.trilha = []
+        self._aviso(f'programa: {self._nome_programa()}')
+
+    def _nome_programa(self):
+        """'pasta/arquivo' do programa atual (a pasta ajuda quando todos se chamam main.py)."""
+        p = self.sim.programa
+        if not p:
+            return 'nenhum'
+        return f'{os.path.basename(os.path.dirname(p))}/{os.path.basename(p)}'
 
     def _alterna_caminho(self):
         self.mostrar_caminho = not self.mostrar_caminho
@@ -730,6 +768,8 @@ class Interface:
                     b.texto = 'Auto-botão: ' + ('sim' if self.sim.auto_botao else 'não')
                 elif b.acao == self._troca_robo:
                     b.texto = 'Robô: ' + str(self.sim.cfg.get('nome', '?')).split(' ')[0]
+                elif b.acao == self._escolhe_programa:
+                    b.texto = 'Programa: ' + self._nome_programa() + '  (trocar)'
                 elif b.acao is None:
                     b.texto = f'camada {self.camada_ed}'
                 b.rect = pygame.Rect(int(x + i * (bw + 6)), y, int(bw), 28)

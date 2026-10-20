@@ -53,6 +53,7 @@ python simulador.py --editor                               # abre no editor de m
 | **LoP** (L) | falta de progresso: volta ao último checkpoint |
 | **Botão do robô** (B) / **Auto-botão** | aperta o botão de início (P3) / aperta sozinho 1,5 s após o programa subir |
 | **Robô** | troca entre os `robo_*.json` |
+| **Programa** | escolhe outro programa sem fechar o simulador; depois é só apertar ▶ Iniciar |
 | **Caminho** (P) | mostra o número de cada passo do caminho |
 | **Pausar** (espaço), **Vel.** (1–5) | pausa / velocidade de 0,25x a 4x |
 | arrastar, Q/E, roda do mouse | reposiciona o robô (programa parado) |
