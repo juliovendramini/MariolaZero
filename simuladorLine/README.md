@@ -299,16 +299,22 @@ são estimativas** (ver `_comentario` no json).
 
 Quatro servos inteligentes (MG90S com a `placaControleServo`) no **mesmo barramento das placas de
 motor** (SERIAL1): braço, dedo esquerdo, dedo direito e a porta da caçamba. O simulador emula o
-**firmware unificado da placa** byte a byte: protocolo de 6 bytes, broadcast (ID 254), troca de ID,
-calibração do tempo de trava (comando 65000), controle liga-desliga com zona morta e potência,
-**trava** (parado mais que o tempo de trava = motor desliga 2 s), **5 s sem comando = motor desliga**,
-10 s = a placa reinicia. A lib `placaControleServo.py` roda sem mudar.
+**firmware da placa de 21/10/2026** byte a byte: protocolo de 6 bytes, broadcast (ID 254), troca de
+ID, calibração do tempo de trava (comando 65000), consulta (65001), polaridade (65002) e
+configuração do controle (65003); controle **proporcional com freio** (o padrão: KP, KD, termo I,
+PWM mínimo, histerese) ou **liga-desliga**, sempre com zona morta e a potência como teto; **trava**
+(parado mais que o tempo de trava = motor desliga 2 s), **5 s sem comando = motor desliga**, 10 s =
+a placa reinicia (configuração e polaridade ficam, como na EEPROM). O motor simulado está ligado do
+jeito normal: a autodetecção da polaridade sempre acerta. A lib `placaControleServo.py` roda sem
+mudar.
 
 * Cada posição é a **leitura do potenciômetro** (0–1023) que vocês calibram no robô: braço `baixo`
   (garra no chão) e `alto`; dedos `aberto` e `fechado` (encostando no outro); porta `fechada`,
   `solta_esq` e `solta_dir`.
 * MG90S a 5 V pela ponte L9110S: ~0,12 s por 60° com potência 255 (`graus_por_s`), parado abaixo de
-  `pwm_minimo`. O braço é mais lento (`carga`).
+  `pwm_minimo` (45, estimado: tem de ficar abaixo dos 60 de PWM mínimo do firmware, senão o
+  controle proporcional para antes do alvo). O braço é mais lento (`carga`). Sem inércia: no
+  liga-desliga ele não vibra em volta do alvo como o servo de verdade.
 * **O braço cai sem força**, a não ser todo levantado (ali ele se apoia no fim de curso). Trava,
   potência 0, 5 s sem comando e `le_posicao()` desligam o motor. Use `consulta_posicao()` para ler.
 * **Os dedos só seguram com força enquanto empurram.** Fechando na bolinha eles param encostados e,

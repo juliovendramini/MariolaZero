@@ -4,13 +4,15 @@
 from time import sleep
 from portas import Portas
 from placaControleServo import PlacaControleServo
-print("comecou:")
+# print("comecou:")
 # servos = PlacaControleServo.buscar_servos("COM10")
 # print("Servos encontrados:")
 # for servo in servos:
 #     print(f"ID: {servo['id']}, Posição: {servo['posicao']}")
 # exit()
-servo1 = PlacaControleServo(Portas.SERIAL1, id_equipamento=5) #65 67 74
+servo1 = PlacaControleServo(None, id_equipamento=75, porta_fixa="COM10") #65 67 74
+# servo1.inverte_polaridade()
+servo1.configura_controle(ki=0.25)
 # servo2 = PlacaControleServo(Portas.SERIAL1, id_equipamento=66)
 # servo3 = PlacaControleServo(Portas.SERIAL1, id_equipamento=73)
 posicao = 0

@@ -264,7 +264,7 @@
   "servo": {
    "graus_por_s": 500,
    "pot_por_grau": 3.41,
-   "pwm_minimo": 60
+   "pwm_minimo": 45
   },
   "braco": {
    "id": 70,

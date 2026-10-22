@@ -53,6 +53,19 @@ enquanto o braço sobe):
 servo.calibrar_tempo_detecta_trava(3000)    # ms, de 1000 a 5000; fica gravado
 ```
 
+### Controle e polaridade
+A placa vem no **modo proporcional**: diminui a força perto do alvo e freia se estiver chegando
+rápido, então não passa do ponto nem fica tremendo. O modo antigo, **liga-desliga** (força cheia
+até chegar), chega mais rápido mas vibra em volta do alvo. Os ganhos ficam gravados na placa:
+```python
+print(servo.le_configuracao_controle())      # modo, kp, kd, ki, pwm_minimo...
+servo.configura_controle(kp=3, kd=8)         # ajuste na bancada, uma vez
+servo.define_modo_controle(PlacaControleServo.MODO_LIGA_DESLIGA)   # se quiser o antigo
+```
+Se um servo **fugir do alvo** em vez de ir até ele (motor ligado ao contrário do potenciômetro),
+corrija com `servo.inverte_polaridade()`. A placa costuma descobrir isso sozinha na primeira vez
+que liga. Detalhes e a tabela dos parâmetros na [referência](referencia/placaControleServo.md).
+
 ## 9.3 Calibrando as posições
 
 As posições são **leituras do potenciômetro do servo montado no seu robô**. Para cada servo:
@@ -93,15 +106,15 @@ espera_chegar(dedo_dir, DIR_FECHADO)
 move_e_espera(braco, BRACO_ALTO)
 ```
 ```
-servo 70: alvo 270, está em 271
-servo 71: alvo 380, está em 379
-servo 72: alvo 640, está em 640
-servo 70: alvo 820, está em 800
+servo 70: alvo 270, está em 270
+servo 71: alvo 380, está em 380
+servo 72: alvo 640, está em 639
+servo 70: alvo 820, está em 797
 servo 70: alvo 270, está em 295
-braço ainda em 271
+braço ainda em 276
 ```
 
-Repare: o braço parou em 800 (não 820) — o chão segurou. Por isso a tolerância e o `tempo_max`:
+Repare: o braço parou em 797 (não 820) — o chão segurou. Por isso a tolerância e o `tempo_max`:
 **nem todo alvo é atingido**, e o programa não pode travar esperando.
 
 ### Ler a posição para saber se pegou algo

@@ -44,6 +44,7 @@ Os simuladores emulam estes firmwares byte a byte. Na dúvida sobre um comportam
 |---|---|
 | `placaBrickVendra` | ATmega328PB dentro do Mariola (2 motores com encoder, 10 LEDs RGB, botões) |
 | `placaControleMotor` | placa de controle de motor independente do Julio (barramento serial, endereço por placa) |
+| `placaControleServo` | placa do servo inteligente (ATtiny, MG90S). Firmware de 21/10/2026: controle proporcional (padrão) ou liga-desliga, polaridade, comandos 65000-65003. A pasta tem também a lib `placaControleServo.py` (a mesma de `libs/`, desde 22/10) |
 | `sensorLinhaPro1616` | sensor de linha/cor Pro1616 (ATtiny1616). O `sensorCorReflexao.py` de lá é cópia da V2 atual (atualizado em 20/10). O `sensorLinhaPro1616.py` é a lib do EV3 (pybricks), igual à de `scriptsEv3dev`, com o mesmo classificador de cor da V2 |
 | `brickSimples` | libs do brick Paçoca (copiadas em `simuladorLine/pacoca/libs_pacoca/`) |
 | `sensorLinhaPro` | versão **antiga** do sensor de linha do Paçoca (ATmega328P, não controla os LEDs dos TCS). Só curiosidade: o Paçoca usa o Pro1616 |

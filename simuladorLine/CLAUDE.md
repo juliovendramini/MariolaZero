@@ -155,6 +155,14 @@ mundo ou a cada 10 ms (detalhes no `pacoca/LEIAME.md`).
   caçamba de dois lados), no mesmo barramento serial das placas de motor; posições variam por robô e
   ficam no JSON; a garra cai se o servo desliga no meio do curso. Câmera da frente a ~5 cm do chão
   (a garra atrapalha a visão); bolinha despejada a ~10 cm de altura com o robô faceado no triângulo.
+* Placa de servo (`FirmwareServo` em `sim/resgate.py`) emula o `placaControleServo.ino` de
+  21/10/2026 (`Documents\Arduino\placaControleServo`): controle proporcional (padrão; KP 3, KD 8,
+  PWM mín. 60, histerese 4, período 5 ms, KI 0) ou liga-desliga, comandos 65000-65003, polaridade
+  (motor simulado normal). A velocidade do termo D é normalizada para "por período" porque a física
+  roda a 240 Hz. O atrito do servo físico (`servo.pwm_minimo` no `robo_4x4.json` e nas cópias de
+  `professor/mapas_teste/`) foi de 60 para 45 em 22/10: com 60, o PWM mínimo do firmware não movia o
+  servo e o proporcional parava antes do alvo. A lib `placaControleServo.py` (22/10) é a mesma em
+  `libs/`, nos `libs_mariola/` e nos exemplos 08, 10 e 12.
 * Câmera é **stub** (`visao`): devolve detecções (~90% de acerto), sem imagem. No Mariola a IA das
   vítimas roda a ~4 fps e o OpenCV dos triângulos a ~30 fps. A câmera que olha para baixo (para seguir
   linha) não é simulada.

@@ -109,12 +109,24 @@ class ServoFisico:
 
 
 class FirmwareServo:
-    """placaControleServo.ino (versão unificada de 17/10/2026)."""
+    """placaControleServo.ino (versão de 21/10/2026: polaridade e controle proporcional).
+
+    O laço do firmware roda bem mais rápido que a física (240 Hz); a velocidade do termo D é medida
+    a cada "período" e normalizada para contagens por período, como o firmware vê."""
     ID_BROADCAST = 254
     COMANDO_CALIBRACAO = 65000
+    COMANDO_POLARIDADE = 65002
+    COMANDO_CONTROLE = 65003
     DESCANSO = 2.0
     TIMEOUT_COMUNICACAO = 5.0
     TIMEOUT_RESET = 10.0
+    TEMPO_AUTODETECCAO = 0.3          # s: dois pulsos curtos, sem atender a serial
+    MODO_LIGA_DESLIGA, MODO_PROPORCIONAL = 0, 1
+    ESCALA = 16                       # KP, KD e KI em 1/16
+    # modo, KP, KD, PWM mínimo, histerese, período (ms), KI, faixa do termo I, limite do termo I
+    CONTROLE_PADRAO = (1, 48, 128, 60, 4, 5, 0, 40, 150)
+    P_MODO, P_KP, P_KD, P_PWM_MIN, P_HIST, P_PERIODO, P_KI, P_FAIXA_I, P_LIMITE_I = range(9)
+    RESTAURA, SO_CONSULTA = 0x7F, 0x80
 
     def __init__(self, mundo, servo, id_placa, tabela, tempo_trava, rng):
         self.servo = servo
@@ -123,32 +135,55 @@ class FirmwareServo:
         self.tempo_trava = max(1.0, min(5.0, tempo_trava))
         self.rng = rng
         self.eh_servo = True
+        # o que fica na EEPROM (sobrevive ao reset): a placa já fez a autodetecção no primeiro boot
+        self.controle = list(self.CONTROLE_PADRAO)
+        self.polaridade_invertida = False
+        self.polaridade_calibrada = True
+        self.status_autodeteccao = 0  # 0 não rodou desde o boot, 1 sucesso, 2 falhou
+        self.ocupado_ate = -1.0
         self._reinicia(0.0)
 
     def _reinicia(self, t):
         self.alvo = 512
         self.potencia = 0
         self.zona = 5
+        self.status_autodeteccao = 0
+        self.ult_com = t
+        self.servo.pwm = 0
+        self._reinicia_controle(t)
+        self.pos_amostra = self.leitura()
+        self.ult_amostra = t
+        self.vel = 0.0
+
+    def _reinicia_controle(self, t):
+        """reiniciarControle(): histerese, termo I e proteção contra trava do zero."""
+        self.parado = True
+        self.integral = 0
+        self.integral_bloqueada = False
         self.travado = False
         self.ini_descanso = 0.0
         self.pos_ant = self.leitura()
         self.ult_mudanca = t
-        self.ult_com = t
-        self.servo.pwm = 0
 
-    def leitura(self):
-        return max(0, min(1023, int(round(self.servo.pot + self.rng.gauss(0, 0.6)))))
+    def leitura(self, media=False):
+        """analogRead do potenciômetro; com media=True, a média de 8 leituras (menos ruído)."""
+        ruido = 0.6 / (8 ** 0.5) if media else 0.6
+        return max(0, min(1023, int(round(self.servo.pot + self.rng.gauss(0, ruido)))))
 
-    def _resp(self, pos=None):
-        p = self.leitura() if pos is None else pos
-        r = [self.id, (p >> 8) & 0xFF, p & 0xFF, self.potencia & 0xFF, self.zona & 0xFF]
+    def _pacote(self, campo_pos, c3, c4):
+        r = [self.id, (campo_pos >> 8) & 0xFF, campo_pos & 0xFF, c3 & 0xFF, c4 & 0xFF]
         x = 0
         for b in r:
             x ^= b
         return bytes(r + [x])
 
+    def _resp(self, pos=None):
+        return self._pacote(self.leitura() if pos is None else pos, self.potencia, self.zona)
+
     def quadro(self, f, t):
         """Pacote de 6 bytes com CRC certo, para este ID ou broadcast."""
+        if t < self.ocupado_ate:          # autodetectando: a serial não é atendida
+            return None
         self.ult_com = t
         br = f[0] == self.ID_BROADCAST
         valor = (f[1] << 8) | f[2]
@@ -161,23 +196,115 @@ class FirmwareServo:
         if valor == self.COMANDO_CALIBRACAO:
             self.tempo_trava = max(1.0, min(5.0, ((f[3] << 8) | f[4]) / 1000.0))
             return None if br else (self._resp(self.COMANDO_CALIBRACAO), 0.0006)
-        if valor > 1023:
+        if valor == self.COMANDO_POLARIDADE:
+            acao = (f[3] << 8) | f[4]
+            if acao == 2:
+                # no simulador o motor está ligado do jeito normal: a autodetecção acerta
+                self.ocupado_ate = t + self.TEMPO_AUTODETECCAO
+                self.servo.pwm = 0
+                self.polaridade_invertida = False
+                self.polaridade_calibrada = True
+                self.status_autodeteccao = 1
+                self._reinicia_controle(t)
+                return None
+            if acao in (0, 1):
+                self.polaridade_invertida = acao == 1
+                self.polaridade_calibrada = True
+                self._reinicia_controle(t)
+            if br:
+                return None
+            pol = (1 if self.polaridade_invertida else 0) if self.polaridade_calibrada else 0xFF
+            return self._pacote(self.COMANDO_POLARIDADE, pol, self.status_autodeteccao), 0.0006
+        if valor == self.COMANDO_CONTROLE:
+            so_consulta = bool(f[3] & self.SO_CONSULTA)
+            par = f[3] & ~self.SO_CONSULTA & 0xFF
+            if par == self.RESTAURA:
+                if not so_consulta:
+                    self.controle = list(self.CONTROLE_PADRAO)
+                    self._reinicia_controle(t)
+                return None if br else (self._pacote(self.COMANDO_CONTROLE, self.RESTAURA, 0), 0.0006)
+            if par >= len(self.controle):
+                return None if br else (self._pacote(self.COMANDO_CONTROLE, 0xFF, 0), 0.0006)
+            if not so_consulta:
+                v = f[4]
+                if not (par == self.P_MODO and v > self.MODO_PROPORCIONAL):
+                    if par == self.P_PERIODO:
+                        v = max(1, min(100, v))
+                    self.controle[par] = v
+                    self._reinicia_controle(t)
+            return None if br else (self._pacote(self.COMANDO_CONTROLE, par, self.controle[par]), 0.0006)
+        if valor > 1023:                  # 65001 (consulta) e outros: responde sem mudar o comando
             return None if br else (self._resp(), 0.0006)
+        if abs(valor - self.alvo) > self.controle[self.P_FAIXA_I]:
+            self.integral = 0             # alvo novo longe: a força guardada no termo I não vale mais
         self.alvo = valor
         self.potencia = f[3]
         self.zona = f[4]
         return None if br else (self._resp(), 0.0006)
 
+    # ------------------------------------------------------------------ controle
+    def _aciona(self, aumentar, pwm):
+        """acionarMotor(): o sentido da ponte H depende da polaridade (o motor do simulador é normal)."""
+        self.servo.pwm = pwm if aumentar != self.polaridade_invertida else -pwm
+
+    def _amostra_velocidade(self, pos, t):
+        periodo = self.controle[self.P_PERIODO] / 1000.0
+        dec = t - self.ult_amostra
+        if dec < periodo - 1e-9:
+            return False
+        self.vel = (pos - self.pos_amostra) * periodo / dec if dec <= 2 * periodo + 1e-9 else 0.0
+        self.pos_amostra = pos
+        self.ult_amostra = t
+        return True
+
+    def _acumula_integral(self, erro):
+        c = self.controle
+        if c[self.P_KI] == 0 or abs(erro) > c[self.P_FAIXA_I]:
+            return
+        aumentaria = self.integral == 0 or (erro > 0) == (self.integral > 0)
+        if self.integral_bloqueada and aumentaria:
+            return
+        lim = c[self.P_LIMITE_I] * self.ESCALA
+        self.integral = max(-lim, min(lim, self.integral + c[self.P_KI] * erro))
+
+    def _proporcional(self, erro, potencia, periodo_novo):
+        c = self.controle
+        if periodo_novo:
+            self._acumula_integral(erro)
+        num = c[self.P_KP] * erro - c[self.P_KD] * self.vel + self.integral
+        saida = math.trunc(num / self.ESCALA)          # divisão inteira do C (para o zero)
+        if saida == 0 or (saida > 0) != (erro > 0):
+            self.integral_bloqueada = True
+            self.servo.pwm = 0                         # as duas saídas em LOW: freia
+            return
+        mag = abs(saida)
+        self.integral_bloqueada = mag >= potencia
+        pwm = min(mag, 255)
+        pwm = max(pwm, c[self.P_PWM_MIN])
+        pwm = min(pwm, potencia)                       # a potência do pacote é sempre o teto
+        self._aciona(erro > 0, pwm)
+
     def passo(self, t):
+        s = self.servo
+        if t < self.ocupado_ate:
+            s.pwm = 0
+            return
         if t - self.ult_com > self.TIMEOUT_RESET:
-            self._reinicia(t)           # watchdog: a placa reinicia (EEPROM mantém ID e trava)
+            self._reinicia(t)           # watchdog: a placa reinicia (EEPROM mantém ID, trava, polaridade e controle)
             return
         if t - self.ult_com > self.TIMEOUT_COMUNICACAO:
             self.potencia = 0
-        s = self.servo
-        pos = self.leitura()
-        dentro = self.alvo - self.zona <= pos <= self.alvo + self.zona
+        prop = self.controle[self.P_MODO] == self.MODO_PROPORCIONAL
+        pos = self.leitura(media=prop)
+        erro = self.alvo - pos
+        periodo_novo = self._amostra_velocidade(pos, t)
+        limite = self.zona + (self.controle[self.P_HIST] if prop and self.parado else 0)
+        dentro = abs(erro) <= limite
+        self.parado = dentro or self.potencia == 0
         if dentro or self.potencia == 0:
+            if self.potencia == 0:
+                self.integral = 0
+            self.integral_bloqueada = False
             s.pwm = 0
             self.travado = False
             self.pos_ant = pos
@@ -195,10 +322,14 @@ class FirmwareServo:
             self.ult_mudanca = t
         if t - self.ult_mudanca >= self.tempo_trava:
             self.travado = True
+            self.integral = 0           # senão volta do descanso empurrando a trava com o termo I cheio
             self.ini_descanso = t
             s.pwm = 0
             return
-        s.pwm = self.potencia if self.alvo > pos else -self.potencia
+        if prop:
+            self._proporcional(erro, self.potencia, periodo_novo)
+        else:
+            self._aciona(erro > 0, self.potencia)   # liga-desliga: potência cheia até a zona morta
 
     @property
     def com_forca(self):
