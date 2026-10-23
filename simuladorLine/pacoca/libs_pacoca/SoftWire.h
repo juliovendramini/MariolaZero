@@ -1,8 +1,37 @@
 #ifndef SOFTWIRE_H
 #define SOFTWIRE_H
+/*
+2026-10-23 - acelerada (versão do medidor de vazão do SmartIrriga): funções de pino inline no .h (sem
+             chamada de função por operação) e o timeout (millis) só é criado se o escravo segurar o
+             SCL (clock stretching), em vez de conferir o millis() a cada bit. Ver liberaSclEspera().
+             No Paçoca o buffer de recepção continua com 32 bytes (o do medidor tem 8).
+2026-10-23 - SOFTWIRE_100KHZ: tire o comentário abaixo para o barramento rodar a ~80-90 kHz.
+2026-10-23 - laço de bits do llWrite/llRead com os ponteiros dos registradores em variáveis locais
+             (ver SoftWire.cpp): bit de escrita de 139 para 100 ciclos, de leitura para 88.
+*/
 
 #define SOFTWIRE_VERSION "2.0.9"
-#define DELAY_TIME_US 1  // Delay padrão para 400kHz (2.5us mínimo, usando 2us)
+
+//velocidade do I2C (vale para todos os sensores do brick). Comentado = máxima (~160 kHz escrevendo e
+//~180 kHz lendo, no Paçoca); sem comentário = ~80-90 kHz, dentro do I2C padrão de 100 kHz, para
+//sensor com fio comprido, sem resistor de pull-up ou que não aguenta a velocidade máxima
+//#define SOFTWIRE_100KHZ
+
+//espera em cada meia fase do clock. Contagem de ciclos do llWrite/llRead compilados (Paçoca, 16 MHz):
+//sem a espera, o código gasta por bit ~30 ciclos com o SCL em baixo e ~38 em alto escrevendo, e ~14
+//em baixo e ~42 em alto lendo (o _delay_us soma em cima disso, 16 ciclos por us)
+#ifdef SOFTWIRE_100KHZ
+//pior caso (leitura): 4,9 us em baixo e 6,6 us em alto (I2C padrão: mínimo 4,7 us em baixo e 4,0 us
+//em alto) => ~88 kHz lendo e ~81 kHz escrevendo
+#define DELAY_TIME_US 4
+#else
+//escrevendo 2,9 us em baixo e 3,4 us em alto (~160 kHz); lendo 1,9 us em baixo e 3,6 us em alto
+//(~180 kHz). Fast mode: mínimo 1,3 us em baixo e 0,6 us em alto
+#define DELAY_TIME_US 1
+#endif
+//quantas leituras rápidas do SCL (sem millis) antes de considerar clock stretching. Cobre o tempo
+//de subida do SCL só com pull-up interno (~5 ciclos por leitura => ~40 us a 8 MHz, ~20 us a 16 MHz)
+#define LEITURAS_RAPIDAS_SCL 64
 
 #include <Arduino.h>
 #include <stdint.h>
@@ -25,12 +54,13 @@ class SoftWire : public Stream {
     static const uint8_t defaultDelay_us = 2;  // Otimizado para 400kHz (m\u00e1ximo suportado)
     static const uint16_t defaultTimeout_ms = 100;
 
-    static void sdaLow(const SoftWire *p);
-    static void sdaHigh(const SoftWire *p);
-    static void sclLow(const SoftWire *p);
-    static void sclHigh(const SoftWire *p);
-    static uint8_t readSda(const SoftWire *p);
-    static uint8_t readScl(const SoftWire *p);
+    //2026-10-23 - inline (definidas no fim deste arquivo): viram poucas instruções dentro do laço de bits
+    static inline void sdaLow(const SoftWire *p) __attribute__((always_inline));
+    static inline void sdaHigh(const SoftWire *p) __attribute__((always_inline));
+    static inline void sclLow(const SoftWire *p) __attribute__((always_inline));
+    static inline void sclHigh(const SoftWire *p) __attribute__((always_inline));
+    static inline uint8_t readSda(const SoftWire *p) __attribute__((always_inline));
+    static inline uint8_t readScl(const SoftWire *p) __attribute__((always_inline));
 
     // SMBus uses CRC-8 for its PEC
     static uint8_t crc8_update(uint8_t crc, uint8_t data);
@@ -144,6 +174,9 @@ class SoftWire : public Stream {
 
 
     uint8_t endTransmissionInner(void) const;
+    //libera o SCL e espera subir. Parte rápida inline; o timeout (millis) só no esperaSclStretch()
+    inline bool liberaSclEspera(void) const __attribute__((always_inline));
+    bool esperaSclStretch(void) const;
 };
 
 
@@ -291,6 +324,87 @@ void SoftWire::sclHigh(void) const
 }
 
 
+//2026-10-23 - funções de pino inline. As escritas são leitura-modifica-escrita no PORTx/DDRx, por isso
+//ficam com as interrupções desligadas (só 2 instruções a mais): uma ISR mexendo em outro pino do mesmo
+//port (ex.: LED no INT0) não é sobrescrita.
+#if defined(ARDUINO_ARCH_AVR)
+#include <util/atomic.h>
+#define SOFTWIRE_ATOMICO ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+#else
+#define SOFTWIRE_ATOMICO
+#endif
+
+inline void SoftWire::sdaLow(const SoftWire *p)
+{
+  SOFTWIRE_ATOMICO
+  {
+    *p->_sdaOut &= ~p->_sdaMask;  // Coloca saída em LOW
+    *p->_sdaDdr |= p->_sdaMask;   // Configura como OUTPUT
+  }
+}
+
+inline void SoftWire::sdaHigh(const SoftWire *p)
+{
+  SOFTWIRE_ATOMICO
+  {
+    *p->_sdaDdr &= ~p->_sdaMask;  // Configura como INPUT
+    if (p->_inputMode == INPUT_PULLUP) {
+      *p->_sdaOut |= p->_sdaMask;   // Ativa pull-up
+    } else {
+      *p->_sdaOut &= ~p->_sdaMask;  // Desativa pull-up
+    }
+  }
+}
+
+inline void SoftWire::sclLow(const SoftWire *p)
+{
+  SOFTWIRE_ATOMICO
+  {
+    *p->_sclOut &= ~p->_sclMask;  // Coloca saída em LOW
+    *p->_sclDdr |= p->_sclMask;   // Configura como OUTPUT
+  }
+}
+
+inline void SoftWire::sclHigh(const SoftWire *p)
+{
+  SOFTWIRE_ATOMICO
+  {
+    *p->_sclDdr &= ~p->_sclMask;  // Configura como INPUT
+    if (p->_inputMode == INPUT_PULLUP) {
+      *p->_sclOut |= p->_sclMask;   // Ativa pull-up
+    } else {
+      *p->_sclOut &= ~p->_sclMask;  // Desativa pull-up
+    }
+  }
+}
+
+inline uint8_t SoftWire::readSda(const SoftWire *p)
+{
+  return (*p->_sdaIn & p->_sdaMask) ? HIGH : LOW;
+}
+
+inline uint8_t SoftWire::readScl(const SoftWire *p)
+{
+  return (*p->_sclIn & p->_sclMask) ? HIGH : LOW;
+}
+
+
+// Libera o SCL e espera ele subir. Caminho rápido inline: algumas leituras seguidas, sem millis()
+// e sem chamada de função. Só se o SCL continuar baixo (escravo fazendo clock stretching, ou
+// barramento travado) é que chama esperaSclStretch(), que usa o timeout com millis().
+// Antes o millis() era consultado a cada bit, e isso era a maior parte do tempo de cada bit.
+inline bool SoftWire::liberaSclEspera(void) const
+{
+  sclHigh(this);
+  for (uint8_t i = LEITURAS_RAPIDAS_SCL; i; --i) {
+    if (readScl(this))
+      return true;
+  }
+  return esperaSclStretch();
+}
+
+
+//mantida por compatibilidade (a biblioteca agora usa liberaSclEspera)
 bool SoftWire::sclHighAndStretch(AsyncDelay& timeout) const
 {
   SoftWire::sclHigh(this);

@@ -24,9 +24,10 @@ O programa roda em processo separado (`rodar.py`; para `.ino`, `rodar_pacoca.py`
 | `sim/servidor.py` | operações pedidas pelo hardware virtual (inclusive `imu`, `motor_dc`, `leds` do Paçoca) |
 | `sim/firmware.py`, `fake_hw/dispositivos.py` | firmware emulado (Mariola, placas de motor, Pro1616, VL53L0X/TCA9548A, servos) |
 | `sim/app.py`, `sim/gui.py`, `sim/painel_brick.py` | janela, painéis, tela OLED e teclado (tecla O) |
+| `sim/camera_linha.py`, `fake_hw/camera.py` | câmera de linha: geometria e imagem (compartilhado), `cv2.VideoCapture` falso (tecla C mostra) |
 | `avalia.py` | várias sementes sem janela, desafios L01-L13 (`desafios/desafios.json`), relatório em `resultados/` |
 | `ferramentas/` | `pista_surpresa.py`, `gera_desafios.py`, `gera_mapas.py`, `importa_ladrilhos.py`, `monta_portatil.py` |
-| `robo_4x4.json`, `robo_esteira.json`, `robo_pacoca_amarelo.json`, `robo_pacoca_ev3.json` | os robôs |
+| `robo_4x4.json`, `robo_4x4_camera.json`, `robo_esteira.json`, `robo_pacoca_amarelo.json`, `robo_pacoca_ev3.json` | os robôs |
 
 ## Testes de referência (rode depois de qualquer mudança em `sim/`, `fake_hw/` ou `pacoca/`)
 
@@ -139,6 +140,8 @@ mundo ou a cada 10 ms (detalhes no `pacoca/LEIAME.md`).
   `--so-zip` refaz só o zip; `--python`, `--w64devkit`, `--rodas` usam arquivos já baixados.
 * O enxugamento do w64devkit é por exclusão (`GCC_BIN`, `GCC_LIBEXEC_FORA`, `GCC_PASTAS_FORA`): se uma
   versão nova do w64devkit mudar de layout e o teste do Paçoca falhar, é ali que se mexe.
+* `opencv-python-headless` entrou no `requirements.txt` em 22/10 (câmera de linha): o zip cresce uns
+  40 MB. O zip de 19/10 ainda não tem o OpenCV (refazer com o `monta_portatil.py`).
 * O pacote só tem o que está no `requirements.txt`. Biblioteca nova que o simulador (ou o programa de
   alguma equipe) precisar tem de entrar lá antes de montar o zip.
 * Python do Windows no Wine 9: numpy ≥ 2.2 aborta (falta `ucrtbase.crealf` no Wine, não no Windows).
@@ -163,9 +166,29 @@ mundo ou a cada 10 ms (detalhes no `pacoca/LEIAME.md`).
   `professor/mapas_teste/`) foi de 60 para 45 em 22/10: com 60, o PWM mínimo do firmware não movia o
   servo e o proporcional parava antes do alvo. A lib `placaControleServo.py` (22/10) é a mesma em
   `libs/`, nos `libs_mariola/` e nos exemplos 08, 10 e 12.
-* Câmera é **stub** (`visao`): devolve detecções (~90% de acerto), sem imagem. No Mariola a IA das
-  vítimas roda a ~4 fps e o OpenCV dos triângulos a ~30 fps. A câmera que olha para baixo (para seguir
-  linha) não é simulada.
+* Câmera das vítimas é **stub** (`visao`): devolve detecções (~90% de acerto), sem imagem. No Mariola
+  a IA das vítimas roda a ~4 fps e o OpenCV dos triângulos a ~30 fps. O Julio pediu para deixar
+  **exatamente como está**.
+* Câmera de linha (22/10/2026): **o robô da câmera não tem o sensor de linha**, então são dois 4x4:
+  `robo_4x4.json` (Pro1616, sem câmera de linha) e `robo_4x4_camera.json` (cópia sem `sensor_linha`
+  e sem SERIAL6, com `camera_linha`; nome "4x4-câmera ..." porque o botão Robô mostra a 1ª palavra).
+  Sem `sensor_linha`, `Mundo.sensor` é None (sem raspar, `leitura_sensor()` → None, painel e juiz
+  tratam); o `exemplo_aluno/robo.py` aceita `self.cor = None`. Mudou o `robo_4x4.json`? Leve para a
+  cópia da câmera. A câmera: USB embaixo do robô, um pouco atrás das rodas da frente, olhando reto para baixo, **76° (não
+  é grande angular)**, alta o bastante para as bordas da imagem pegarem as rodas da frente (106 mm com
+  as rodas em y ±75, 15 mm de largura); LEDs iluminando (sem luz de fora). x = 50 mm (medida do Julio). No
+  robô é a `/dev/video_usb2`. Divisão: o servidor manda só o material do chão de cada pixel
+  (`Mundo.camera_linha`, op `camera_linha`, zlib+base64, ~1-2 kB) e uma semente; o processo do
+  programa monta a imagem BGR (rodas por traçado de raio contra cilindros, luz, desfoque, ruído).
+  A janela monta o mesmo quadro (`w.cam_linha_quadro`). ~6 ms de amostra + ~6 ms de imagem por quadro.
+  Luz (22/10, pedido do Julio): fita de 8 LEDs (`camera_linha.leds`), com ou sem difusor. Difusa
+  Lambert (cos²/d²); reflexo = mancha gaussiana no ponto de espelho de cada LED, largura pela
+  rugosidade do material (`ESPECULAR`: ks, sigma rad) e pelo tamanho da fonte (difusor = faixa),
+  pico ks·E/(2σ²). Exposição pelo percentil 90 da luz no chão ('auto') ou fixa; com o difusor no
+  'auto' o ruído vai ×1,8. Tudo é pré-calculado por resolução em `Geometria.prepara_luz()`.
+  `rng_cam_linha` (semente base*7+4) entrou em `_rngs`. O exemplo `exemplo_aluno/seguidor_camera.py`
+  (22/10, `--robo robo_4x4_camera.json`, x = 50): L01 6/6 (130, 0 LoP); L02 0/6 (115, 3 LoPs por
+  rodada nas curvas fechadas); L03 não (passa dos 30 s); L04 6/6 (205, 0 LoP); mesmo placar em 2x e 8x.
 * Sensores do 4x4 no resgate: VL53 na garra, um de cada lado no meio, um na frente na altura do
   triângulo, TCS na frente (talvez um atrás).
 

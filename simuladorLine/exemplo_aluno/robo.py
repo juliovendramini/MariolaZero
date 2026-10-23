@@ -85,8 +85,12 @@ class Robo:
         print(f'Tração: {tracao}')
 
         self.giro = Giroscopio(Portas.SERIAL5)
-        self.cor = CorReflexao(Portas.SERIAL6, arquivo_cores='cores_line.json')
-        self.cor.usa_cores(['branco', 'preto', 'verde', 'vermelho', 'prata'])
+        try:
+            self.cor = CorReflexao(Portas.SERIAL6, arquivo_cores='cores_line.json')
+            self.cor.usa_cores(['branco', 'preto', 'verde', 'vermelho', 'prata'])
+        except Exception as e:   # robô da câmera de linha: não tem o sensor de linha
+            print('Sensor de linha não encontrado:', e)
+            self.cor = None
         self.botoes = Botoes()
         self.vl = {}             # nome -> [sensor, última distância, momento do pedido]
         for nome, canal in VL53_CANAIS.items():
@@ -129,9 +133,14 @@ class Robo:
         self.motores.reseta_angulo_motor(2)
 
     # ------------------------------------------------------------------ sensores
+    def _sensor_linha(self):
+        if self.cor is None:
+            raise RuntimeError('este robô não tem o sensor de linha (na SERIAL6)')
+        return self.cor
+
     def reflexao(self):
         """4 canais: 0 = preto, ~100 = branco."""
-        return self.cor.le_reflexao()
+        return self._sensor_linha().le_reflexao()
 
     def cores(self):
         """Cor embaixo de cada TCS: [esquerda, meio, direita].
@@ -139,7 +148,7 @@ class Robo:
         Na borda da linha, com pouca luz, uma leitura isolada pode ser classificada como verde ou
         vermelho. Por isso verde/vermelho só valem se o RGB também tiver a cor dominante."""
         out = []
-        for k, nome in enumerate(self.cor.cores(), start=1):
+        for k, nome in enumerate(self._sensor_linha().cores(), start=1):
             if nome in ('verde', 'vermelho'):
                 r, g, b, c = self.cor.le_rgbc(k)
                 if nome == 'verde' and not (g > 1.4 * r and g > 1.15 * b and c > 20):

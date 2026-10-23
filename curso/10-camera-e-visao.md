@@ -121,7 +121,41 @@ Falta você:
 
 Para ver o que a câmera do robô está vendo: `exemplos/camera/01-streamingVLC` (abre no navegador).
 
-## 10.6 E na Maze?
+## 10.6 Outra câmera: seguir a linha com OpenCV
+
+Em vez do sensor de linha, o robô pode seguir a linha com uma **câmera de linha**: embaixo do robô,
+um pouco atrás das rodas da frente, olhando reto para o chão, com LEDs iluminando. No simulador é o
+robô `robo_4x4_camera.json` (o 4x4 sem o Pro1616). Esta câmera **gera a imagem de verdade**, e o
+programa usa o OpenCV como no robô:
+
+```python
+import cv2
+cam = cv2.VideoCapture('/dev/video_usb2')        # a câmera da porta USB 2
+ok, img = cam.read()                             # imagem BGR 320 x 240
+cinza = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+_, preto = cv2.threshold(cinza, 90, 255, cv2.THRESH_BINARY_INV)   # linha = branco na máscara
+m = cv2.moments(preto[:120], binaryImage=True)   # metade de cima = à frente da câmera
+if m['m00'] > 300:
+    x_linha = m['m10'] / m['m00']                # coluna do centro da linha (160 = meio)
+```
+
+* A frente do robô fica no **topo** da imagem. Cada pixel vale ~0,5 mm no chão (a imagem cobre
+  16,5 x 12,4 cm).
+* As **rodas da frente aparecem nas bordas** da esquerda e da direita: elas são escuras e parecem
+  linha. Corte uns 40 px de cada lado antes de procurar o preto.
+* O verde e o vermelho saem com `cv2.cvtColor(img, cv2.COLOR_BGR2HSV)` e `cv2.inRange`.
+* A luz vem de uma fita de LEDs. Sem difusor, a fita isolante preta **reflete os LEDs** e aparece
+  com pontos brancos estourados; com difusor (`"difusor": true` no `robo_4x4_camera.json`), o
+  reflexo vira uma faixa cinza mais fraca, mas a imagem fica mais escura. Teste o seu programa nos
+  dois casos.
+* `read()` espera o próximo quadro (30 por segundo): o laço fica no ritmo da câmera.
+* Na janela do simulador, a tecla **C** mostra o último quadro que o programa leu.
+
+O exemplo completo é o `simuladorLine/exemplo_aluno/seguidor_camera.py`: segue a linha só com a
+câmera, trata gap, verde e a fita vermelha da chegada. No PC precisa do OpenCV
+(`pip install opencv-python-headless`; o pacote do laboratório já traz).
+
+## 10.7 E na Maze?
 
 A Maze usa duas câmeras laterais e outra interface (`deteccaoVitimas`): `detecta()` devolve o tipo
 da vítima (letra ou alvo cognitivo), o estado e **quantos kits** deixar. Veja o módulo 16.

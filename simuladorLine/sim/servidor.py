@@ -9,6 +9,7 @@ import math
 import socket
 import threading
 
+from . import camera_linha as CL
 from . import firmware as FW
 from .fisica import canal_mux as pino_canal
 from .protocolo import envia, recebe
@@ -124,6 +125,9 @@ class Servidor:
                 if idx is None:
                     return {'v': None}
                 return {'v': w.resgate.tcs(idx)}
+            if op == 'camera_linha':
+                mats, sem = w.camera_linha(r['largura'], r['altura'])
+                return {'m': CL.codifica(mats), 's': sem, 't': w.t}
             if op == 'visao':
                 return {'v': w.resgate.camera(r.get('tipo', 'vitimas'))}
             if op == 'gpio_le':

@@ -21,6 +21,7 @@ Python **3.11 ou mais novo**.
 
 ```bash
 pip install pygame pymunk numpy pillow
+pip install opencv-python-headless       # só para a câmera de linha (programas com import cv2)
 ```
 
 Funciona no Windows e no Linux. No Linux, para os diálogos de abrir/salvar mapa, instale também
@@ -160,6 +161,7 @@ como no robô.
 | arrastar o robô / Q, E / roda do mouse | reposiciona o robô (com o programa parado) |
 | R, T | raios dos VL53, trilha |
 | O | mostra/esconde a tela e o teclado do brick (botões: clique ou F1–F4) |
+| C | mostra/esconde o último quadro que o programa leu da câmera de linha (canto de baixo à esquerda) |
 
 O painel mostra o tempo, a pontuação, os eventos do juiz e as leituras: os **4 canais de reflexão**
 (o que a lib recebe), os **12 ITR8307 um a um** (cinza = leitura de cada um), a cor dos **3 TCS**,
@@ -255,7 +257,7 @@ A área de resgate vai em `zona_resgate` (as células dela não têm ladrilhos n
 
 ---
 
-## Os dois robôs
+## Os robôs do Mariola
 
 | | `robo_4x4.json` | `robo_esteira.json` |
 |---|---|---|
@@ -267,6 +269,10 @@ A área de resgate vai em `zona_resgate` (as células dela não têm ladrilhos n
 Cada esteira encosta no chão em 5 pontos, todos com a velocidade do mesmo motor: o robô de esteira
 gira com mais esforço (as pontas da esteira arrastam de lado). **Medidas, motor e polia da esteira
 são estimativas** (ver `_comentario` no json).
+
+`robo_4x4_camera.json` é o mesmo 4x4, mas segue a linha com a **câmera de linha** no lugar do
+Pro1616 (não tem `sensor_linha` nem nada na SERIAL6: a `CorReflexao` dá erro ao abrir, como no robô).
+Programa de exemplo: `exemplo_aluno/seguidor_camera.py`. Na janela, o botão **Robô** mostra "4x4-câmera".
 
 ### Sensor de linha Pro1616 (como está no `sensor_linha`)
 
@@ -349,6 +355,47 @@ for t in v.triangulos():    # ~30 quadros/s, como o OpenCV
   detectadas como vivas (`falsa_detectada`), campo de visão (`fov_graus`) e alcance.
 * A câmera fica a 5 cm do chão: uma vítima esconde a outra, a parede do triângulo (6 cm) esconde o
   que está dentro dele, a parede e o obstáculo escondem o que está atrás.
+
+### Câmera de linha (`camera_linha`, imagem de verdade para o OpenCV)
+
+Só no `robo_4x4_camera.json`: uma segunda câmera USB, **embaixo do robô, olhando reto para o
+chão**, um pouco atrás das rodas da frente, no lugar do sensor de linha. Esta gera a imagem: o
+programa usa o OpenCV normalmente e só o `cv2.VideoCapture` é do simulador (a câmera das vítimas
+continua sendo o stub `visao` de cima).
+
+```python
+import cv2
+cam = cv2.VideoCapture('/dev/video_usb2')    # câmera da porta USB 2 (regra 99-cameras.rules)
+ok, img = cam.read()                         # BGR, 320 x 240, como no robô
+cinza = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+```
+
+* Frente do robô no topo da imagem, esquerda do robô à esquerda. 76° na horizontal a 106 mm do
+  chão: a imagem cobre 165 x 124 mm (0,52 mm por pixel), de 12 mm atrás a 112 mm à frente do centro
+  do robô. As **rodas da frente aparecem nas bordas** da esquerda e da direita (corte uns 40 px de
+  cada lado antes de procurar a linha).
+* `read()` segue o fps da câmera (30): devolve o quadro mais novo e, se ele já foi lido, espera o
+  próximo. `set(cv2.CAP_PROP_FRAME_WIDTH/HEIGHT)` muda a resolução (o campo de visão continua o
+  mesmo). Arquivos de vídeo/imagem do PC abrem com o `VideoCapture` de verdade.
+* A luz vem só da **fita de LEDs** do robô (`leds`; luz de fora não entra). Cada LED ilumina o chão
+  caindo com a distância (o meio fica mais claro que os cantos) e se **reflete** no chão liso onde o
+  ângulo do LED e o da câmera batem:
+  * `"difusor": false`: imagem bem iluminada, mas a **fita isolante preta** e a **fita prata**
+    estouram em pontos brancos (um por LED, onde a fita passa pela faixa dos reflexos);
+  * `"difusor": true`: passa só `transmissao_difusor` da luz e cada LED vira uma faixa de
+    `largura_difusor_mm`: o reflexo vira uma faixa larga e mais fraca na fita preta;
+  * `"exposicao": "auto"` compensa a luz que falta (com o difusor, o ruído aumenta quase 2x); um
+    número fixa a exposição (1 = certa para a fita sem difusor; com o difusor a imagem escurece);
+  * `"reflexos": false` deixa o chão todo fosco; sem `leds` a luz é igual em tudo (modelo simples).
+  Posição da fita (`x`, `y_inicio`, `y_fim`, `altura_mm`) e o brilho de cada material
+  (`ESPECULAR` em `sim/camera_linha.py`) são estimativas. Além disso: menos luz nos cantos pela
+  lente (`vinheta`), foco um pouco mole (`desfoque`) e ruído em cada pixel (`ruido`). As cores são
+  as do piso do simulador (branco, preto, verde, vermelho, prata, madeira dos palitos).
+* No `camera_linha` do json: posição (`x` = 50 mm, `y`, `altura_mm`), `fov_horizontal_graus`, `rotacao_graus`
+  (câmera montada girada), resolução, `fps`, `dispositivos` (o nome que o programa abre) e `tampas`
+  (placas embaixo do robô que aparecem na imagem, como a do sensor de linha).
+* Precisa do OpenCV no Python do PC (`pip install opencv-python-headless`; o pacote portátil já traz).
+* Gasta uns 12 ms de PC por quadro: com a câmera, o simulador fica mais lento (o resultado não muda).
 
 ### TCS34725 horizontais (`tcs_i2c`)
 
@@ -453,6 +500,11 @@ desligar o robô. Arquivos listados em `arquivos_rodada` são apagados a cada "N
   do sensor. O exemplo só aceita a fita prata com os 3 TCS classificando "prata" e C acima de 165,
   os 4 canais de IR entre 50 e 120 (sem linha preta, sem estourar) e, na entrada da área, o robô
   nivelado.
+* `robo.py` aceita robô sem o sensor de linha (`self.cor = None`; `reflexao()` e `cores()` dão erro).
+* `seguidor_camera.py` (robô `robo_4x4_camera.json`): seguidor só com a **câmera de linha** (OpenCV):
+  PD na posição da linha na metade de cima da imagem, gap reto, verde (só o que aparece antes da
+  interseção, chegando pela frente da imagem; depois de girar, o verde da mesma interseção não conta
+  de novo) e parada no vermelho. Não trata obstáculo, rampa nem área de resgate.
 
 É um ponto de partida, não a solução. Nos mapas de exemplo ele completa a rodada às vezes sem LoP e
 às vezes com. Na área de resgate ele costuma pegar as três vítimas, mas às vezes perde uma. Use isso
@@ -602,15 +654,17 @@ simulador.py        janela / modo sem janela
 rodar.py            executa o programa do aluno com o hardware virtual
 rodar_pacoca.py     compila e executa o programa do brick Paçoca (.ino) com o hardware virtual
 robo_4x4.json       robô 4x4 (o da Maze) com o sensor de linha, câmera e mecanismo de resgate
+robo_4x4_camera.json  o mesmo 4x4 com a câmera de linha no lugar do sensor de linha
 robo_esteira.json   robô de esteira
 robo_pacoca_*.json  robôs do brick Paçoca (motor amarelo, motor EV3)
 pacoca/             brick Paçoca: compila.py (g++), ponte.py (dispositivos), nucleo/ (Arduino.h
                     simulado), troca/ (SoftwareSerial, SoftWire, ultrassom... simulados),
                     libs_pacoca/ (cópia da brickSimples, reserva). Detalhes em pacoca/LEIAME.md
 exemplo_pacoca/     programa de exemplo do Paçoca (.ino)
-sim/                ladrilhos, mapa, física, área de resgate (resgate.py), juiz, servidor, interface
+sim/                ladrilhos, mapa, física, área de resgate (resgate.py), juiz, servidor, interface,
+                    camera_linha.py (geometria e imagem da câmera de linha)
 ladrilhos/          os 82 ladrilhos oficiais (1 mm por pixel) + ladrilhos.json
-fake_hw/            serial, smbus2, gpiod, firmware das placas, relógio virtual
+fake_hw/            serial, smbus2, gpiod, firmware das placas, relógio virtual, camera.py (cv2.VideoCapture)
 libs_mariola/       cópia das libs do Mariola (reserva)
 mapas/              treino.json, completo.json e resgate.json
 exemplo_aluno/      programa de exemplo
@@ -631,7 +685,13 @@ dist/               (criada pelo monta_portatil.py, fora do git) o zip para o la
 * Mundo 2,5D: o robô não capota nem pula. A altura do piso vem do mapa e o robô se apoia nos
   contatos mais altos.
 * Lombada e palito levantam o robô, mas não freiam nem fazem o robô quicar (sem dinâmica vertical).
-* A câmera não gera imagem: é um stub que devolve as detecções (a YOLO de vocês não roda aqui).
+* A câmera das vítimas não gera imagem: é um stub que devolve as detecções (a YOLO de vocês não roda
+  aqui).
+* Câmera de linha: lente sem distorção (pinhole), piso sempre plano embaixo dela (na lombada e no pé
+  da rampa a imagem não muda), rodas não fazem sombra, exposição automática fixa (calculada uma vez,
+  não muda com a cena), sem borrão de movimento e sem o
+  buffer do V4L2 (no robô, um laço lento pode receber quadros atrasados). O tempo que o OpenCV gasta
+  no PC não conta: no Banana Pi, processar cada quadro leva alguns milissegundos.
 * As vítimas são bolinhas 2D com altura: não pulam, não saem rolando por cima de nada e não apertam o
   para-choque. O mecanismo é cinemático (posições dos servos, sem forças): a bolinha entra na garra se
   estiver entre os dedos quando eles fecham.

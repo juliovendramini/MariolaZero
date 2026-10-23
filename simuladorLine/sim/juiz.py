@@ -213,8 +213,9 @@ class Juiz:
         w = self.mundo
         b = w.corpo
         import numpy as np
-        pts = np.array([[b.position.x, b.position.y],
-                        list(b.local_to_world((w.sensor.ir[len(w.sensor.ir) // 2][0], 0)))])
+        x_sensor = w.sensor.ir[len(w.sensor.ir) // 2][0] if w.sensor else \
+            float((w.cfg.get('camera_linha') or {}).get('x', 0.0))
+        pts = np.array([[b.position.x, b.position.y], list(b.local_to_world((x_sensor, 0)))])
         mats = w.materiais(pts)
         return bool((mats == LT.M_PRETO).any())
 

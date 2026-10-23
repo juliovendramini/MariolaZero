@@ -11,6 +11,7 @@ import pygame
 
 from .painel_brick import PainelBrick
 
+from . import camera_linha as CL
 from . import ladrilhos as LT
 from . import mapa as M
 from .app import eh_pacoca
@@ -103,6 +104,8 @@ class Interface:
         self.mostrar_raios = True
         self.mostrar_trilha = True
         self.mostrar_caminho = False
+        self.mostrar_cam_linha = True
+        self._cam_linha_sup = (None, None)
         self.trilha = []
         self.sujo = True
         self.camada = None
@@ -628,7 +631,7 @@ class Interface:
         # sensor de linha: cada ITR8307 (cinza = leitura) e cada TCS (cor = leitura)
         ul = snap['leitura']
         sl = w.sensor
-        if ul:
+        if ul and sl and len(ul['ir12']) == len(sl.ir):
             for i, (lx, ly) in enumerate(sl.ir):
                 v = max(0, min(255, int(ul['ir12'][i] * 2.2)))
                 pygame.draw.circle(tela, (v, v, v), L(lx, ly), max(2, int(2.6 * e) + 1))
@@ -731,6 +734,30 @@ class Interface:
                     cd = (0, 220, 100) if d['cor'] == 'verde' else (255, 60, 60)
                     pygame.draw.line(tela, cd, L(cx, cy), p, 1)
                     pygame.draw.circle(tela, cd, p, 4)
+
+    def _desenha_cam_linha(self):
+        """Último quadro que o programa leu da câmera de linha (canto de baixo, à esquerda)."""
+        q = getattr(self.sim.mundo, 'cam_linha_quadro', None)
+        if q is None:
+            return
+        area = self._area()
+        if not self.mostrar_cam_linha:
+            t = self.f11.render('C: mostra a câmera de linha', True, COR_TEXTO2)
+            self.tela.blit(t, (area.x + 10, area.bottom - t.get_height() - 6))
+            return
+        if self._cam_linha_sup[0] is not q:
+            _, geo, mats = q
+            img = CL.compoe(geo, mats)[..., ::-1]          # BGR -> RGB
+            sup = pygame.surfarray.make_surface(np.ascontiguousarray(img.transpose(1, 0, 2)))
+            esc = 208.0 / max(geo.w, geo.h)
+            sup = pygame.transform.smoothscale(sup, (int(geo.w * esc), int(geo.h * esc)))
+            self._cam_linha_sup = (q, sup)
+        sup = self._cam_linha_sup[1]
+        r = pygame.Rect(area.x + 10, area.bottom - sup.get_height() - 30, sup.get_width() + 12,
+                        sup.get_height() + 22)
+        pygame.draw.rect(self.tela, (16, 17, 20), r, border_radius=8)
+        self.tela.blit(self.f11.render('câmera de linha (C esconde)', True, COR_TEXTO2), (r.x + 6, r.y + 3))
+        self.tela.blit(sup, (r.x + 6, r.y + 16))
 
     def _redesenha_pontes(self, snap):
         """Robô passando por baixo de uma ponte: a ponte fica por cima dele (transparente)."""
@@ -848,37 +875,18 @@ class Interface:
         d = self.leituras
         if not d:
             return
-        y = self._txt('Sensor de linha (bytes do Pro1616)', x, y, self.f16b)
-        ln = d['linha']
-        # 4 canais de reflexão
-        bw = (larg - 18) / 4
-        for k, v in enumerate(ln['bytes'][:4]):
-            r = pygame.Rect(int(x + k * (bw + 6)), y, int(bw), 34)
-            pygame.draw.rect(self.tela, (50, 52, 60), r)
-            hgt = int(min(1.0, v / 130.0) * 34)
-            pygame.draw.rect(self.tela, (210, 210, 210), (r.x, r.bottom - hgt, r.w, hgt))
-            t = self.f14.render(f'IR{k} {v}', True, (255, 90, 90) if v < 50 else (20, 20, 20) if hgt > 22 else COR_TEXTO)
-            self.tela.blit(t, (r.centerx - t.get_width() / 2, r.y + 2))
-        y += 38
-        # 12 ITR8307 individuais
-        bw2 = (larg - 11 * 2) / 12
-        for k, v in enumerate(ln['ir12']):
-            r = pygame.Rect(int(x + k * (bw2 + 2)), y, int(bw2), 12)
-            c = max(0, min(255, int(v * 2.2)))
-            pygame.draw.rect(self.tela, (c, c, c), r)
-        y += 15
-        for k in range(3):
-            rgbc = ln['bytes'][4 + 4 * k: 8 + 4 * k]
-            r = pygame.Rect(x + k * 138, y, 16, 16)
-            pygame.draw.rect(self.tela, tuple(min(255, int(v * 1.8)) for v in rgbc[:3]), r)
-            pygame.draw.rect(self.tela, (0, 0, 0), r, 1)
-            self._txt(f'{rgbc[0]},{rgbc[1]},{rgbc[2]},{rgbc[3]}', x + k * 138 + 20, y, self.f12)
-        y += 20
+        sl = self.sim.mundo.sensor
+        ln = d['linha'] if sl else None      # (logo depois de trocar de robô a leitura é do robô antigo)
+        if ln:
+            y = self._painel_linha(x, y, larg, ln)
+        else:
+            y = self._txt('Sem sensor de linha' + (' (câmera de linha: tecla C)' if self.sim.cfg.get('camera_linha')
+                                                   else ''), x, y, self.f14)
         g = d['giro']
         y = self._txt(f'Giro  X {g[0]}   Y {g[1]}   Z {g[2]}      altura {d["h"]:.0f} mm', x, y, self.f12)
-        ds = [v for v in ln.get('distancias', [])[:len(self.sim.mundo.sensor.ir)] if v == v]
+        ds = [v for v in ln.get('distancias', [])[:len(sl.ir)] if v == v] if ln else []
         if ds:
-            nom = self.sim.mundo.sensor.altura
+            nom = sl.altura
             cor = COR_TEXTO if max(abs(v - nom) for v in ds) < 1.5 else COR_DESTAQUE
             y = self._txt(f'Sensor IR até o piso: {min(ds):.1f} a {max(ds):.1f} mm (normal {nom:g})',
                           x, y, self.f12, cor)
@@ -912,6 +920,33 @@ class Interface:
                  'O tela/teclado do brick (botões: clique ou F1–F4).')
         for linha in _quebra(ajuda, 70):
             y = self._txt(linha, x, y, self.f12, COR_TEXTO2)
+
+    def _painel_linha(self, x, y, larg, ln):
+        y = self._txt('Sensor de linha (bytes do Pro1616)', x, y, self.f16b)
+        # 4 canais de reflexão
+        bw = (larg - 18) / 4
+        for k, v in enumerate(ln['bytes'][:4]):
+            r = pygame.Rect(int(x + k * (bw + 6)), y, int(bw), 34)
+            pygame.draw.rect(self.tela, (50, 52, 60), r)
+            hgt = int(min(1.0, v / 130.0) * 34)
+            pygame.draw.rect(self.tela, (210, 210, 210), (r.x, r.bottom - hgt, r.w, hgt))
+            t = self.f14.render(f'IR{k} {v}', True, (255, 90, 90) if v < 50 else (20, 20, 20) if hgt > 22 else COR_TEXTO)
+            self.tela.blit(t, (r.centerx - t.get_width() / 2, r.y + 2))
+        y += 38
+        # 12 ITR8307 individuais
+        bw2 = (larg - 11 * 2) / 12
+        for k, v in enumerate(ln['ir12']):
+            r = pygame.Rect(int(x + k * (bw2 + 2)), y, int(bw2), 12)
+            c = max(0, min(255, int(v * 2.2)))
+            pygame.draw.rect(self.tela, (c, c, c), r)
+        y += 15
+        for k in range(3):
+            rgbc = ln['bytes'][4 + 4 * k: 8 + 4 * k]
+            r = pygame.Rect(x + k * 138, y, 16, 16)
+            pygame.draw.rect(self.tela, tuple(min(255, int(v * 1.8)) for v in rgbc[:3]), r)
+            pygame.draw.rect(self.tela, (0, 0, 0), r, 1)
+            self._txt(f'{rgbc[0]},{rgbc[1]},{rgbc[2]},{rgbc[3]}', x + k * 138 + 20, y, self.f12)
+        return y + 20
 
     def _painel_resgate(self, x, y, zs):
         mec = zs.get('mec')
@@ -1283,6 +1318,8 @@ class Interface:
                 self.trilha = []
             elif k == pygame.K_o and self.modo == 'simular':
                 self.brick.visivel = not self.brick.visivel
+            elif k == pygame.K_c and self.modo == 'simular':
+                self.mostrar_cam_linha = not self.mostrar_cam_linha
             elif k == pygame.K_F5:
                 self._iniciar()
             elif k in (pygame.K_q, pygame.K_e) and self.modo == 'simular' and not s.programa_rodando():
@@ -1408,6 +1445,7 @@ class Interface:
                 self._redesenha_pontes(snap)
             if self.sim.cfg.get('brick') != 'pacoca':        # tela + teclado são do brick Mariola
                 self.brick.desenha(self.tela, self.sim.mundo, self._area(), self.f12b, self.f11)
+            self._desenha_cam_linha()
         lw, lh = self.tela.get_size()
         pygame.draw.rect(self.tela, COR_PAINEL, (lw - PAINEL, 0, PAINEL, lh))
         x = lw - PAINEL + 14

@@ -16,6 +16,7 @@ import numpy as np
 import pymunk
 from pymunk import Vec2d
 
+from . import camera_linha as CL
 from . import firmware as FW
 from . import ladrilhos as LT
 from . import resgate as RG
@@ -327,7 +328,7 @@ class Mundo:
         self.resgate.semear(self._base_semente)
         if self.resgate.mec:
             self.resgate.mec.registra_firmwares(self.fw_placas)
-        self.sensor = SensorLinha(cfg)
+        self.sensor = SensorLinha(cfg) if cfg.get('sensor_linha') else None   # robô da câmera não tem
         self._monta_apoios()
         self._tabela_cores()
         self.cor_cache = None
@@ -373,9 +374,10 @@ class Mundo:
         self.rng_vl53 = random.Random(base * 7 + 1)
         self.rng_giro = random.Random(base * 7 + 2)
         self.rng_cor = random.Random(base * 7 + 3)
+        self.rng_cam_linha = random.Random(base * 7 + 4)
 
     def _rngs(self):
-        rs = [self.rng, self.rng_vl53, self.rng_giro, self.rng_cor]
+        rs = [self.rng, self.rng_vl53, self.rng_giro, self.rng_cor, self.rng_cam_linha]
         if getattr(self, 'resgate', None) is not None:
             rs += [self.resgate.rng_cam, self.resgate.rng_tcs]
         return rs
@@ -704,7 +706,7 @@ class Mundo:
         self._amostras = np.array(loc)
         self._lift = np.array(lift)
         self._xs_el = np.array(xs_el)
-        self._raspa = np.array(self.sensor.raspa)
+        self._raspa = np.array(self.sensor.raspa if self.sensor else [], dtype=float).reshape(-1, 2)
 
     def _relevos(self):
         """Lombadas e palitos perto do robô: lista de (x1, y1, x2, y2, altura, meia_largura, tipo)."""
@@ -817,8 +819,8 @@ class Mundo:
                         phs.append(h)
                 self._A_contato.append(('esteira', (ux, env)))
         # placa do sensor (raspa se o chão subir mais que a altura dela)
-        hs_raspa = self.alturas_piso(self._mundo(self._raspa), rel)
-        h0 = self.sensor.altura
+        hs_raspa = self.alturas_piso(self._mundo(self._raspa), rel) if len(self._raspa) else []
+        h0 = self.sensor.altura if self.sensor else 0.0
         for (lx, ly), h in zip(self._raspa, hs_raspa):
             if np.isfinite(h):
                 pxs.append(lx)
@@ -1216,8 +1218,11 @@ class Mundo:
         return out
 
     def leitura_sensor(self, ruido=True):
-        """Lê o sensor de linha. Devolve dict com os 12 IR, 4 canais, 3 RGBC e os 16 bytes."""
+        """Lê o sensor de linha. Devolve dict com os 12 IR, 4 canais, 3 RGBC e os 16 bytes
+        (None se o robô não tem sensor de linha)."""
         sl = self.sensor
+        if sl is None:
+            return None
         b = self.corpo
         th = b.angle
         c, s = math.cos(th), math.sin(th)
@@ -1260,6 +1265,8 @@ class Mundo:
     def cor_firmware(self):
         """O sensor atualiza na taxa do firmware e devolve o último valor lido. Se ficar 30 s
         sem pedido ele para de ler: o primeiro pedido depois disso devolve valores velhos."""
+        if self.sensor is None:
+            return [0] * 16
         ocioso = self.t - self.cor_pedido
         self.cor_pedido = self.t
         periodo = 1.0 / float(self.sensor.cfg.get('taxa_hz', 50))
@@ -1271,6 +1278,21 @@ class Mundo:
 
     def cor_bytes(self):
         return self.leitura_sensor()['bytes']
+
+    def camera_linha(self, largura, altura):
+        """Material do chão em cada pixel da câmera de linha (o programa monta a imagem com
+        sim/camera_linha.py) e uma semente para o ruído. Guarda o quadro para a janela mostrar."""
+        chave = (int(largura), int(altura))
+        cache = self.__dict__.setdefault('_geo_cam_linha', {})
+        if chave not in cache:
+            cache[chave] = CL.Geometria(self.cfg, *chave)
+        geo = cache[chave]
+        x, y, th = self.pose()
+        c, s = math.cos(th), math.sin(th)
+        lx, ly = geo.chao[:, 0], geo.chao[:, 1]
+        mats = self.materiais(np.stack([x + lx * c - ly * s, y + lx * s + ly * c], axis=1))
+        self.cam_linha_quadro = (self.t, geo, mats)
+        return mats, self.rng_cam_linha.randrange(1 << 30)
 
     # ---------------------------------------------------------------- para-choque e GPIO
     def para_choque(self, pino):

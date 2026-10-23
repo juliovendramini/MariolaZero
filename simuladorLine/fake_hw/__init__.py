@@ -41,6 +41,9 @@ def instalar(pasta_programa, pasta_libs):
     for nome, mod in fake_luma.modulos().items():
         sys.modules[nome] = mod
     fake_luma.instala_fontes()
+    # câmera de linha: cv2.VideoCapture gera a imagem do chão embaixo do robô
+    from . import camera
+    camera.instala()
 
     # caminho de import: pasta do programa primeiro, libs do Mariola como reserva
     sys.path.insert(0, pasta_programa)

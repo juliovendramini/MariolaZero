@@ -27,67 +27,21 @@ uint8_t SoftWire::_txBufferIndex = 0;
 #define portInputRegister(P) ( (volatile uint8_t *)( pgm_read_word( port_to_input_PGM + (P))) )
 #define portModeRegister(P) ( (volatile uint8_t *)( pgm_read_word( port_to_mode_PGM + (P))) )
 
-// Force SDA low - OTIMIZADO usando cache de registradores
-void SoftWire::sdaLow(const SoftWire *p)
+// 2026-10-23 - sdaLow/sdaHigh/sclLow/sclHigh/readSda/readScl agora são inline no SoftWire.h
+
+
+// Parte lenta do liberaSclEspera() (SoftWire.h): o SCL não subiu nas leituras rápidas, então o
+// escravo está segurando o clock (clock stretching) ou o barramento travou => espera com timeout
+bool SoftWire::esperaSclStretch(void) const
 {
-#ifdef ATOMIC_BLOCK
-  ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-#endif
-  {
-    *p->_sdaOut &= ~p->_sdaMask;  // Coloca saída em LOW
-    *p->_sdaDdr |= p->_sdaMask;   // Configura como OUTPUT
+  AsyncDelay timeout(_timeout_ms, AsyncDelay::MILLIS);
+  while (readScl(this) == LOW) {
+    if (timeout.isExpired()) {
+      stop(false); // Reset bus. Do not allow clock stretching here
+      return false;
+    }
   }
-}
-
-
-// Release SDA to float high - OTIMIZADO usando cache de registradores
-void SoftWire::sdaHigh(const SoftWire *p)
-{
-  *p->_sdaDdr &= ~p->_sdaMask;  // Configura como INPUT
-  if (p->getInputMode() == INPUT_PULLUP) {
-    *p->_sdaOut |= p->_sdaMask;   // Ativa pull-up
-  } else {
-    *p->_sdaOut &= ~p->_sdaMask;  // Desativa pull-up
-  }
-}
-
-
-// Force SCL low - OTIMIZADO usando cache de registradores
-void SoftWire::sclLow(const SoftWire *p)
-{
-#ifdef ATOMIC_BLOCK
-  ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-#endif
-  {
-    *p->_sclOut &= ~p->_sclMask;  // Coloca saída em LOW
-    *p->_sclDdr |= p->_sclMask;   // Configura como OUTPUT
-  }
-}
-
-
-// Release SCL to float high - OTIMIZADO usando cache de registradores
-void SoftWire::sclHigh(const SoftWire *p)
-{
-  *p->_sclDdr &= ~p->_sclMask;  // Configura como INPUT
-  if (p->getInputMode() == INPUT_PULLUP) {
-    *p->_sclOut |= p->_sclMask;   // Ativa pull-up
-  } else {
-    *p->_sclOut &= ~p->_sclMask;  // Desativa pull-up
-  }
-}
-
-
-// Read SDA (for data read) - OTIMIZADO usando cache de registradores
-uint8_t SoftWire::readSda(const SoftWire *p)
-{
-  return (*p->_sdaIn & p->_sdaMask) ? HIGH : LOW;
-}
-
-
-// Read SCL (to detect clock-stretching) - OTIMIZADO usando cache de registradores
-uint8_t SoftWire::readScl(const SoftWire *p)
-{
-  return (*p->_sclIn & p->_sclMask) ? HIGH : LOW;
+  return true;
 }
 
 
@@ -145,7 +99,6 @@ void SoftWire::begin(void) const
 
 SoftWire::result_t SoftWire::stop(bool allowClockStretch) const
 {
-  AsyncDelay timeout(_timeout_ms, AsyncDelay::MILLIS);
   _transmissionInProgress = false;
 
   // Force SCL low
@@ -158,7 +111,7 @@ SoftWire::result_t SoftWire::stop(bool allowClockStretch) const
 
   // Release SCL
   if (allowClockStretch) {
-    if (!sclHighAndStretch(timeout))
+    if (!liberaSclEspera())
       return timedOut;
   } else {
     sclHigh();
@@ -189,7 +142,6 @@ SoftWire::result_t SoftWire::llStart(uint8_t rawAddr) const
 
 SoftWire::result_t SoftWire::llRepeatedStart(uint8_t rawAddr) const
 {
-  AsyncDelay timeout(_timeout_ms, AsyncDelay::MILLIS);
 
   // Force SCL low
   SoftWire::sclLow(this);
@@ -200,7 +152,7 @@ SoftWire::result_t SoftWire::llRepeatedStart(uint8_t rawAddr) const
   _delay_us(DELAY_TIME_US);
 
   // Release SCL
-  if (!sclHighAndStretch(timeout))
+  if (!liberaSclEspera())
     return timedOut;
   _delay_us(DELAY_TIME_US);
 
@@ -237,55 +189,103 @@ SoftWire::result_t SoftWire::llStartWait(uint8_t rawAddr) const
 }
 
 
+// 2026-10-23 - laço de bits do llWrite/llRead: os ponteiros dos registradores e as máscaras ficam em
+// variáveis locais (registradores do AVR) durante o byte inteiro. Com as funções que recebem o objeto
+// (sclLow(this)...), cada operação de pino relia do objeto os 2 ponteiros e a máscara: a escrita num
+// ponteiro volatile obriga o compilador a reler tudo. Mesma sequência de pinos de antes.
+
+// pino em LOW: saída em LOW e depois OUTPUT (nunca empurra o pino para HIGH)
+static inline void pinoBaixo(volatile uint8_t *out, volatile uint8_t *ddr, uint8_t m, uint8_t nm)
+  __attribute__((always_inline));
+static inline void pinoBaixo(volatile uint8_t *out, volatile uint8_t *ddr, uint8_t m, uint8_t nm)
+{
+  SOFTWIRE_ATOMICO
+  {
+    *out &= nm;
+    *ddr |= m;
+  }
+}
+
+// pino solto: INPUT e depois o pull-up interno (pull = máscara, ou 0 sem pull-up)
+static inline void pinoSolto(volatile uint8_t *out, volatile uint8_t *ddr, uint8_t nm, uint8_t pull)
+  __attribute__((always_inline));
+static inline void pinoSolto(volatile uint8_t *out, volatile uint8_t *ddr, uint8_t nm, uint8_t pull)
+{
+  SOFTWIRE_ATOMICO
+  {
+    *ddr &= nm;
+    *out = (*out & nm) | pull;
+  }
+}
+
+// leituras rápidas do SCL depois de soltar (a parte rápida do liberaSclEspera)
+static inline bool sclSubiu(volatile uint8_t *in, uint8_t m) __attribute__((always_inline));
+static inline bool sclSubiu(volatile uint8_t *in, uint8_t m)
+{
+  for (uint8_t i = LEITURAS_RAPIDAS_SCL; i; --i) {
+    if (*in & m)
+      return true;
+  }
+  return false;
+}
+
+// ponteiros e máscaras do SDA e do SCL em variáveis locais (usado no começo do llWrite/llRead)
+#define SOFTWIRE_PINOS_LOCAIS                                                         \
+  volatile uint8_t *const sclOut = _sclOut, *const sclDdr = _sclDdr, *const sclIn = _sclIn; \
+  volatile uint8_t *const sdaOut = _sdaOut, *const sdaDdr = _sdaDdr, *const sdaIn = _sdaIn; \
+  const uint8_t sclM = _sclMask, sclNM = ~_sclMask, sdaM = _sdaMask, sdaNM = ~_sdaMask;    \
+  const uint8_t sclPull = (_inputMode == INPUT_PULLUP) ? sclM : 0;                          \
+  const uint8_t sdaPull = (_inputMode == INPUT_PULLUP) ? sdaM : 0
+
 SoftWire::result_t SoftWire::llWrite(uint8_t data) const
 {
-  AsyncDelay timeout(_timeout_ms, AsyncDelay::MILLIS);
+  //2026-10-23 - sem timeout por bit: o timeout (millis) só é criado se houver clock stretching
+  SOFTWIRE_PINOS_LOCAIS;
+
   for (uint8_t i = 8; i; --i) {
     // Force SCL low
-    SoftWire::sclLow(this);
+    pinoBaixo(sclOut, sclDdr, sclM, sclNM);
 
     if (data & 0x80) {
       // Release SDA
-      SoftWire::sdaHigh(this);
+      pinoSolto(sdaOut, sdaDdr, sdaNM, sdaPull);
     }
     else {
       // Force SDA low
-      SoftWire::sdaLow(this);
+      pinoBaixo(sdaOut, sdaDdr, sdaM, sdaNM);
     }
     _delay_us(DELAY_TIME_US);
 
-    // Release SCL
-    if (!sclHighAndStretch(timeout))
+    // Release SCL e espera subir (clock stretching: esperaSclStretch, com timeout)
+    pinoSolto(sclOut, sclDdr, sclNM, sclPull);
+    if (!sclSubiu(sclIn, sclM) && !esperaSclStretch())
       return timedOut;
 
     _delay_us(DELAY_TIME_US);
 
     data <<= 1;
-    if (timeout.isExpired()) {
-      stop(); // Reset bus
-      return timedOut;
-    }
   }
 
   // Get ACK
   // Force SCL low
-  SoftWire::sclLow(this);
+  pinoBaixo(sclOut, sclDdr, sclM, sclNM);
 
   // Release SDA
-  SoftWire::sdaHigh(this);
+  pinoSolto(sdaOut, sdaDdr, sdaNM, sdaPull);
 
   _delay_us(DELAY_TIME_US);
 
   // Release SCL
-  if (!sclHighAndStretch(timeout))
+  pinoSolto(sclOut, sclDdr, sclNM, sclPull);
+  if (!sclSubiu(sclIn, sclM) && !esperaSclStretch())
     return timedOut;
 
-  result_t res = (SoftWire::readSda(this) == LOW ? ack : nack);
+  result_t res = ((*sdaIn & sdaM) ? nack : ack);
 
   _delay_us(DELAY_TIME_US);
 
   // Keep SCL low between bytes
-  SoftWire::sclLow(this);
+  pinoBaixo(sclOut, sclDdr, sclM, sclNM);
 
   return res;
 }
@@ -293,65 +293,54 @@ SoftWire::result_t SoftWire::llWrite(uint8_t data) const
 
 SoftWire::result_t SoftWire::llRead(uint8_t &data, bool sendAck) const
 {
-  data = 0;
-  AsyncDelay timeout(_timeout_ms, AsyncDelay::MILLIS);
+  SOFTWIRE_PINOS_LOCAIS;
+  uint8_t lido = 0;
+
+  // Force SCL low e Release SDA (do ACK anterior). O SDA fica solto nos 8 bits: antes ele era
+  // solto de novo a cada bit, sem efeito
+  pinoBaixo(sclOut, sclDdr, sclM, sclNM);
+  pinoSolto(sdaOut, sdaDdr, sdaNM, sdaPull);
 
   for (uint8_t i = 8; i; --i) {
-    data <<= 1;
+    lido <<= 1;
+    _delay_us(DELAY_TIME_US);
+
+    // Release SCL e espera subir (inclusive com clock stretching)
+    pinoSolto(sclOut, sclDdr, sclNM, sclPull);
+    if (!sclSubiu(sclIn, sclM) && !esperaSclStretch()) {
+      data = lido;
+      return timedOut;
+    }
+    _delay_us(DELAY_TIME_US);
+
+    if (*sdaIn & sdaM)
+      lido |= 1;
 
     // Force SCL low
-    SoftWire::sclLow(this);
-
-    // Release SDA (from previous ACK)
-    SoftWire::sdaHigh(this);
-    _delay_us(DELAY_TIME_US);
-
-    // Release SCL
-    if (!sclHighAndStretch(timeout))
-      return timedOut;
-    _delay_us(DELAY_TIME_US);
-
-    // Read clock stretch
-    while (SoftWire::readScl(this) == LOW)
-      if (timeout.isExpired()) {
-        stop(); // Reset bus
-        return timedOut;
-      }
-
-    if (SoftWire::readSda(this))
-      data |= 1;
+    pinoBaixo(sclOut, sclDdr, sclM, sclNM);
   }
+  data = lido;
 
-  // Put ACK/NACK
-  // Force SCL low
-  SoftWire::sclLow(this);
+  // Put ACK/NACK (SCL já está em LOW)
   if (sendAck) {
     // Force SDA low
-    SoftWire::sdaLow(this);
+    pinoBaixo(sdaOut, sdaDdr, sdaM, sdaNM);
   }
   else {
     // Release SDA
-    SoftWire::sdaHigh(this);
+    pinoSolto(sdaOut, sdaDdr, sdaNM, sdaPull);
   }
 
   _delay_us(DELAY_TIME_US);
 
   // Release SCL
-  if (!sclHighAndStretch(timeout))
+  pinoSolto(sclOut, sclDdr, sclNM, sclPull);
+  if (!sclSubiu(sclIn, sclM) && !esperaSclStretch())
     return timedOut;
   _delay_us(DELAY_TIME_US);
 
-  // Wait for SCL to return high
-  while (SoftWire::readScl(this) == LOW)
-    if (timeout.isExpired()) {
-      stop(); // Reset bus
-      return timedOut;
-    }
-
-  _delay_us(DELAY_TIME_US);
-
   // Keep SCL low between bytes
-  SoftWire::sclLow(this);
+  pinoBaixo(sclOut, sclDdr, sclM, sclNM);
 
   return ack;
 }

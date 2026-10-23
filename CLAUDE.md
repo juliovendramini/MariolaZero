@@ -59,6 +59,17 @@ Os simuladores emulam estes firmwares byte a byte. Na dúvida sobre um comportam
   `brickSimples.h` com o `adiciona(Motor&, Motor&)` dentro de `#ifdef SUPORTE_MOTOR` (sem isso não
   compilava sem motor) e um comentário no `frear()` (no L9110S `parar()` e `frear()` dão no mesmo);
   `docs/DOCUMENTACAO_COMPLETA_ACESSIVEL.md` seção 10.5 com a API nova do sensor.
+* 23/10/2026: `SoftWire.h/.cpp` trocadas pela versão acelerada do medidor de vazão do SmartIrriga
+  (`smartIrriga/medidorVazaoFerti`: pinos inline, millis só no clock stretching), mas com o buffer de
+  recepção de **32** bytes (o do medidor tem 8; BMI160, VL53 e RFID leem mais). +~500 bytes de flash,
+  mesma RAM. Não testada em I2C de verdade (o simulador troca a SoftWire pela dele).
+  Depois, no mesmo dia: o laço de bits do `llWrite`/`llRead` guarda os ponteiros dos registradores e
+  as máscaras em variáveis locais (antes cada operação de pino relia tudo do objeto) e o `llRead` solta
+  o SDA uma vez por byte. Contagem de ciclos do código compilado a 16 MHz: bit de escrita 139 → 100
+  ciclos (~160 kHz), de leitura ~88 (~180 kHz); +22 bytes de flash.
+  `//#define SOFTWIRE_100KHZ` no começo da `SoftWire.h`: sem comentário, `DELAY_TIME_US` vai de 1
+  para 4 (pior caso, leitura: 4,9 µs em baixo, dentro do I2C padrão; ~80-90 kHz). O simulador conta
+  50 µs por byte nos dois modos (o real ficou em ~55-65 µs no máximo).
 * `brickSimples.h` está com quebra de linha CRLF: mantenha.
 * Mudou algo na brickSimples? Copie para `simuladorLine/pacoca/libs_pacoca/` e rode o teste do Paçoca.
 

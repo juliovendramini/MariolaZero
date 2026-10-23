@@ -2,7 +2,7 @@
 da pasta portatil/ do simulador. Nada é instalado no Windows e nada vai para o PATH: serve para
 laboratório com o Windows travado (sem administrador).
 
-    portatil/python/   Python 3.12 (python-build-standalone) + pygame, pymunk, numpy, pillow
+    portatil/python/   Python 3.12 (python-build-standalone) + pygame, pymunk, numpy, pillow, opencv
     portatil/gcc/      g++ do w64devkit, só com o que o simulador usa (para os programas .ino do Paçoca)
 
 Depois de montado:
@@ -348,9 +348,10 @@ def testa(wine):
     for v in ('PYTHONHOME', 'PYTHONPATH', 'PACOCA_GXX'):
         env.pop(v, None)
     env['PYTHONNOUSERSITE'] = '1'
-    r = roda_windows([py, '-c', 'import sys, pygame, pymunk, numpy, PIL; '
+    r = roda_windows([py, '-c', 'import sys, pygame, pymunk, numpy, PIL, cv2; '
                       'print(sys.version.split()[0], "pygame", pygame.version.ver, "pymunk", pymunk.version, '
-                      '"numpy", numpy.__version__, "pillow", PIL.__version__)'], wine, env=env)
+                      '"numpy", numpy.__version__, "pillow", PIL.__version__, "opencv", cv2.__version__)'],
+                     wine, env=env)
     if r.returncode != 0:
         falha('o Python portátil não importou as bibliotecas:\n' + r.stdout + r.stderr)
     msg('  python: ' + r.stdout.strip().splitlines()[-1])

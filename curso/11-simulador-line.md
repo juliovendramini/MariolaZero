@@ -60,6 +60,7 @@ python simulador.py --editor                               # abre no editor de m
 | R, T | raios dos VL53, trilha |
 | F1–F4, clique nos botões do painel | botões do teclado do brick (Voltar, Baixo, Cima, Enter) |
 | O | mostra/esconde a **tela e o teclado do brick** (canto de baixo à direita do mapa) |
+| C | mostra/esconde o que a **câmera de linha** viu por último (módulo 10.6) |
 
 O **painel** mostra: tempo, placar, eventos do juiz, os 4 canais IR, os 12 ITR8307 um a um, a cor
 de cada TCS, giroscópio, encoders, VL53, para-choque, e (no 4x4) servos, garra, caçamba e o que a
@@ -168,13 +169,16 @@ só obstáculo) e use-os como "testes unitários" do seu programa. O `curso_pist
 
 O arquivo do robô diz **onde está cada coisa**: medidas, motores e em que porta/ID, sensor de linha
 (posição dos ITR e TCS, altura), giroscópio (sentido, deriva), VL53 (canal, posição, ângulo,
-altura), para-choque, TCS horizontais, câmera, mecanismo de resgate. **Os valores que vieram são
+altura), para-choque, TCS horizontais, câmera, mecanismo de resgate. O `robo_4x4_camera.json` é o
+4x4 com a câmera de linha no lugar do sensor de linha (módulo 10.6). **Os valores que vieram são
 estimativas**: o módulo 17 mostra como medir o seu robô e ajustar o arquivo.
 
 ## 11.9 Limitações
 
 * Mundo 2,5D: o robô não capota; lombadas levantam, mas não fazem quicar.
-* A câmera não gera imagem (stub).
+* A câmera das vítimas não gera imagem (stub). A câmera de linha gera, mas simplificada: chão
+  sempre plano embaixo dela, sem reflexo, sem borrão, e o tempo do OpenCV no PC não conta (no
+  Banana Pi conta).
 * O BNO085 não existe no simulador (a tela OLED e o teclado existem: veja 11.3).
 * O barramento serial é "perfeito" (no real pode haver erro de comunicação).
 * O VL53 mede na hora em que o resultado é **lido**; no robô a medida é da hora em que foi
