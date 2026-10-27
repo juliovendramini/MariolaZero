@@ -166,6 +166,12 @@ mundo ou a cada 10 ms (detalhes no `pacoca/LEIAME.md`).
   `professor/mapas_teste/`) foi de 60 para 45 em 22/10: com 60, o PWM mínimo do firmware não movia o
   servo e o proporcional parava antes do alvo. A lib `placaControleServo.py` (22/10) é a mesma em
   `libs/`, nos `libs_mariola/` e nos exemplos 08, 10 e 12.
+* Mariola (`FirmwareMariola` em `sim/firmware.py`, igual ao da Maze menos o broadcast das placas de
+  servo): firmware de 26/10/2026 com buzzer (0xEC-0xEF, respostas de 3 bytes) e a regra nova do
+  Timer2 (servos, ventoinha e buzzer: o primeiro uso fica com ele até a rodada nova). A duração de
+  cada som vem de `sim/buzzer_mariola.py` (cópia da tabela do `buzzer.h`, a mesma na Maze); o som não
+  toca no PC. Detalhes no `CLAUDE.md` da Maze ("Cuidados com o firmware emulado"). `libs_mariola/
+  motores.py` = `libs/motores.py` de 26/10; `exemplos/13-buzzer/main.py` roda inteiro aqui (132,8 s).
 * Câmera das vítimas é **stub** (`visao`): devolve detecções (~90% de acerto), sem imagem. No Mariola
   a IA das vítimas roda a ~4 fps e o OpenCV dos triângulos a ~30 fps. O Julio pediu para deixar
   **exatamente como está**.

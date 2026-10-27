@@ -8,12 +8,20 @@ resposta, os tempos e os efeitos nos motores é este módulo, porque o firmware
 também age sem receber nada (PID a 40 Hz, parada por ângulo, timeouts).
 """
 
+import math
 import struct
+
+from . import buzzer_mariola as BZ
 
 TIMEOUT_MARIOLA = 5.0        # TIMEOUT 1250 com millis() 4x mais lento
 TIMEOUT_PLACA = 5.0          # TIMEOUT_COMUNICACAO
 WATCHDOG_PLACA = 12.0        # 10 s sem comunicação + watchdog de 2 s -> placa reinicia
 NUM_LEDS = 10                # LEDStrip numLeds
+
+# Timer2 do Mariola (firmware de 26/10/2026): servos, ventoinha e buzzer dividem o timer, e o primeiro
+# que for usado fica com ele até o brick reiniciar (aqui, até a rodada nova); os outros são ignorados
+TIMER2_LIVRE, TIMER2_SERVOS, TIMER2_VENTOINHA, TIMER2_BUZZER = 0, 1, 2, 3
+BUZZER_RECUSADO, BUZZER_OK, BUZZER_SOM_INVALIDO = 0, 1, 2
 
 
 def _s8(b):
@@ -33,6 +41,8 @@ def _xor(buf):
 
 
 class FirmwareMariola:
+    nivel_buzzer_eeprom = False      # endereço 32 da EEPROM: True = buzzer liga em HIGH (padrão: LOW)
+
     def __init__(self, mundo):
         self.w = mundo
         self.ultimo = 0.0
@@ -41,6 +51,12 @@ class FirmwareMariola:
         self.velocidades = [0, 0, 0, 0]
         self.leds_porta4 = None      # porta 4 como fita de LEDs (None = servo); não aparece na tela
         self.ventoinha = None        # PWM da ventoinha (0-255) depois do primeiro ATIVA_VENTOINHA
+        self.modo_timer2 = TIMER2_LIVRE
+        # buzzer (só o estado, o som não toca no PC): o que está tocando e até quando (tempo simulado)
+        self.buzzer_som = None       # número do som (1-23), 0 = tom avulso, None = em silêncio
+        self.buzzer_freq = 0         # Hz do tom avulso
+        self.buzzer_fim = -math.inf
+        self.buzzer_liga_high = FirmwareMariola.nivel_buzzer_eeprom   # EEPROM: vale para o brick todo
 
     def motor(self, canal):
         return self.w.por_mariola.get(canal)
@@ -66,7 +82,7 @@ class FirmwareMariola:
         if t < self.ocupado_ate:          # calibrando: não atende a serial
             return None
         cmd = f[0]
-        if cmd < 0xF0 or cmd > 0xFD:
+        if cmd < 0xEC or cmd > 0xFD:
             return None
         self.ultimo = t
         if self.desativado:
@@ -74,12 +90,18 @@ class FirmwareMariola:
             for m in self.w.por_mariola.values():
                 m.desligado = False
         if cmd == 0xFD:                                      # ENVIA_SERVOS
-            self.w.servos = {str(i): f[i] for i in range(1, 5)}
-            if f[4] <= 180:                                  # ângulo no servo 4: a porta volta a ser servo
-                self.leds_porta4 = None
-            if self.ventoinha is not None and min(f[1:5]) <= 180:
-                self.ventoinha = 0                           # o servo religa o Timer2 e o PWM do pino 11 para
+            servos = {}
+            for i in range(1, 5):
+                if f[i] <= 180 and self._reserva_timer2(TIMER2_SERVOS):
+                    servos[str(i)] = f[i]
+                    if i == 4:                               # ativaPorta4ComoServo
+                        self.leds_porta4 = None
+                else:
+                    servos[str(i)] = 200                     # detach
+            self.w.servos = servos
             return (b'\xFD', 0.0002)
+        if cmd in (0xEF, 0xEE, 0xED, 0xEC):
+            return (self._buzzer(cmd, f, t), 0.0003)
         if cmd in (0xFC, 0xF8):                              # ENVIA_MOTORES / 4X4 (PID)
             modo4x4 = cmd == 0xF8
             v = [_s8(f[1]), _s8(f[2]), _s8(f[3]), _s8(f[4])]
@@ -164,11 +186,69 @@ class FirmwareMariola:
             self.ocupado_ate = t + 26.0
             return (b'\xF3', 0.0002)
         if cmd == 0xF2:                                      # ATIVA_VENTOINHA
-            if self.ventoinha is None:                       # configuraTimer2PWMVentoinha: desliga os servos
+            if self.modo_timer2 == TIMER2_LIVRE:             # configuraTimer2PWMVentoinha: desliga os servos
+                self._reserva_timer2(TIMER2_VENTOINHA)
                 self.w.servos = {str(i): 200 for i in range(1, 5)}
-            self.ventoinha = f[1]                            # o timeout de 5 s não desliga a ventoinha
-            return (b'\xF2', 0.0002)
+                self.ventoinha = 0
+            if self.modo_timer2 == TIMER2_VENTOINHA:         # ignora se o Timer2 é dos servos ou do buzzer
+                self.ventoinha = f[1]                        # o timeout de 5 s não desliga a ventoinha
+            return (b'\xF2', 0.0002)                         # responde mesmo quando ignora
         return None
+
+    # ------------------------------------------------------------------ Timer2 e buzzer
+    def _reserva_timer2(self, modo):
+        if self.modo_timer2 == TIMER2_LIVRE:
+            self.modo_timer2 = modo
+        return self.modo_timer2 == modo
+
+    def _reserva_buzzer(self):
+        if self.modo_timer2 == TIMER2_LIVRE:                 # reservaBuzzer: desliga todos os servos
+            self._reserva_timer2(TIMER2_BUZZER)
+            self.w.servos = {str(i): 200 for i in range(1, 5)}
+        return self.modo_timer2 == TIMER2_BUZZER
+
+    def buzzer_tocando(self, t):
+        return t < self.buzzer_fim
+
+    def _para_buzzer(self):
+        self.buzzer_som = None
+        self.buzzer_fim = -math.inf
+
+    def _buzzer(self, cmd, f, t):
+        """TOCA_BUZZER, TOCA_SOM, CONSULTA_BUZZER e CONFIGURA_BUZZER. Resposta de 3 bytes:
+        [comando, status, modo do Timer2 já atualizado]."""
+        status = BUZZER_RECUSADO
+        if cmd == 0xEF:                                      # TOCA_BUZZER: frequência e duração
+            freq = (f[1] << 8) | f[2]
+            dur = (f[3] << 8) | f[4]
+            if freq == 0 or dur == 0:                        # parar não reserva o Timer2
+                if self.modo_timer2 == TIMER2_BUZZER:
+                    self._para_buzzer()
+                status = BUZZER_OK
+            elif self._reserva_buzzer():                     # um som novo substitui o que estiver tocando
+                self.buzzer_som, self.buzzer_freq = 0, min(20000, max(31, freq))
+                self.buzzer_fim = t + BZ.duracao_tom(dur)
+                status = BUZZER_OK
+        elif cmd == 0xEE:                                    # TOCA_SOM: número, repetições, velocidade
+            numero, repeticoes, velocidade = f[1], f[2], f[3]
+            if numero > BZ.QUANTIDADE_SONS:
+                status = BUZZER_SOM_INVALIDO
+            elif numero == 0:
+                if self.modo_timer2 == TIMER2_BUZZER:
+                    self._para_buzzer()
+                status = BUZZER_OK
+            elif self._reserva_buzzer():
+                self.buzzer_som = numero
+                self.buzzer_fim = t + BZ.duracao_som(numero, repeticoes, velocidade)
+                status = BUZZER_OK
+        elif cmd == 0xED:                                    # CONSULTA_BUZZER
+            status = 1 if self.buzzer_tocando(t) else 0
+        else:                                                # CONFIGURA_BUZZER: 0/1 grava, outro só consulta
+            if f[1] in (0, 1):
+                self.buzzer_liga_high = f[1] == 1
+                FirmwareMariola.nivel_buzzer_eeprom = self.buzzer_liga_high
+            status = 1 if self.buzzer_liga_high else 0
+        return bytes([cmd, status, self.modo_timer2])
 
     def passo(self, t):
         if not self.desativado and t - self.ultimo > TIMEOUT_MARIOLA:
@@ -181,6 +261,9 @@ class FirmwareMariola:
             self.w.leds = [(0, 0, 0)] * NUM_LEDS       # sem comando os LEDs também apagam
             if self.leds_porta4 is not None:
                 self.leds_porta4 = [(0, 0, 0)] * NUM_LEDS
+            self.w.servos = {str(i): 200 for i in range(1, 5)}   # detach (o Timer2 continua reservado)
+            if self.modo_timer2 == TIMER2_BUZZER:      # melodia repetindo não fica tocando sozinha
+                self._para_buzzer()
 
 
 class FirmwarePlaca:

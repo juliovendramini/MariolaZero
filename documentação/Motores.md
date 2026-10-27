@@ -238,16 +238,116 @@ porta volta a ser servo.
 
 ---
 
+## Servos, ventoinha e buzzer: um de cada vez (Timer2)
+
+Os servos comuns, a ventoinha e o buzzer usam o mesmo timer do ATmega (Timer2). Desde o firmware
+de 26/10/2026, **o primeiro que for usado fica com o Timer2 até o brick reiniciar** e o firmware
+ignora os comandos dos outros dois:
+
+| primeiro uso | conta como uso | depois disso |
+|---|---|---|
+| servos | um `ENVIA_SERVOS` com algum ângulo de 0 a 180 (servos desativados, > 180, não contam) | ventoinha e buzzer recusados |
+| ventoinha | o primeiro `set_ventoinha` | servos e buzzer recusados |
+| buzzer | o primeiro som ou tom (parar o buzzer e configurar o nível não contam) | servos e ventoinha recusados |
+
+- Ventoinha ou buzzer primeiro: o firmware desliga **todos os servos** e o serial de debug do
+  ATmega (o pino 11 é o TX do debug).
+- O `setup()` do firmware ainda liga os servos 1 a 4 ao ligar (pulso de centro), mas isso não conta
+  como uso: o Timer2 começa livre.
+- A lib acompanha o que ela mesma usou (`servos_ativos`, `ventoinha_ativa`, `buzzer_ativo`) e lança
+  exceção antes de mandar o comando. O estado de verdade fica no firmware (vale também para um
+  programa anterior que rodou desde o último reinício): as respostas do buzzer trazem o modo do
+  Timer2 e a lib avisa quem está com ele.
+
 ## Ventoinha
 
 ### `set_ventoinha(self, potencia)` · `desliga_ventoinha(self)`
 Liga a ventoinha na coluna **DEBUG/PWM** do header amarelo (a 6ª, pino 11 do ATmega) com potência
 de 0 a 100 (%). `desliga_ventoinha()` = `set_ventoinha(0)`.
 
-- O primeiro comando desliga **todos os servos** do Mariola e o serial de debug do ATmega (os servos
-  e o PWM da ventoinha usam o mesmo timer). Os servos só voltam depois de reiniciar o brick; com a
-  ventoinha ativa, `move_servo` lança exceção.
+- Segue a regra do Timer2 acima: lança exceção se os servos ou o buzzer já foram usados; depois do
+  primeiro `set_ventoinha`, `move_servo` e o buzzer lançam exceção.
 - O timeout de 5 s **não** desliga a ventoinha. A classe desliga no `__del__`.
+
+## Buzzer
+
+Buzzer na coluna **DEBUG/PWM** (pino 11 = PB3/OC2A do ATmega), gerado pelo Timer2 (firmware de
+26/10/2026). O firmware toca tudo sozinho, **sem travar**: a função volta na hora e os motores,
+o PID e a serial continuam funcionando enquanto o som toca. Segue a regra do Timer2 acima.
+
+### `toca_som(self, som, vezes=1, velocidade=100, esperar=False)`
+Toca um som pronto (constantes `SOM_*` e `MELODIA_*`, de 1 a 23).
+
+- `vezes`: quantas vezes toca (`0` = repete até `para_buzzer()`; com `0` não dá para usar `esperar`).
+- `velocidade`: % do andamento original, de 10 a 255 (`200` = duas vezes mais rápido, `50` = metade).
+- `esperar=True` só volta quando o som termina.
+
+### `toca_tom(self, frequencia, duracao_ms, esperar=False)`
+Toca um tom de 31 a 20000 Hz por até 65535 ms.
+
+### `para_buzzer(self)`
+Para o som. Pode chamar sempre: não reserva o Timer2.
+
+### `buzzer_tocando(self)` · `espera_buzzer(self, timeout=None)`
+`True` enquanto toca; `espera_buzzer` espera terminar (`timeout` em segundos; devolve `False` se
+estourou).
+
+### `set_nivel_buzzer(self, nivel)` · `nivel_buzzer(self)`
+Nível que liga o buzzer: `BUZZER_LIGA_LOW` (**padrão**, os buzzers do Julio) ou `BUZZER_LIGA_HIGH`.
+Fica salvo na EEPROM do ATmega (endereço 32), então basta configurar uma vez por brick. Em
+silêncio o pino fica no nível contrário. Não reserva o Timer2.
+
+- O timeout de 5 s sem comando para o buzzer (uma melodia com `vezes=0` não fica tocando sozinha).
+- Exemplo: `exemplos/13-buzzer/`.
+
+| nº | constante | som |
+|---|---|---|
+| 1 | `SOM_BIPE` | 1 bipe curto |
+| 2 | `SOM_BIPE_DUPLO` | 2 bipes rápidos |
+| 3 | `SOM_SUCESSO` | arpejo subindo (dó-mi-sol-dó) |
+| 4 | `SOM_ERRO` | dois tons graves descendo |
+| 5 | `SOM_ALERTA` | 3 bipes agudos rápidos |
+| 6 | `SOM_LIGANDO` | notas subindo |
+| 7 | `SOM_DESLIGANDO` | notas descendo |
+| 8 | `SOM_LARGADA` | 3 bipes médios e 1 longo agudo |
+| 9 | `SOM_RE` | bipe de caminhão de ré (1 ciclo: use `vezes`) |
+| 10 | `SOM_SIRENE_DOIS_TONS` | dois tons alternando |
+| 11 | `SOM_SIRENE` | varredura subindo e descendo |
+| 12 | `SOM_MOEDA` | dois tons agudos rápidos |
+| 13 | `SOM_POWER_UP` | varredura rápida subindo |
+| 14 | `SOM_LASER` | varredura rápida descendo |
+| 15 | `SOM_BATERIA_FRACA` | tons descendo devagar |
+| 16 | `SOM_ROBO` | bipes de tons aleatórios |
+| 17 | `MELODIA_ESCALA` | dó-ré-mi-fá-sol-lá-si-dó |
+| 18 | `MELODIA_PARABENS` | Parabéns pra você |
+| 19 | `MELODIA_BRILHA_ESTRELINHA` | Brilha, brilha estrelinha |
+| 20 | `MELODIA_ODE_ALEGRIA` | Ode à Alegria (Beethoven) |
+| 21 | `MELODIA_JINGLE_BELLS` | Jingle Bells |
+| 22 | `MELODIA_FUR_ELISE` | começo de Für Elise (Beethoven) |
+| 23 | `MELODIA_GRAN_VALS` | trecho do Gran Vals (Tárrega), o toque de celular |
+
+As notas, durações e varreduras de cada som estão na tabela `sonsBuzzer` do `buzzer.h` do firmware.
+As melodias separam um pouco cada nota (1/8 da duração, no máximo 40 ms) e fazem 250 ms de silêncio
+entre as repetições; os sons de sinalização não. As varreduras andam em passos de 10 ms.
+
+### Protocolo (para quem emula o firmware)
+
+Pacote de 10 bytes como os outros comandos (os bytes que sobram são ignorados). Todos respondem
+**3 bytes**: `[comando, status, modo do Timer2]`, com modo `0` livre, `1` servos, `2` ventoinha,
+`3` buzzer (o modo já atualizado por este comando).
+
+| comando | bytes enviados | status na resposta |
+|---|---|---|
+| `0xEF` TOCA_BUZZER (239) | frequência (Hz, 2 bytes, alto primeiro), duração (ms, 2 bytes, alto primeiro). Frequência ou duração 0 = parar | `1` ok, `0` Timer2 de outro |
+| `0xEE` TOCA_SOM (238) | número do som (1-23; 0 = parar), repetições depois da primeira (255 = para sempre), velocidade em % (0 = 100) | `1` ok, `0` Timer2 de outro, `2` som inválido (> 23) |
+| `0xED` CONSULTA_BUZZER (237) | nada | `1` tocando, `0` em silêncio |
+| `0xEC` CONFIGURA_BUZZER (236) | nível: `0` liga em LOW, `1` liga em HIGH, outro valor = só consulta | nível atual (`0`/`1`) |
+
+- Parar (`0xEF` com 0, `0xEE` com som 0) e `0xEC` **não** reservam o Timer2; parar com o Timer2 de
+  outro devolve status `1` e não muda nada.
+- Um som novo substitui o que estiver tocando.
+- O timeout de 5 s sem pacote para o buzzer (só se o Timer2 for do buzzer).
+- A frequência é limitada a 31-20000 Hz; o firmware ajusta para o que o Timer2 consegue gerar.
 
 ---
 

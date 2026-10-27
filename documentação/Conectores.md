@@ -13,7 +13,7 @@ está em [`Conectores.pdf`](Conectores.pdf) (fonte editável: `Conectores.odp`).
 | **MOTOR 3, MOTOR 4** | 2 | 2 fios | motores **sem encoder** |
 | **SERVOS 1–4** | 4 colunas | SINAL, 5V, GND | servos comuns. A coluna 4 também pode ser uma 2ª fita de LEDs (`set_led_rgb_*_porta4`) |
 | **LEDs** | 1 coluna | SINAL, 5V, GND | fita dos 10 LEDs RGB WS2812B do Mariola (`set_led_rgb_all/one`) |
-| **DEBUG/PWM** | 1 coluna | SINAL, 5V, GND | pino 11 do ATmega: TX do serial de debug do firmware (115200 bps) **ou** PWM da ventoinha (`set_ventoinha`) |
+| **DEBUG/PWM** | 1 coluna | SINAL, 5V, GND | pino 11 do ATmega: TX do serial de debug do firmware (115200 bps) **ou** PWM da ventoinha (`set_ventoinha`) **ou** buzzer (`toca_som`) |
 | **SERIAIS 1, 2, 3** | 3 | TX, RX, GND, 5V | placas e sensores seriais (conversores USB dentro do brick) |
 | **SERIAIS 4, 5, 6** | 3 | TX, RX, GND, 5V | placas e sensores seriais (UART do Banana Pi) |
 | **I2C1 … I2C8** | 8 | SDA, SCL, GND, 5V | sensores I2C, um por conector (multiplexador TCA9548A) |
@@ -37,10 +37,13 @@ para a direita:
 | SERVO 3 | 16 | servo |
 | SERVO 4 | 17 | servo **ou** 2ª fita de LEDs (o último comando decide) |
 | LEDs | 12 | fita de 10 LEDs RGB |
-| DEBUG/PWM | 11 | TX do debug do ATmega **ou** PWM da ventoinha |
+| DEBUG/PWM | 11 (PB3) | TX do debug do ATmega **ou** PWM da ventoinha **ou** buzzer |
 
-* Depois do primeiro `set_ventoinha`, a coluna DEBUG/PWM fica como PWM até o brick reiniciar, e os
-  servos comuns param de funcionar (usam o mesmo timer do ATmega). Detalhes em [Motores](Motores.md).
+* Servos comuns, ventoinha e buzzer usam o mesmo timer do ATmega: o primeiro que for usado fica com
+  ele até o brick reiniciar e os outros dois param de funcionar. Depois do primeiro `set_ventoinha`
+  ou do primeiro som do buzzer, a coluna DEBUG/PWM deixa de ser o debug. Detalhes em
+  [Motores](Motores.md).
+* O buzzer padrão liga com o pino em **LOW** (dá para trocar para HIGH; fica salvo na EEPROM).
 * Este DEBUG é o do **ATmega**. O terminal serial do **Banana Pi** (Linux) é outra porta, de 3 pinos,
   na lateral do brick ao lado da mini HDMI (GND no pino mais externo, 115200 bps).
 

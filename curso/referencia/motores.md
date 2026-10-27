@@ -239,11 +239,63 @@ Liga a ventoinha com potência de 0 a 100 (%). Ela vai na coluna **DEBUG/PWM** d
   bps): dá para ver as mensagens do firmware com um conversor USB-serial. Depois, vira PWM até o
   brick reiniciar.
 
-* **Cuidado 1:** com a ventoinha ligada, **os servos comuns do Mariola param de funcionar** até
-  o brick reiniciar (os dois usam o mesmo timer do ATmega). Depois de `set_ventoinha`,
-  `move_servo` dá erro. Os [servos inteligentes](placaControleServo.md) não são afetados.
+* **Cuidado 1:** servos comuns, ventoinha e buzzer usam o mesmo timer do ATmega: **o primeiro que
+  for usado fica com ele até o brick reiniciar** (veja "Um de cada vez", mais abaixo).
+  Depois de `set_ventoinha`, `move_servo` e o buzzer dão erro. Os
+  [servos inteligentes](placaControleServo.md) não são afetados.
 * **Cuidado 2:** o timeout de 5 s **não** desliga a ventoinha. A lib desliga quando o objeto
   `Motores` é destruído (fim normal do programa), mas se o programa travar ela continua girando.
+
+## Buzzer
+
+O buzzer vai na coluna **DEBUG/PWM** do header amarelo, a mesma da ventoinha (precisa do firmware
+do Mariola de 26/10/2026 ou mais novo). Quem toca é o ATmega: **a função volta na hora** e o robô
+continua andando, lendo sensores e mandando comandos enquanto o som toca.
+
+### `toca_som(som, vezes=1, velocidade=100, esperar=False)`
+Toca um som pronto.
+
+* `som`: uma das constantes da tabela abaixo, por exemplo `Motores.SOM_SUCESSO`.
+* `vezes`: quantas vezes toca. `0` repete até você chamar `para_buzzer()`.
+* `velocidade`: em %, de 10 a 255. `200` toca duas vezes mais rápido, `50` na metade.
+* `esperar=True`: só volta quando o som termina (útil para não emendar um som no outro).
+
+| sinalização | melodias |
+|---|---|
+| `SOM_BIPE`, `SOM_BIPE_DUPLO`, `SOM_SUCESSO`, `SOM_ERRO`, `SOM_ALERTA`, `SOM_LIGANDO`, `SOM_DESLIGANDO`, `SOM_LARGADA`, `SOM_RE`, `SOM_SIRENE_DOIS_TONS`, `SOM_SIRENE`, `SOM_MOEDA`, `SOM_POWER_UP`, `SOM_LASER`, `SOM_BATERIA_FRACA`, `SOM_ROBO` | `MELODIA_ESCALA`, `MELODIA_PARABENS`, `MELODIA_BRILHA_ESTRELINHA`, `MELODIA_ODE_ALEGRIA`, `MELODIA_JINGLE_BELLS`, `MELODIA_FUR_ELISE`, `MELODIA_GRAN_VALS` (o toque de celular) |
+
+### `toca_tom(frequencia, duracao_ms, esperar=False)`
+Toca uma nota qualquer: `frequencia` em Hz (31 a 20000) por `duracao_ms` milissegundos.
+
+### `para_buzzer()` · `buzzer_tocando()` · `espera_buzzer(timeout=None)`
+Para o som; diz se ainda está tocando; espera terminar (`timeout` em segundos).
+
+### `set_nivel_buzzer(nivel)` · `nivel_buzzer()`
+O buzzer padrão do Mariola apita com o pino em **LOW** (`Motores.BUZZER_LIGA_LOW`). Se o seu apita
+em HIGH, rode uma vez `motores.set_nivel_buzzer(Motores.BUZZER_LIGA_HIGH)`: fica salvo no brick.
+
+```python
+motores.toca_som(Motores.SOM_LARGADA, esperar=True)  # espera a largada terminar
+motores.toca_som(Motores.MELODIA_JINGLE_BELLS)       # toca enquanto o robô anda
+motores.velocidade_motores(50, 50)
+```
+
+* **Quando usar:** avisar que o robô terminou a calibração, que achou uma vítima, que viu a fita
+  prata; depurar sem olhar para a tela.
+* **Cuidado:** o timeout de 5 s sem comando para o buzzer. Exemplo completo em `exemplos/13-buzzer/`.
+
+## Um de cada vez: servos, ventoinha e buzzer
+
+Os servos comuns, a ventoinha e o buzzer dividem o mesmo timer do ATmega. O primeiro que o
+programa usar fica com ele **até o brick reiniciar**, e os outros dois dão erro:
+
+* servos: o primeiro `move_servo` (com ângulo de 0 a 180) que chega na placa;
+* ventoinha: o primeiro `set_ventoinha`;
+* buzzer: o primeiro `toca_som` ou `toca_tom` (`para_buzzer` e `set_nivel_buzzer` não contam).
+
+Vale também entre programas: se o programa anterior usou o buzzer, o seguinte não consegue usar
+servos até reiniciar o brick. Precisa de garra e de som no mesmo robô? Use os
+[servos inteligentes](placaControleServo.md), que não usam esse timer.
 
 ## Erros comuns
 
@@ -260,4 +312,6 @@ Liga a ventoinha com potência de 0 a 100 (%). Ela vai na coluna **DEBUG/PWM** d
 
 Emulado byte a byte (PID a 40 Hz, encoder ×2, timeout de 5 s, LEDs). Os motores e LEDs ligados em
 cada canal estão no `robo*.json` (`motores`, `leds`). A fita da porta 4 responde como no robô, mas
-não aparece na tela do simulador.
+não aparece na tela do simulador. O buzzer também responde como no robô: cada som dura o tempo
+certo (`buzzer_tocando()`, `espera_buzzer()` e `esperar=True` funcionam), vale a regra do Timer2
+(servos, ventoinha e buzzer, um de cada vez) e o timeout de 5 s, mas o som não toca no PC.

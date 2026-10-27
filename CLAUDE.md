@@ -116,8 +116,9 @@ Os simuladores emulam estes firmwares byte a byte. Na dúvida sobre um comportam
   placas de motor.
 * Conectores: `documentação/Conectores.pdf`/`.odp` (fonte, o Julio edita) e `documentação/Conectores.md`
   (texto). Header amarelo = 6 colunas (SINAL, 5V, GND): SERVOS 1–4 (pinos 14–17; o 4 pode ser a 2ª
-  fita de LEDs), LEDs (pino 12, os 10 RGB) e DEBUG/PWM (pino 11: TX do serialDebug do ATmega ou PWM
-  da ventoinha). REDE (RXN, RXP, TXN, TXP; virado 180° em relação ao USB) e AUDIO (GND, L_OUT,
+  fita de LEDs), LEDs (pino 12, os 10 RGB) e DEBUG/PWM (pino 11: TX do serialDebug do ATmega, PWM
+  da ventoinha ou buzzer). Servos comuns, ventoinha e buzzer dividem o Timer2: desde o firmware de
+  26/10/2026 o primeiro usado fica com ele até reiniciar (`documentação/Motores.md`). REDE (RXN, RXP, TXN, TXP; virado 180° em relação ao USB) e AUDIO (GND, L_OUT,
   L_IN, 5V) são do Banana Pi. A imagem do mapa no curso (`curso/imagens/conectores.jpg`) sai da
   página 1 do PDF.
 

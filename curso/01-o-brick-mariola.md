@@ -31,7 +31,7 @@ exemplo, se o Python travar, a plaquinha percebe que ficou **5 s sem ordens** e 
 | **MOTOR 3, MOTOR 4** | 2 | 2 fios | motores **sem encoder** |
 | **SERVOS 1–4** | 4 | SINAL, 5V, GND | servos comuns de hobby (o 4 também pode ser uma 2ª fita de LEDs: [`set_led_rgb_*_porta4`](referencia/motores.md)) |
 | **LEDs** | 1 | SINAL, 5V, GND | a fita dos **10 LEDs RGB** (WS2812B) do Mariola (`set_led_rgb_all/one`) |
-| **DEBUG/PWM** | 1 | SINAL, 5V, GND | do ATmega: o **TX do serial de debug** dele (115200 bps) ou o **PWM da ventoinha** (`set_ventoinha`) |
+| **DEBUG/PWM** | 1 | SINAL, 5V, GND | do ATmega: o **TX do serial de debug** dele (115200 bps), o **PWM da ventoinha** (`set_ventoinha`) ou o **buzzer** (`toca_som`) |
 | **SERIAIS 1, 2, 3** | 3 | TX, RX, GND, 5V | placas e sensores seriais (conversores USB dentro do brick) |
 | **SERIAIS 4, 5, 6** | 3 | TX, RX, GND, 5V | placas e sensores seriais (UART do Banana Pi) |
 | **I2C1 … I2C8** | 8 | SDA, SCL, GND, 5V | sensores I2C, um por conector (passam por um multiplexador) |
@@ -47,10 +47,11 @@ O arquivo `documentação/Conectores.pdf` tem a foto de cada conector com a pina
 
 **O header amarelo** tem 6 colunas de 3 pinos (de cima para baixo: SINAL, 5V, GND). Da esquerda
 para a direita: **SERVOS 1, 2, 3, 4**, **LEDs** e **DEBUG/PWM**. Os LEDs RGB do Mariola já vêm
-ligados na coluna LEDs. A DEBUG/PWM é uma coisa **ou** outra: enquanto a ventoinha não é ligada, é o
-debug do ATmega; depois do primeiro `set_ventoinha`, vira o PWM dela até o brick reiniciar (e os
-servos param: veja a [referência](referencia/motores.md)). Não confunda com a porta de debug do
-Banana Pi, que fica na lateral (abaixo).
+ligados na coluna LEDs. A DEBUG/PWM é uma coisa de cada vez: enquanto a ventoinha e o buzzer não
+são usados, é o debug do ATmega; depois do primeiro `set_ventoinha` (ou do primeiro som do buzzer),
+vira a ventoinha (ou o buzzer) até o brick reiniciar. Servos, ventoinha e buzzer dividem o mesmo
+timer: só o primeiro que for usado funciona (veja a [referência](referencia/motores.md)). Não
+confunda com a porta de debug do Banana Pi, que fica na lateral (abaixo).
 
 ### A lateral do brick
 
