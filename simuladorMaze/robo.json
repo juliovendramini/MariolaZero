@@ -66,7 +66,7 @@
   },
 
   "para_choque": {
-    "_comentario": "botões de contato na frente; pino = P1..P8 (Botoes/PinosDigitais). Apertado = nível BAIXO, como na lib Botoes.",
+    "_comentario": "botões de contato na frente; pino = P1..P8 (PinosDigitais). Apertado = nível BAIXO, como na lib PinosDigitais.",
     "esquerdo": {"pino": "P1", "y_min": 5, "y_max": 80},
     "direito":  {"pino": "P2", "y_min": -80, "y_max": -5},
     "curso_mm": 2.0

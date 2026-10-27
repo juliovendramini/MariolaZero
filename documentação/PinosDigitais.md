@@ -6,26 +6,36 @@ Classe para controlar 8 pinos digitais GPIO com configuração flexível de entr
 
 - **8 pinos digitais** (P1 a P8)
 - **Entrada ou Saída** configurável para cada pino
-- **Compatível** com a classe Botoes (métodos `le_botao` e `botao_pressionado`)
+- **Botões**: `le_botao` e `botao_pressionado` (a antiga classe `Botoes` foi juntada a esta)
 - **Métodos convenientes** para ligar, desligar e inverter pinos
+- **Instância única**: `PinosDigitais()` chamado de novo devolve o mesmo objeto (não reserva as
+  linhas duas vezes; a classe `Lidar` do exemplo 06 usa isso)
+- **Pino 8 com PWM**: se a linha do P8 já estiver em uso (ex.: o PWM da ventoinha na imagem do
+  @Work), ele fica indisponível (`PWM = True`) e os outros 7 continuam funcionando
 
 ## Pinos Disponíveis
 
-| Constante | GPIO | Descrição |
+Linhas do PIO principal do H618 (`300b000.pinctrl`). A lib acha o `gpiochip` sozinha
+(`acha_chip_gpio()`): ele era o `gpiochip0` no kernel 6.6 e é o
+`gpiochip1` no 6.18 (Bookworm) e na imagem Noble, onde o `gpiochip0` é o `7022000.pinctrl`
+(R_PIO, 32 linhas). Conferido num brick em 27/10/2026 (6.18.42).
+
+| Constante | Linha GPIO | Pino do H618 |
 |-----------|------|-----------|
-| P1 | 267 | Pino 1 |
-| P2 | 266 | Pino 2 |
-| P3 | 265 | Pino 3 |
-| P4 | 234 | Pino 4 |
-| P5 | 233 | Pino 5 (novo) |
-| P6 | 232 | Pino 6 (novo) |
-| P7 | 231 | Pino 7 (novo) |
-| P8 | 230 | Pino 8 (novo) |
+| P1 | 259 | PI3 |
+| P2 | 260 | PI4 |
+| P3 | 71 | PC7 |
+| P4 | 234 | PH10 |
+| P5 | 228 | PH4 |
+| P6 | 265 | PI9 |
+| P7 | 266 | PI10 |
+| P8 | 267 | PI11 |
 
 ## Valores Lógicos
 
 - `ALTO` / `LIBERADO`: Nível lógico alto (Value.ACTIVE)
 - `BAIXO` / `APERTADO`: Nível lógico baixo (Value.INACTIVE)
+- `SAIDA` / `ENTRADA`: direções (Direction.OUTPUT / Direction.INPUT)
 
 ## Uso Básico
 
@@ -61,7 +71,7 @@ if valor == pinos.ALTO:
 else:
     print("Pino em nível baixo")
 
-# Verificar se botão está pressionado (compatibilidade com Botoes)
+# Verificar se botão está pressionado
 if pinos.botao_pressionado(pinos.P1):
     print("Botão P1 pressionado!")
 ```
@@ -207,18 +217,16 @@ try:
     pinos.escreve_pino(pinos.P1, pinos.ALTO)  # P1 está como entrada!
 except ValueError as e:
     print(f"Erro: {e}")
-    # Erro: Pino 267 não está configurado como SAÍDA
+    # Erro: Pino 259 não está configurado como SAÍDA
 ```
 
-## Diferenças da Classe Botoes
+## A antiga classe Botoes
 
-| Característica | Botoes | PinosDigitais |
-|---------------|--------|---------------|
-| Quantidade de pinos | 4 | 8 |
-| Direção | Apenas entrada | Entrada **OU** saída |
-| Configuração | Fixa | Dinâmica |
-| Saída | ❌ Não | ✅ Sim |
-| Compatibilidade | Base | Compatível com Botoes |
+Até 27/10/2026 havia também a classe `Botoes` (`botoes.py`), só de entrada, nos mesmos pinos. As
+duas davam "Device or resource busy" juntas, e ela foi juntada a esta: `le_botao`,
+`botao_pressionado`, `LIBERADO`/`APERTADO` e `P1`-`P8` são os mesmos. Programa antigo: troque
+`from botoes import Botoes` por `from pinosDigitais import PinosDigitais` e `Botoes` por
+`PinosDigitais` (veja [`Botoes.md`](Botoes.md)).
 
 ## Notas Importantes
 
@@ -229,6 +237,5 @@ except ValueError as e:
 
 ## Ver Também
 
-- `botoes.py` - Classe original para 4 botões
-- Exemplos em `exemplos/05-pinosDigitais/`
+- Exemplos em `exemplos/05-pinosDigitais/` (e `04-vl53l0x/`, que lê os botões)
 - Documentação gpiod: https://libgpiod.readthedocs.io/

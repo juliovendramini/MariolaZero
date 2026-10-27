@@ -8,7 +8,7 @@ sem "ilhas". Simulador da Maze:
 import math
 import time
 
-from botoes import Botoes
+from pinosDigitais import PinosDigitais
 from giroscopio import Giroscopio
 from motores import Motores
 from placaControleMotor import PlacaControleMotor
@@ -30,7 +30,7 @@ giro = Giroscopio(Portas.SERIAL5)
 cor = CorReflexao(Portas.SERIAL6)
 cor.usa_cores(['branco', 'preto', 'prata', 'azul', 'vermelho'])
 vl = {'esquerda': VL53L0X(Portas.I2C1), 'direita': VL53L0X(Portas.I2C3), 'frente': VL53L0X(Portas.I2C5)}
-botoes = Botoes()
+botoes = PinosDigitais()
 direcao = 0.0          # direção desejada em graus do giroscópio (múltiplos de 90)
 
 
@@ -109,7 +109,7 @@ def espera(segundos):
 
 
 try:
-    while not botoes.botao_pressionado(Botoes.P3):
+    while not botoes.botao_pressionado(PinosDigitais.P3):
         anda(0, 0)
         time.sleep(0.05)
     giro.reseta_z()

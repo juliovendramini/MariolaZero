@@ -3,16 +3,21 @@
 **Objetivo:** começar a rodada pelo botão, perceber batidas pelo para-choque, medir tempo e montar
 um menu no próprio robô para escolher modos e calibrar sem computador.
 
-Referência: [`Botoes`](referencia/botoes.md), [`PinosDigitais`](referencia/pinosDigitais.md),
+Referência: [botões e chaves](referencia/botoes.md), [`PinosDigitais`](referencia/pinosDigitais.md),
 [`Teclado` e `Tela`](referencia/teclado-tela.md), [`Cronometro`](referencia/cronometro.md).
 Códigos: [`codigos/06_interface/`](codigos/06_interface/).
 
 ## 8.1 O botão de início
 
 A regra pede que o robô comece quando o time manda (um toque). Ligue um botão num pino digital
-(P3 no robô do curso) e espere:
+(P3 no robô do curso) e espere. Os botões são lidos pela classe `PinosDigitais` (até 27/10/2026
+havia uma classe `Botoes` separada; programa antigo: troque `Botoes` por `PinosDigitais`):
 
 ```python
+from pinosDigitais import PinosDigitais
+
+botoes = PinosDigitais()        # os 8 pinos como entrada
+
 def espera_botao(pino):
     """Espera apertar E soltar (o robô só sai quando o dedo já saiu do botão)."""
     while not botoes.botao_pressionado(pino):
@@ -140,14 +145,13 @@ precisam conversar.
 um buzzer:
 
 ```python
-from gpiod.line import Direction
-pinos = PinosDigitais()
-pinos.configura_pino(PinosDigitais.P5, Direction.OUTPUT)
+pinos = PinosDigitais()         # o mesmo objeto dos botões (é um só no programa)
+pinos.configura_pino(PinosDigitais.P5, PinosDigitais.SAIDA)
 pinos.liga_pino(PinosDigitais.P5)
 ```
 
-> `Botoes` e `PinosDigitais` querem os **mesmos** pinos: use **um ou outro** no programa.
-> `PinosDigitais` tem `botao_pressionado()` também.
+> Botões e saídas usam a **mesma** classe: chamar `PinosDigitais()` de novo devolve o mesmo objeto,
+> então dá para ler o botão no P3 e acender um LED no P5 no mesmo programa.
 
 ## Exercícios
 

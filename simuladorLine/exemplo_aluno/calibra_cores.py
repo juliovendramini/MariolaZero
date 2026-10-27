@@ -10,7 +10,7 @@ robô (com o programa parado entre as cores) ou use o Q/E para posicionar.
 
 import time
 
-from botoes import Botoes
+from pinosDigitais import PinosDigitais
 from portas import Portas
 from sensorCorReflexao import CorReflexao
 
@@ -18,16 +18,16 @@ CORES = [('branco', (1, 2, 3)), ('preto', (2,)), ('verde', (2,)), ('vermelho', (
 
 
 def espera_botao(b):
-    while not b.botao_pressionado(Botoes.P3):
+    while not b.botao_pressionado(PinosDigitais.P3):
         time.sleep(0.02)
-    while b.botao_pressionado(Botoes.P3):
+    while b.botao_pressionado(PinosDigitais.P3):
         time.sleep(0.02)
 
 
 def main():
     cor = CorReflexao(Portas.SERIAL6, arquivo_cores='cores_line.json')
     cor.usa_cores([n for n, _ in CORES])
-    b = Botoes()
+    b = PinosDigitais()
     for nome, sensores in CORES:
         onde = 'os três sensores de cor' if len(sensores) == 3 else 'o sensor de cor do MEIO'
         print(f'Coloque {onde} sobre o {nome.upper()} e aperte o botão')

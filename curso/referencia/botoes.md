@@ -1,6 +1,13 @@
-# `Botoes` — botões e chaves nos pinos digitais
+# Botões e chaves nos pinos digitais (com `PinosDigitais`)
 
-Arquivo: `libs/botoes.py` · `from botoes import Botoes`
+Arquivo: `libs/pinosDigitais.py` · `from pinosDigitais import PinosDigitais`
+
+> **Mudou em 27/10/2026:** a classe `Botoes` (`botoes.py`) foi juntada ao
+> [`PinosDigitais`](pinosDigitais.md). As duas usavam os mesmos 8 pinos e davam erro ("Device or
+> resource busy") quando estavam no mesmo programa. Programa antigo? Troque
+> `from botoes import Botoes` por `from pinosDigitais import PinosDigitais` e `Botoes` por
+> `PinosDigitais` no resto do código (`Botoes.P3` → `PinosDigitais.P3`, `Botoes()` →
+> `PinosDigitais()`). Os métodos são os mesmos.
 
 ## Para que serve
 
@@ -13,7 +20,8 @@ PINO; aceitam 5 V e têm proteção). Usos:
 
 ## Como funciona
 
-Os pinos são linhas GPIO do Banana Pi (`/dev/gpiochip0`), lidas pela biblioteca `gpiod`. Os
+Os pinos são linhas GPIO do Banana Pi, lidas pela biblioteca `gpiod`. A lib acha sozinha o
+`gpiochip` certo (no kernel do brick é o `/dev/gpiochip1`; em kernels antigos era o `gpiochip0`). Os
 pinos têm *pull-up*: **solto = nível alto, apertado (ligado ao GND) = nível baixo**. Por isso as
 constantes parecem "ao contrário": `LIBERADO = ACTIVE` e `APERTADO = INACTIVE`.
 
@@ -23,38 +31,39 @@ Ligue o botão entre o PINO e o GND do mesmo conector.
 
 | Constante | Significado |
 |---|---|
-| `Botoes.P1` … `Botoes.P8` | os 8 pinos (números das linhas GPIO; use sempre o nome) |
-| `Botoes.APERTADO`, `Botoes.LIBERADO` | o que `le_botao` devolve |
+| `PinosDigitais.P1` … `PinosDigitais.P8` | os 8 pinos (números das linhas GPIO; use sempre o nome) |
+| `PinosDigitais.APERTADO`, `PinosDigitais.LIBERADO` | o que `le_botao` devolve |
 
 ## Métodos
 
-### `Botoes()`
-Reserva os 8 pinos como entrada.
+### `PinosDigitais()`
+Reserva os 8 pinos, todos como **entrada**: prontos para botões, sem configurar nada.
 
-* **Cuidado:** só pode haver **um** dono de cada pino. Não crie dois `Botoes()`, nem `Botoes()` e
-  `PinosDigitais()` no mesmo programa (o segundo dá erro "Device or resource busy"). A classe
-  `Lidar` cria um `PinosDigitais` por dentro quando recebe `pino_liga`. Se precisar de entradas
-  **e** saídas, use só [`PinosDigitais`](pinosDigitais.md), que tem os mesmos métodos.
+* Chamar `PinosDigitais()` de novo no mesmo programa devolve **o mesmo objeto**. Por isso o seu
+  programa e a classe `Lidar` (que usa um pino para ligar o motor do lidar) podem usar os pinos
+  juntos. Para usar alguns pinos como **saída** (LED, relé), veja
+  [`PinosDigitais`](pinosDigitais.md).
 
 ### `botao_pressionado(pino)` → `True`/`False`
 **O método do dia a dia.**
 
 ```python
-if botoes.botao_pressionado(Botoes.P1):
+botoes = PinosDigitais()
+if botoes.botao_pressionado(PinosDigitais.P1):
     print('bateu do lado esquerdo')
 ```
 
-### `le_botao(pino)` → `Botoes.APERTADO` ou `Botoes.LIBERADO`
-O mesmo, devolvendo o nível. `ValueError` para pino inválido.
+### `le_botao(pino)` → `PinosDigitais.APERTADO` ou `PinosDigitais.LIBERADO`
+O mesmo, devolvendo o nível. `ValueError` para pino inválido ou configurado como saída.
 
 ## Receitas
 
 **Esperar o botão de início (apertar e soltar):**
 ```python
-while not botoes.botao_pressionado(Botoes.P3):
+while not botoes.botao_pressionado(PinosDigitais.P3):
     motores.estado()          # mantém o Mariola acordado (timeout de 5 s)
     time.sleep(0.05)
-while botoes.botao_pressionado(Botoes.P3):
+while botoes.botao_pressionado(PinosDigitais.P3):
     time.sleep(0.02)
 ```
 Esperar soltar evita que o robô saia com a mão do juiz ainda em cima dele.

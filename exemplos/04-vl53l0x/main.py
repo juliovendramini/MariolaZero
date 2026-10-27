@@ -5,11 +5,11 @@ from time import sleep
 from portas import Portas
 from vl53 import VL53L0X
 from tcs34725 import TCS34725
-from botoes import Botoes
+from pinosDigitais import PinosDigitais
 
 sensor1 = VL53L0X(Portas.I2C1)
 # sensor1_cor = TCS34725(Portas.I2C1)
-botoes = Botoes()   
+botoes = PinosDigitais()   
 
 try:   
     while(True):

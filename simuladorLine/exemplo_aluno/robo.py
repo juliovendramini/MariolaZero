@@ -12,7 +12,7 @@ Canal 0 / TCS1 = lado esquerdo do robô.
 import math
 import time
 
-from botoes import Botoes
+from pinosDigitais import PinosDigitais
 from giroscopio import Giroscopio
 from motores import Motores
 from placaControleMotor import PlacaControleMotor
@@ -55,9 +55,9 @@ PORTA_FECHADA, PORTA_SOLTA_ESQ, PORTA_SOLTA_DIR = 512, 330, 700
 VL53_CANAIS = {'frente': Portas.I2C5, 'esquerda': Portas.I2C1, 'direita': Portas.I2C3, 'garra': Portas.I2C2}
 TCS_CANAIS = {'frente': Portas.I2C6, 'tras': Portas.I2C7}
 
-BOTAO_INICIO = Botoes.P3
-PARA_CHOQUE_ESQ = Botoes.P1
-PARA_CHOQUE_DIR = Botoes.P2
+BOTAO_INICIO = PinosDigitais.P3
+PARA_CHOQUE_ESQ = PinosDigitais.P1
+PARA_CHOQUE_DIR = PinosDigitais.P2
 
 
 class Robo:
@@ -91,7 +91,7 @@ class Robo:
         except Exception as e:   # robô da câmera de linha: não tem o sensor de linha
             print('Sensor de linha não encontrado:', e)
             self.cor = None
-        self.botoes = Botoes()
+        self.botoes = PinosDigitais()
         self.vl = {}             # nome -> [sensor, última distância, momento do pedido]
         for nome, canal in VL53_CANAIS.items():
             try:

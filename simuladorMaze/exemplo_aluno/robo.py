@@ -1,7 +1,7 @@
 """Camada de hardware do robô da Maze usando as bibliotecas do Mariola.
 
 Este arquivo roda igual no robô real e no simulador: as libs (motores.py,
-placaControleMotor.py, giroscopio.py, vl53.py, sensorCorReflexao.py, botoes.py)
+placaControleMotor.py, giroscopio.py, vl53.py, sensorCorReflexao.py, pinosDigitais.py)
 são as mesmas. Só deteccaoVitimas.py e dispensadorKits.py precisam da versão
 do robô real (ver pasta robo_real/ do simulador).
 """
@@ -9,7 +9,7 @@ do robô real (ver pasta robo_real/ do simulador).
 import math
 import time
 
-from botoes import Botoes
+from pinosDigitais import PinosDigitais
 from deteccaoVitimas import DeteccaoVitimas
 from dispensadorKits import DispensadorKits
 from giroscopio import Giroscopio
@@ -38,9 +38,9 @@ FOLGA_FRENTE = 45.0           # mm entre a frente do robô e a parede com o rob�
 LATERAL_CENTRO = 55.0         # mm do VL53 lateral até a parede com o robô centralizado
 DIST_SENSORES_LATERAIS = 140.0
 
-BOTAO_INICIO = Botoes.P3
-PARA_CHOQUE_ESQ = Botoes.P1
-PARA_CHOQUE_DIR = Botoes.P2
+BOTAO_INICIO = PinosDigitais.P3
+PARA_CHOQUE_ESQ = PinosDigitais.P1
+PARA_CHOQUE_DIR = PinosDigitais.P2
 
 
 class Robo:
@@ -67,7 +67,7 @@ class Robo:
             'frente': VL53L0X(Portas.I2C5),
             'tras': VL53L0X(Portas.I2C6),      # traseiro, mesma altura do da frente
         }
-        self.botoes = Botoes()
+        self.botoes = PinosDigitais()
         self.camera = DeteccaoVitimas()
         self.kits = DispensadorKits()
         self.dist = {k: 8190 for k in self.vl}

@@ -10,7 +10,7 @@ Este diretório contém a documentação completa de todas as classes disponíve
 ## 📚 Índice das Classes
 
 ### 🔧 Controle e I/O
-- **[Botoes](Botoes.md)** - Interface para leitura de botões GPIO
+- **[Botoes](Botoes.md)** - (juntada ao PinosDigitais em 27/10/2026: como trocar nos programas antigos)
 - **[Teclado](Teclado.md)** - Controle de botões e LEDs via PCF8574A I2C
 - **[Portas](Portas.md)** - Gerenciamento de portas seriais USB e fixas
 

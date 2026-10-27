@@ -6,7 +6,7 @@ As referências vão para cores_piso.json, que o robô carrega (CorReflexao(arqu
 
 import time
 
-from botoes import Botoes
+from pinosDigitais import PinosDigitais
 from portas import Portas
 from sensorCorReflexao import CorReflexao
 
@@ -14,16 +14,16 @@ CORES = ['branco', 'preto', 'prata', 'azul', 'vermelho']
 
 
 def espera_botao(b):
-    while not b.botao_pressionado(Botoes.P3):
+    while not b.botao_pressionado(PinosDigitais.P3):
         time.sleep(0.02)
-    while b.botao_pressionado(Botoes.P3):
+    while b.botao_pressionado(PinosDigitais.P3):
         time.sleep(0.02)
 
 
 def main():
     cor = CorReflexao(Portas.SERIAL6, arquivo_cores='cores_piso.json')
     cor.usa_cores(CORES)
-    b = Botoes()
+    b = PinosDigitais()
     for nome in CORES:
         print(f'Coloque o robô sobre o {nome.upper()} e aperte o botão')
         espera_botao(b)

@@ -6,17 +6,17 @@ No simulador o botão de início (P3) é apertado sozinho 1,5 s depois do progra
 """
 import time
 
-from botoes import Botoes
+from pinosDigitais import PinosDigitais
 from cronometro import Cronometro
 from motores import Motores
 from placaControleMotor import PlacaControleMotor
 from portas import Portas
 
-BOTAO_INICIO = Botoes.P3
-PARA_CHOQUE_ESQ = Botoes.P1
-PARA_CHOQUE_DIR = Botoes.P2
+BOTAO_INICIO = PinosDigitais.P3
+PARA_CHOQUE_ESQ = PinosDigitais.P1
+PARA_CHOQUE_DIR = PinosDigitais.P2
 
-botoes = Botoes()
+botoes = PinosDigitais()
 motores = Motores(False)
 motores.direcao_motor(2, Motores.INVERTIDO)
 barramento = Portas().abre_porta_serial(Portas.SERIAL1, 250000, timeout=0.005)

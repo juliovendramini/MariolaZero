@@ -72,9 +72,19 @@ class LineSettings:
         self.output_value = output_value
 
 
+class ChipInfo:
+    def __init__(self, name, label, num_lines):
+        self.name, self.label, self.num_lines = name, label, num_lines
+
+
 class Chip:
     def __init__(self, path):
         self.path = path
+
+    def get_info(self):
+        """Qualquer chip responde como o PIO principal do H618, onde ficam os pinos P1-P8: as libs
+        (pinosDigitais.py) procuram o gpiochip por esse rótulo."""
+        return ChipInfo(str(self.path).rsplit('/', 1)[-1], '300b000.pinctrl', 288)
 
     def close(self):
         pass

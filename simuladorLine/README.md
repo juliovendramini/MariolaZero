@@ -6,7 +6,7 @@ robô real.
 
 Como no simulador da Maze, o programa do aluno importa as bibliotecas reais do Mariola
 (`motores.py`, `placaControleMotor.py`, `giroscopio.py`, `vl53.py`, `sensorCorReflexao.py`,
-`botoes.py`, ...) e elas rodam **sem nenhuma alteração**. O simulador troca só a camada de baixo
+`pinosDigitais.py`, ...) e elas rodam **sem nenhuma alteração**. O simulador troca só a camada de baixo
 (serial, I2C, GPIO e relógio) e emula o firmware de cada placa byte a byte.
 
 Também roda robôs com o **brick Paçoca** (ATmega328PB, programa em Arduino/C++): o `.ino` da equipe

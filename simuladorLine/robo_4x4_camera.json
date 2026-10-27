@@ -183,7 +183,7 @@
   "offset_mm": 0
  },
  "para_choque": {
-  "_comentario": "botões de contato na frente; pino = P1..P8. Apertado = nível BAIXO, como na lib Botoes.",
+  "_comentario": "botões de contato na frente; pino = P1..P8. Apertado = nível BAIXO, como na lib PinosDigitais.",
   "esquerdo": {
    "pino": "P1",
    "y_min": 5,

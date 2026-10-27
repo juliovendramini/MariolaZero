@@ -5,7 +5,8 @@ Arquivo: `libs/pinosDigitais.py` · `from pinosDigitais import PinosDigitais` ·
 
 ## Para que serve
 
-A mesma coisa que [`Botoes`](botoes.md), mas cada pino pode ser **entrada ou saída**:
+Os 8 pinos digitais, cada um como **entrada ou saída** (para botões, veja também
+[botões e chaves](botoes.md); a antiga classe `Botoes` foi juntada a esta em 27/10/2026):
 
 * **saída:** ligar um LED de sinalização, um relé (ex.: o motor do lidar), um buzzer, um
   transistor que liga um eletroímã;
@@ -16,18 +17,24 @@ Os pinos aceitam 5 V e têm proteção (veja o módulo 1).
 
 ## Constantes
 
-`P1`…`P8` (pinos), `ALTO`/`BAIXO` (níveis), `LIBERADO`/`APERTADO` (compatíveis com `Botoes`).
+`P1`…`P8` (pinos), `ALTO`/`BAIXO` (níveis), `LIBERADO`/`APERTADO` (botões: o que `le_botao` devolve),
+`SAIDA`/`ENTRADA` (direções: o mesmo que `Direction.OUTPUT`/`Direction.INPUT`).
 
 ## Métodos
 
 ### `PinosDigitais()`
-Reserva os 8 pinos, todos como **entrada**. Não use junto com `Botoes()` (os dois querem os mesmos
-pinos).
+Reserva os 8 pinos, todos como **entrada**.
+
+* Chamar `PinosDigitais()` de novo no mesmo programa devolve **o mesmo objeto** (não reserva os
+  pinos duas vezes). Por isso a classe `Lidar` e o seu programa podem usar `PinosDigitais` juntos.
+* Se o pino 8 já estiver em uso por outro programa do sistema (ex.: o PWM da ventoinha na imagem
+  do @Work), ele fica indisponível: `pinos.PWM` vira `True` e usar o `P8` dá `ValueError`.
+* A lib acha sozinha o `gpiochip` dos pinos (no kernel do brick é o `/dev/gpiochip1`).
 
 ### `configura_pino(pino, direcao)`
-`Direction.OUTPUT` ou `Direction.INPUT`.
+`PinosDigitais.SAIDA` ou `PinosDigitais.ENTRADA` (ou `Direction.OUTPUT`/`Direction.INPUT`).
 ```python
-pinos.configura_pino(PinosDigitais.P5, Direction.OUTPUT)
+pinos.configura_pino(PinosDigitais.P5, PinosDigitais.SAIDA)
 ```
 
 ### Entrada

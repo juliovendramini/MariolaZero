@@ -110,6 +110,20 @@ Os simuladores emulam estes firmwares byte a byte. Na dúvida sobre um comportam
   1º ao 12º), 3 TCS34725 a 2 cm um do outro, fileiras IR e TCS separadas por 9 mm, 3 LEDs brancos.
   IR: 0 = preto, ~100 = branco calibrado, **fita prata ~80 (abaixo do branco)**. TCS calibrado no
   branco e enviado pela metade (branco ≈ 127, prata passa de 127). A equipe usa o sensor a 12 mm do chão.
+* Pinos digitais P1-P8 (`PinosDigitais`): linhas 259, 260, 71, 234, 228, 265, 266, 267 do
+  PIO principal do H618 (`300b000.pinctrl`). No kernel 6.18 (conferido num brick em 27/10/2026) ele é
+  o `gpiochip1`; o `gpiochip0` é o R_PIO, de 32 linhas (no 6.6 era o contrário). Desde 27/10 a lib
+  acha o chip pelo rótulo (`acha_chip_gpio()`); antes estava fixa no `gpiochip0` e não funcionava no
+  6.18. `libs/pinosDigitais.py` = a versão do `exemplos/06-lidar` (singleton, `SAIDA`/`ENTRADA`, P8
+  indisponível se a linha estiver em uso pelo PWM), copiada em `exemplos/04`, `05`, `06` e nos
+  `libs_mariola`. **A classe `Botoes` (`botoes.py`) foi juntada ao `PinosDigitais` em 27/10** (as duas
+  disputavam os pinos): `botoes.py` apagado de `libs/`, `exemplos/04` e `libs_mariola`, e os
+  programas (exemplos dos simuladores, `curso/codigos`, gabarito m08/m16, exemplo 04) trocados para
+  `PinosDigitais`, que tem `le_botao`/`botao_pressionado`/`LIBERADO`/`APERTADO`. Programa de aluno
+  com `from botoes import Botoes` quebra de propósito (a referência `curso/referencia/botoes.md`
+  explica a troca). O `menuPrincipal/botoes.py` (antigo, pinos em outra ordem, `gpiochip0`, não
+  usado pelo menu) também saiu, e o `cronometro.py` do menu ficou igual ao de `libs/` (só mudava a
+  formatação). O `gpiod` falso dos simuladores responde `get_info()` como o PIO principal.
 * Giroscópio do Mariola: Z em graus, acumulando, positivo no sentido horário. O curso usa
   `z()` positivo = esquerda e troca o sinal numa função só.
 * Servos inteligentes do Julio (lib `placaControleServo`) no mesmo barramento serial (SERIAL1) das

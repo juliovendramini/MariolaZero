@@ -25,8 +25,8 @@ lidar = Lidar(Portas.SERIAL6, pino_liga=PinosDigitais.P7)
 frente = lidar.pontos(340, 20)
 ```
 
-* Com `pino_liga`, a classe cria um `PinosDigitais` por dentro: não crie `Botoes()` no mesmo
-  programa (use `PinosDigitais` para tudo).
+* Com `pino_liga`, a classe usa o `PinosDigitais` por dentro. O seu programa pode criar
+  `PinosDigitais()` também (é o mesmo objeto) para ler os botões.
 * Não é emulado no simulador.
 
 ---

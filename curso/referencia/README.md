@@ -18,8 +18,8 @@ mesmas bibliotecas sendo usadas passo a passo.
 | `tcs34725.py` — `TCS34725` | [tcs34725](tcs34725.md) | I2C |
 | `bno085.py` — `BNO085` | [bno085](bno085.md) | I2C |
 | `placaMuxVl53l0x.py`, `placaMuxTCS34725.py` | [placasMux](placasMux.md) | SERIAL |
-| `botoes.py` — `Botoes` | [botoes](botoes.md) | PINOS DIGITAIS |
-| `pinosDigitais.py` — `PinosDigitais` | [pinosDigitais](pinosDigitais.md) | PINOS DIGITAIS |
+| `pinosDigitais.py` — `PinosDigitais` (botões) | [botoes](botoes.md) | PINOS DIGITAIS |
+| `pinosDigitais.py` — `PinosDigitais` (entrada e saída) | [pinosDigitais](pinosDigitais.md) | PINOS DIGITAIS |
 | `teclado.py`, `tela.py` | [teclado-tela](teclado-tela.md) | TECLADO, TELA |
 | `cronometro.py` — `Cronometro` | [cronometro](cronometro.md) | — |
 | Lidar, controle Bluetooth, câmera | [extras](extras.md) | SERIAL, USB |
@@ -36,11 +36,11 @@ mesmas bibliotecas sendo usadas passo a passo.
 | seguir a linha | `CorReflexao.le_reflexao()` |
 | ver o verde / o vermelho / o prata no chão | `CorReflexao.cores()` (+ confirmar no `le_rgbc`) |
 | saber a cor do piso na Maze | `CorReflexao.cor_piso()` |
-| ver obstáculo / parede | `VL53L0X` (frente, lados), `Botoes` (para-choque) |
+| ver obstáculo / parede | `VL53L0X` (frente, lados), `PinosDigitais` (para-choque) |
 | ver a cor de uma parede / triângulo | `TCS34725` horizontal |
 | mover a garra e saber se chegou | `PlacaControleServo.move_servo` + `consulta_posicao` |
 | achar as vítimas | `visao.Visao().vitimas()` (Line), `DeteccaoVitimas` (Maze) |
-| esperar o botão de início | `Botoes.botao_pressionado(Botoes.P3)` |
+| esperar o botão de início | `PinosDigitais().botao_pressionado(PinosDigitais.P3)` |
 | mostrar algo no robô | LEDs (`Motores.set_led_rgb_*`), `Tela`, LEDs do `Teclado` |
 | escolher um modo sem computador | `Teclado` + `Tela` |
 | medir tempo / lembrar o tempo após reiniciar | `Cronometro` (com arquivo) |

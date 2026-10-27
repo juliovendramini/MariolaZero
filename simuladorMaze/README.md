@@ -5,7 +5,7 @@ Rescue Maze (regra 2026) com o **mesmo código** que vai para o robô real.
 
 O ponto principal: o programa do aluno importa as bibliotecas reais do Mariola
 (`motores.py`, `placaControleMotor.py`, `giroscopio.py`, `vl53.py`, `sensorCorReflexao.py`,
-`botoes.py`, ...) e elas rodam **sem nenhuma alteração**. O simulador troca só a camada de
+`pinosDigitais.py`, ...) e elas rodam **sem nenhuma alteração**. O simulador troca só a camada de
 baixo (porta serial, I2C, GPIO e relógio) e emula o firmware de cada placa byte a byte.
 
 ![tela](docs/tela.png)
@@ -205,7 +205,7 @@ iluminação. Para usar um pino como LED de vítima, troque para `"led_vitima": 
 * **VL53L0X**: feixe em cone de 25° (a borda do cone só enxerga perto), ruído, 8190 fora do
   alcance, medida leva `tempo_medida_ms`. A lib `vl53.py` faz toda a inicialização de registradores normalmente.
 * **Para-choque**: dois botões na frente (P1 esquerdo, P2 direito); apertado = nível BAIXO, como
-  em `Botoes`. Empurrar a parede com os dois apertados alinha o robô.
+  em `PinosDigitais`. Empurrar a parede com os dois apertados alinha o robô.
 * **Terreno**: lombadas (1 cm; 2 cm na zona de perigo), escadas (degraus de 1 cm, menos atrito,
   inclinação no giroscópio, mais íngreme na zona) e detritos soltos que se mexem quando a roda passa.
 

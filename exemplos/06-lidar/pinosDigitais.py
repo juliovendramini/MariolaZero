@@ -1,13 +1,42 @@
+import glob
+
 import gpiod
 from gpiod.line import Direction, Value
 # 2026-08-15 - Pino 8 é detectado automaticamente: se a linha já estiver em uso (ex.: driver pwm da ventoinha), o pino 8 fica indisponível para uso digital.
+# 2026-10-27 - O gpiochip é escolhido sozinho (acha_chip_gpio): os 8 pinos ficam no PIO principal do
+#              H618 (300b000.pinctrl), que era o gpiochip0 no kernel 6.6 e é o gpiochip1 no 6.18
+#              (Bookworm) e na imagem Noble. Esta versão (a do exemplo 06-lidar) passou a ser a de libs/.
+# 2026-10-27 - A classe Botoes (botoes.py) foi juntada a esta: as duas queriam os mesmos 8 pinos e davam
+#              "Device or resource busy" quando usadas juntas. Programa antigo: troque
+#              "from botoes import Botoes" por "from pinosDigitais import PinosDigitais" e Botoes por
+#              PinosDigitais (P1-P8, LIBERADO/APERTADO, le_botao e botao_pressionado são os mesmos).
+
+ROTULO_PIO_PRINCIPAL = '300b000.pinctrl'  # o outro chip, 7022000.pinctrl (R_PIO), só tem 32 linhas
+
+
+def acha_chip_gpio():
+    """Caminho do gpiochip onde estão os pinos P1-P8 (o PIO principal do H618)."""
+    candidatos = sorted(glob.glob('/dev/gpiochip*')) or ['/dev/gpiochip0', '/dev/gpiochip1']
+    maior = None
+    for caminho in candidatos:
+        try:
+            with gpiod.Chip(caminho) as chip:
+                info = chip.get_info()
+        except Exception:
+            continue
+        if ROTULO_PIO_PRINCIPAL in info.label:
+            return caminho
+        if maior is None or info.num_lines > maior[1]:
+            maior = (caminho, info.num_lines)
+    if maior is not None and maior[1] > PinosDigitais.P1:   # sem o rótulo: o chip que tem a linha 259
+        return maior[0]
+    raise RuntimeError('Não achei o gpiochip dos pinos digitais (' + ROTULO_PIO_PRINCIPAL + ')')
 
 class PinosDigitais:
     """
-    Classe para controlar 8 pinos digitais (GPIO) com configuração de entrada/saída.
-    
-    Baseada na classe Botoes, mas expandida para:
-    - 8 pinos em vez de 4
+    Classe para controlar os 8 pinos digitais (GPIO) com configuração de entrada/saída.
+    Também é a classe dos botões (botão de início, para-choque): começa com os 8 pinos como entrada
+    e tem le_botao() e botao_pressionado() (era a antiga classe Botoes).
     - Suporte a entrada E saída
     - Configuração individual de direção para cada pino
     """
@@ -25,7 +54,7 @@ class PinosDigitais:
     ALTO = Value.ACTIVE
     BAIXO = Value.INACTIVE
     
-    # Aliases para compatibilidade com Botoes
+    # Botões (pull-up): solto = nível alto, apertado (ligado ao GND) = nível baixo
     LIBERADO = Value.ACTIVE
     APERTADO = Value.INACTIVE
 
@@ -65,7 +94,8 @@ class PinosDigitais:
         if self._inicializado:  # já inicializado (singleton) — ignora novas chamadas
             return
         self._inicializado = True
-        chip_name = '/dev/gpiochip1'
+        chip_name = acha_chip_gpio()
+        self.chip_name = chip_name
         self.chip = gpiod.Chip(chip_name)
         
         # Inicializar todos os pinos como entrada
@@ -189,9 +219,9 @@ class PinosDigitais:
             pinos.configura_pino(pinos.P5, Direction.OUTPUT)
         """
         self._validar_pino(pin)
-        
-        chip_name = '/dev/gpiochip1'
-        
+
+        chip_name = self.chip_name
+
         # Liberar o pino atual
         pino_obj = self._get_pino_obj(pin)
         if pino_obj:
@@ -299,19 +329,17 @@ class PinosDigitais:
         novo_valor = self.BAIXO if valor_atual == self.ALTO else self.ALTO
         pino_obj.set_value(pin, novo_valor)
 
-    # ========== Métodos compatíveis com a classe Botoes ==========
-    
+    # ========== Botões (os métodos da antiga classe Botoes) ==========
+
     def le_botao(self, pin):
         """
-        Compatibilidade com classe Botoes.
-        Lê um pino como se fosse um botão.
+        Lê um pino como se fosse um botão: APERTADO ou LIBERADO.
         """
         return self.le_pino(pin)
 
     def botao_pressionado(self, pin):
         """
-        Compatibilidade com classe Botoes.
-        Verifica se um botão (pino de entrada) está pressionado.
+        True se o botão (pino de entrada) está pressionado (nível baixo).
         """
         return self.le_pino(pin) == self.APERTADO
 

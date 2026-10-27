@@ -42,7 +42,7 @@ ref_ordem = ['README', 'portas', 'motores', 'placaControleMotor', 'placaControle
 curtos = {'README': 'Visão geral das bibliotecas', 'portas': 'Portas', 'motores': 'Motores',
           'placaControleMotor': 'PlacaControleMotor', 'placaControleServo': 'PlacaControleServo',
           'giroscopio': 'Giroscopio', 'sensorCorReflexao': 'CorReflexao (sensor de linha)', 'vl53': 'VL53L0X',
-          'tcs34725': 'TCS34725', 'bno085': 'BNO085', 'placasMux': 'Placas mux (VL53 e TCS)', 'botoes': 'Botoes',
+          'tcs34725': 'TCS34725', 'bno085': 'BNO085', 'placasMux': 'Placas mux (VL53 e TCS)', 'botoes': 'Botões',
           'pinosDigitais': 'PinosDigitais', 'teclado-tela': 'Teclado e Tela', 'cronometro': 'Cronometro',
           'extras': 'Lidar, Bluetooth e câmera', 'modulos-simulador': 'simdebug, visao, vítimas e kits'}
 faltando = set(f[len('referencia/'):-3] for f in arquivos if f.startswith('referencia/')) - set(ref_ordem)
