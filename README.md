@@ -13,6 +13,7 @@ Usado pelas equipes Titãs da Robótica (Ifes Colatina) na RoboCupJunior Rescue 
 | [`INSTALACAO.md`](INSTALACAO.md) | como instalar e configurar o Linux do brick (Armbian, kernel, Python, rede, serviços, recuperação) |
 | [`instalacao/`](instalacao/) | arquivos de apoio da instalação (cooler, regra das câmeras, overlays, `remonta.sh`) |
 | [`documentação/`](documentação/) | manual das bibliotecas e dos [conectores](documentação/Conectores.md) |
+| [`firmware/mariola/`](firmware/mariola/) | firmware da placa do Mariola (`.hex`) e [como regravar](firmware/mariola/LEIAME.md) num brick |
 | [`libs/`](libs/) | bibliotecas Python do Mariola (rodam no robô) |
 | [`exemplos/`](exemplos/) | programas de exemplo de cada biblioteca |
 | [`menuPrincipal/`](menuPrincipal/) | o menu da tela e do teclado, que inicia os programas no robô |

@@ -1,8 +1,11 @@
 #!/bin/bash
 # Grava na eMMC a imagem guardada na p3 do cartao de reserva (backupMariolaZero*.img).
 # O brick tem de ter dado boot PELO CARTAO. Fica na raiz do cartao: /instalacao_emmc.sh
+# (na raiz, e nao na /home, porque a /home costuma vir da eMMC e precisa ser desmontada; pelo mesmo
+# motivo o terminal que chama o script tem de estar fora da /home: rode "cd /" antes)
 #
-# Uso:  sudo bash /instalacao_emmc.sh              (pergunta antes de apagar a eMMC)
+# Uso:  cd /
+#       sudo bash /instalacao_emmc.sh              (pergunta antes de apagar a eMMC)
 #       sudo bash /instalacao_emmc.sh -y           (sem perguntar)
 #       sudo bash /instalacao_emmc.sh --verifica   (depois compara a eMMC com a imagem; dobra o tempo)
 set -u
@@ -46,7 +49,20 @@ if findmnt -rno SOURCE | grep -q "^${EMMC}p"; then
     sync
     for m in $(findmnt -rno TARGET,SOURCE | awk -v d="${EMMC}p" 'index($2, d) == 1 {print $1}' | sort -r); do
         echo "  desmontando $m"
-        umount "$m" || erro "nao consegui desmontar $m (veja: fuser -vm $m). Nada foi gravado."
+        if ! umount "$m"; then
+            # quem esta usando: processo com a pasta atual ou arquivo aberto dentro de $m
+            echo "  $m esta em uso por:"
+            for p in /proc/[0-9]*; do
+                pasta=$(readlink "$p/cwd" 2>/dev/null)
+                if [[ "$pasta" == "$m" || "$pasta" == "$m"/* ]]; then
+                    echo "    PID ${p#/proc/} ($(cat "$p/comm" 2>/dev/null)): pasta atual $pasta"
+                elif ls -l "$p/fd" 2>/dev/null | grep -q -- "-> $m/"; then
+                    echo "    PID ${p#/proc/} ($(cat "$p/comm" 2>/dev/null)): arquivo aberto em $m"
+                fi
+            done
+            echo "  Se for o seu terminal (bash), saia da pasta: cd /  e rode o script de novo."
+            erro "nao consegui desmontar $m. Nada foi gravado."
+        fi
     done
 fi
 findmnt -rno SOURCE | grep -q "^${EMMC}p" && erro "ainda ha particao da eMMC montada. Nada foi gravado."

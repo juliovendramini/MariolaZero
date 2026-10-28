@@ -247,9 +247,13 @@ sudo apt update
 sudo apt install net-tools i2c-tools build-essential libgl1
 sudo apt install python3-full python3-pip pipx
 sudo apt install python3-libgpiod libgpiod-dev python3-dev
+sudo apt install avrdude      # regravar o firmware do Mariola (firmware/mariola/)
 ```
 
 Interface gráfica XFCE: opcional, pelo `armbian-config`.
+
+O `avrdude` (7.1 no brick conferido) grava o firmware da placa do Mariola pela própria serial USB,
+com o RESET apertado à mão: como fazer em [`firmware/mariola/LEIAME.md`](firmware/mariola/LEIAME.md).
 
 **Ambiente virtual** com as bibliotecas do Mariola. Ele fica em **`/meu_venv`, na raiz**, com um
 link `~/meu_venv` na pasta do usuário: com o ultralytics (e o PyTorch que vem junto) ele passa de
@@ -991,6 +995,19 @@ Dois scripts em [`instalacao/`](instalacao/) fazem os procedimentos abaixo, com 
   Só roda com o boot pelo cartão, desmonta o que for da eMMC (a `/home`), pega a imagem mais nova da
   `p3`, pede para digitar `SIM` (ou `-y`) e opcionalmente compara a eMMC com a imagem
   (`--verifica`).
+
+  **Por que na raiz:** no boot pelo cartão, a `/home` costuma vir da **eMMC** (os UUIDs são iguais),
+  e a eMMC inteira vai ser regravada, então a `/home` precisa ser desmontada antes. Um script guardado
+  na `/home` prenderia a própria partição que ele tem de soltar. Pelo mesmo motivo, **o terminal que
+  chama o script também não pode estar dentro da `/home`** (e ele abre no `~`, que é na `/home`):
+  saia dela antes.
+
+  ```bash
+  cd /
+  sudo bash /instalacao_emmc.sh
+  ```
+
+  Se algo ainda estiver usando a `/home`, o script não grava nada e mostra quem é (o PID e a pasta).
 
 **Detectar o cartão com o brick ligado.** Colocado com o brick já ligado, o cartão pode não
 aparecer (o pino de detecção do slot não avisa o kernel). Religue o driver do slot do cartão, o
