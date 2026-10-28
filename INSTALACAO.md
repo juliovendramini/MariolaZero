@@ -156,6 +156,9 @@ Como a eMMC de 8 GB tem 7,3 GB úteis, as partições do cartão precisam caber 
 > brick conferido: raiz do cartão (`mmcblk0p1`) e `/home` da eMMC (`mmcblk2p2`). Em compensação, um
 > cartão bom no slot sempre dá boot, mesmo com a eMMC estragada (seção 17).
 
+**Imagem @Work (eMMC de 32 GB):** o cartão de 32 GB não cabe inteiro na eMMC com `dd`. Use o
+`instalacao/clona_sd_emmc.sh`, que copia os arquivos para partições novas (apêndice D).
+
 ## 5. Kernel 6.18 e overlays
 
 O kernel 6.6 da Armbian 25.2.2 não tem a Ethernet 100M da placa: ela vem do PHY interno AC300 do
@@ -1009,6 +1012,9 @@ Dois scripts em [`instalacao/`](instalacao/) fazem os procedimentos abaixo, com 
 
   Se algo ainda estiver usando a `/home`, o script não grava nada e mostra quem é (o PID e a pasta).
 
+Na imagem @Work (32 GB) não há cartão de reserva com imagem: o próprio cartão @Work é a
+recuperação, e o `clona_sd_emmc.sh` passa ele para a eMMC (apêndice D).
+
 **Detectar o cartão com o brick ligado.** Colocado com o brick já ligado, o cartão pode não
 aparecer (o pino de detecção do slot não avisa o kernel). Religue o driver do slot do cartão, o
 `4020000.mmc` (a eMMC é o `4022000.mmc` e não é afetada):
@@ -1277,9 +1283,65 @@ somente leitura (seção 14), recuperação (seção 17) e compilação (seção
 * **ROS2:** a instalação (versão, pacotes, workspace) não está em nenhum arquivo. O `start.sh` do
   menu tem uma linha comentada `source ~/ros2_ws/.venv/bin/activate`, sinal de um workspace em
   `~/ros2_ws`.
-* **Partições** para 32 GB: tamanhos da raiz e da `/home`.
 * **Rede:** com o NetworkManager, troque `systemd-networkd-wait-online` por
   `NetworkManager-wait-online` nas seções 10 e 16; os arquivos `.network` da seção 10 não se
   aplicam.
 * **Programa no boot:** a seção 16 sugere um `mariola.service` (`Restart=always`) em vez do
   `rc.local`.
+
+### Cartão @Work e passagem para a eMMC
+
+Cartão conferido em 27/10/2026 (num brick de 8 GB, só leitura): Armbian-unofficial 26.08.0-trunk
+noble, kernel 6.18.43, tabela de partições `dos`:
+
+| Partição | Começo | Tamanho | Rótulo | Montagem |
+|---|---|---|---|---|
+| `p1` | setor 8192 (4 MiB) | 18,9 GB | `armbi_root` | `/`, somente leitura (`UUID=` no `fstab` e no `armbianEnv.txt`) |
+| `p2` | logo depois | 12,2 GB | `homesd` | `/home`, `data=journal` (`LABEL=homesd` no `fstab`) |
+
+Antes da `p1` fica o U-Boot cru (de 8 KiB em diante; é o mesmo
+`/usr/lib/linux-u-boot-current-bananapim4zero/u-boot-sunxi-with-spl.bin` do pacote).
+
+O cartão e a eMMC têm 32 GB, mas os dois tamanhos nunca são iguais ao byte. Por isso o `dd` da
+seção 4 não serve, e também não sobra espaço para uma partição com a imagem, como no cartão de
+reserva da seção 17. O **`instalacao/clona_sd_emmc.sh`** faz a cópia arquivo por arquivo:
+
+1. Ligue o brick **com o cartão** (o SD dá boot antes da eMMC).
+2. Copie o script para o brick (ex.: `scp instalacao/clona_sd_emmc.sh banana@IP:~`). Ele pode
+   ficar na `/home`: o script só deixa a `/home` somente leitura, não a desmonta.
+3. Confira antes, sem gravar nada e sem sudo: `bash ~/clona_sd_emmc.sh -n`. Ele mostra os discos, os
+   tamanhos (no cartão, na eMMC, usado) e as opções do ext4.
+4. Grave: `sudo bash ~/clona_sd_emmc.sh` e digite `SIM` (ou `-y`). Com os ~16 GB usados de hoje,
+   a estimativa é de 10 a 20 minutos (não medido).
+5. Desligue, tire o cartão e ligue. Depois confira com `findmnt / /home`, que deve mostrar o
+   `mmcblk2p1` e o `mmcblk2p2`.
+
+O que ele faz:
+
+* Cria na eMMC a `p1` com o mesmo começo e o mesmo tamanho da raiz do cartão. A `p2` fica com o
+  resto. Se a eMMC for menor que o cartão, a raiz encolhe, desde que os arquivos caibam com folga
+  (+10% e +512 MiB). Se não couberem, ele para antes de apagar qualquer coisa: é o que acontece se
+  ele for rodado num brick com a eMMC de 8 GB.
+* Formata com as mesmas opções do ext4 do cartão:
+  * os recursos (`metadata_csum` etc.), o tamanho de bloco e de inode e a reserva do root;
+  * as opções de montagem gravadas no ext4: `journal_data_writeback` na raiz e `journal_data` na
+    `/home`.
+* Os UUIDs são **novos** e os rótulos ficam `armbi_emmc` e `homeemmc`.
+* Copia com `rsync -aAXH`. A raiz do cartão já é somente leitura, e a `/home` fica somente
+  leitura durante a cópia. Se algum programa estiver com arquivo aberto, ele lista qual é e não
+  grava nada.
+* Troca os UUIDs no `/etc/fstab` e no `/boot/armbianEnv.txt` (`rootdev=`) **da cópia**. O
+  `LABEL=homesd` vira `UUID=` da `p2` da eMMC. No cartão, só esses dois arquivos citam os UUIDs.
+* Copia o U-Boot do cartão (de 8 KiB até o setor 8192) e compara com o original.
+* No fim, sempre devolve a escrita à `/home` do cartão, mesmo com erro.
+
+Com UUIDs e rótulos diferentes, ligar o brick com o cartão no slot sobe tudo do cartão, sem misturar
+com a eMMC, que é o problema da seção 4. O cartão continua servindo de recuperação.
+
+**Testado:**
+* o modo `-n` no brick de 8 GB, onde ele recusa porque não cabe;
+* o cálculo das partições, fingindo eMMCs de 31,3 GB, 30,7 GB e 15,4 GB;
+* o `mkfs` com as opções lidas do cartão, que deu um ext4 igual (`dumpe2fs`);
+* a troca dos UUIDs em cópias do `fstab` e do `armbianEnv.txt`.
+
+**Ainda não testado:** a gravação de verdade numa eMMC de 32 GB.

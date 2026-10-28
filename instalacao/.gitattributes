@@ -1,0 +1,2 @@
+# os scripts rodam no brick (bash): sempre com LF, mesmo num clone no Windows
+*.sh text eol=lf
