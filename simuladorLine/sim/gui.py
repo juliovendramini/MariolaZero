@@ -20,6 +20,7 @@ from .ladrilhos import TAM
 
 PAINEL = 430
 CONSOLE = 140
+FAIXA_ENTRADA = 40   # aviso do input() no alto do console
 
 COR_FUNDO = (32, 34, 40)
 COR_PAINEL = (24, 26, 31)
@@ -117,6 +118,7 @@ class Interface:
         self.cache_mini = {}
         self.versao_desenhada = -1
         self.hover = None
+        self.bot_enter = Botao('⏎ Enter', lambda: self.sim.responde_entrada(), dica='Enter')
         self._monta_botoes()
 
     # ------------------------------------------------------------------ botões
@@ -917,7 +919,7 @@ class Interface:
         y += 4
         ajuda = ('Arraste o robô com o mouse (programa parado); Q/E giram 90°, roda do mouse 5°. '
                  'Teclas: espaço pausa, B botão, L LoP, R raios, T trilha, P caminho, 1–5 velocidade, F5 inicia, '
-                 'O tela/teclado do brick (botões: clique ou F1–F4).')
+                 'O tela/teclado do brick (botões: clique ou F1–F4), Enter responde o input() do programa.')
         for linha in _quebra(ajuda, 70):
             y = self._txt(linha, x, y, self.f12, COR_TEXTO2)
 
@@ -1053,12 +1055,34 @@ class Interface:
             yb = area.y + (area.h - barra) * self.rol_paleta / max_rol
             pygame.draw.rect(self.tela, (90, 94, 104), (area.right - 4, yb, 4, barra), border_radius=2)
 
+    def _desenha_entrada(self):
+        """Faixa no alto do console enquanto o programa espera o Enter de um input()."""
+        prompt = self.sim.entrada
+        if prompt is None:
+            self.bot_enter.rect = pygame.Rect(0, 0, 0, 0)
+            return
+        lw, lh = self.tela.get_size()
+        r = pygame.Rect(0, lh - CONSOLE, lw - PAINEL, FAIXA_ENTRADA)
+        pygame.draw.rect(self.tela, COR_DESTAQUE, r)
+        b = self.bot_enter
+        b.rect = pygame.Rect(r.right - 130, r.y + 5, 120, 30)
+        cor = (30, 30, 30) if b.rect.collidepoint(pygame.mouse.get_pos()) else (0, 0, 0)
+        pygame.draw.rect(self.tela, cor, b.rect, border_radius=6)
+        t = self.f14.render(b.texto, True, COR_DESTAQUE)
+        self.tela.blit(t, (b.rect.centerx - t.get_width() / 2, b.rect.centery - t.get_height() / 2))
+        txt = f'O programa está parado no input({prompt!r}): aperte Enter para continuar'
+        t = self.f14.render(txt, True, (0, 0, 0))
+        if t.get_width() > b.rect.x - 20:
+            t = self.f12.render(txt, True, (0, 0, 0))
+        self.tela.blit(t, (10, r.centery - t.get_height() / 2))
+
     def _desenha_console(self):
         lw, lh = self.tela.get_size()
         r = pygame.Rect(0, lh - CONSOLE, lw - PAINEL, CONSOLE)
         pygame.draw.rect(self.tela, (14, 15, 18), r)
-        linhas = list(self.sim.saida)[-((CONSOLE - 8) // 15):]
-        y = r.y + 4
+        faixa = FAIXA_ENTRADA if self.sim.entrada is not None else 0    # aviso do input()
+        linhas = list(self.sim.saida)[-((CONSOLE - 8 - faixa) // 15):]
+        y = r.y + 4 + faixa
         for s in linhas:
             cor = (255, 140, 140) if ('Error' in s or 'Traceback' in s or 'Erro' in s) else (190, 200, 190)
             t = self.f12.render(s[:170], True, cor)
@@ -1258,6 +1282,9 @@ class Interface:
             elif self.modo == 'simular' and self._area().collidepoint(pos) and not s.programa_rodando():
                 self._gira_robo(5 if ev.y > 0 else -5)
         elif ev.type == pygame.MOUSEBUTTONDOWN:
+            if ev.button == 1 and s.entrada is not None and self.bot_enter.rect.collidepoint(ev.pos):
+                self.bot_enter.acao()
+                return
             if (self.modo == 'simular' and ev.button == 1 and s.cfg.get('brick') != 'pacoca'
                     and self.brick.mouse_down(ev.pos, s.mundo, self._area())):
                 return
@@ -1301,7 +1328,9 @@ class Interface:
                 self.hover = t
         elif ev.type == pygame.KEYDOWN:
             k = ev.key
-            if k == pygame.K_SPACE:
+            if k in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                s.responde_entrada()         # libera o input() do programa, se houver
+            elif k == pygame.K_SPACE:
                 self._pausa()
             elif k == pygame.K_b:
                 s.apertar_botao()
@@ -1463,6 +1492,7 @@ class Interface:
             y = self._desenha_botoes(self.bot_ed, x, y, larg) + 2
             self._desenha_painel_ed(x, y, larg)
         self._desenha_console()
+        self._desenha_entrada()
         if self.msg and time.time() - self.t_msg < 4:
             t = self.f14.render(self.msg, True, (0, 0, 0))
             r = t.get_rect(midtop=(self._area().centerx, 8)).inflate(16, 8)

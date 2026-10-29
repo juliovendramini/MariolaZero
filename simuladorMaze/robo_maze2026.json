@@ -1,0 +1,145 @@
+{
+  "_comentario": "Robô da equipe Maze 2026 (repositório maze2026, código de 28/10/2026), montado a partir do robo.json com a ligação do defs.py da equipe. Unidades: mm, graus, kg. Robô: x para frente, y para a esquerda, ângulos anti-horários (0 = frente, 90 = esquerda). O que não está no código da equipe ficou igual ao robo.json e continua estimado.",
+  "nome": "Maze 2026 (código da equipe)",
+
+  "geometria": {
+    "comprimento": 190,
+    "largura": 170,
+    "massa_kg": 1.6
+  },
+
+  "rodas": {
+    "_comentario": "posição de cada roda está em 'motores' (x, y)",
+    "_roda": "roda+motor do aspirador Xiaomi Mijia E10/B112/E12: 70 mm x 15 mm",
+    "diametro": 70,
+    "atrito": 0.9,
+    "atrito_lateral": 0.75,
+    "atrito_parede": 0.25
+  },
+
+  "_motores": "Do defs.py/movimentos.py da equipe: motores.direcao_motor(1, INVERTIDO) -> canal 1 com sentido -1; a placa id 5 (motor_esq_frente, invertida) fica na dianteira esquerda e a id 72 (motor_dir_frente) na dianteira direita (confirmado pelo Julio em 29/10/2026). As placas no SERIAL2 a 250000 bps. ATENÇÃO, bug do código da equipe: velocidade_4x4/potencia_4x4 mandam a velocidade da esquerda para a id 72 (direita) e vice-versa; reto não muda nada, mas nas curvas as rodas da frente giram contra as de trás.",
+  "motores": [
+    {"nome": "traseira_esquerda", "x": -55, "y":  75, "controlador": "mariola", "canal": 1, "sentido": -1},
+    {"nome": "traseira_direita",  "x": -55, "y": -75, "controlador": "mariola", "canal": 2, "sentido":  1},
+    {"nome": "dianteira_esquerda","x":  55, "y":  75, "controlador": "placa", "porta": "SERIAL2", "id": 5,  "sentido": -1},
+    {"nome": "dianteira_direita", "x":  55, "y": -75, "controlador": "placa", "porta": "SERIAL2", "id": 72, "sentido":  1}
+  ],
+
+  "motor_padrao": {
+    "_comentario": "Motor de aspirador Xiaomi. Contagens por volta da roda = pulsos_encoder_motor x reducao x multiplicador (Mariola x2: um canal nas duas bordas; placa x4: quadratura). rpm_livre = rotação da roda com PWM 100%; no PID o comando 100 = 80% disso.",
+    "_deduzido_do_codigo": "A MEDIR. Tirado do código da equipe: movimentos.py converte 1 cm = 1000/45,7 contagens do Mariola, o que com a roda de 70 mm dá 481 por volta (placa: o dobro, 962). As placas recebem calibracao_manual(32, -32); supondo que a equipe igualou a velocidade da frente com a de trás, o Mariola teria calibração 16 (o que dá ~100 rpm livres). Os campos de baixo têm prioridade sobre pulsos x redução e rpm_livre.",
+    "contagens_por_volta_mariola": 481,
+    "contagens_por_volta_placa": 962,
+    "calibracao_mariola": 16,
+    "calibracao_placa": 32,
+    "pulsos_encoder_motor": 17,
+    "reducao": 34,
+    "multiplicador_mariola": 2,
+    "multiplicador_placa": 4,
+    "rpm_livre": 130,
+    "tau_s": 0.06,
+    "forca_max_N": 6.0
+  },
+
+  "portas_serial": {
+    "SERIAL0": "mariola",
+    "SERIAL2": "barramento_motores",
+    "SERIAL4": "giroscopio",
+    "SERIAL6": "cor_reflexao_v2"
+  },
+  "latencia_serial_ms": 1.0,
+
+  "_vl53": "4 VL53L0X nas laterais (threads/sensores_I2C.py da equipe). 'meio' no meio da lateral, 'borda' perto da frente (confirmado pelo Julio em 29/10/2026; x e y A MEDIR). O código desconta 13 mm da borda esquerda e 37 mm da direita: aqui as bordas ficam esse tanto para dentro, para lerem a mais o mesmo que no robô.",
+  "vl53": [
+    {"nome": "borda_esq", "mux": "I2C1", "x": 70, "y":  72, "angulo":  90},
+    {"nome": "meio_esq",  "mux": "I2C3", "x":  0, "y":  85, "angulo":  90},
+    {"nome": "meio_dir",  "mux": "I2C6", "x":  0, "y": -85, "angulo": -90},
+    {"nome": "borda_dir", "mux": "I2C7", "x": 70, "y": -48, "angulo": -90}
+  ],
+  "vl53_params": {
+    "alcance_mm": 1200,
+    "ruido_mm": 3.0,
+    "ruido_percentual": 1.0,
+    "cone_graus": 25,
+    "tempo_medida_ms": 33,
+    "fora_alcance": 8190,
+    "offset_mm": 0
+  },
+
+  "para_choque": {
+    "_comentario": "botões de contato na frente; pino = P1..P8. Apertado = nível BAIXO. Na equipe: P1 esquerdo, P8 direito (threads/parachoque.py).",
+    "esquerdo": {"pino": "P1", "y_min": 5, "y_max": 80},
+    "direito":  {"pino": "P8", "y_min": -80, "y_max": -5},
+    "curso_mm": 2.0
+  },
+  "botao_inicio": {"pino": "P3"},
+
+  "giroscopio": {
+    "_comentario": "escala: unidades por grau (1 = graus inteiros, 10 = décimos). z_continuo=false faz Z voltar entre -180 e 180.",
+    "escala": 1,
+    "z_continuo": true,
+    "z_horario_positivo": true,
+    "eixo_inclinacao_frente": "x",
+    "deriva_graus_min": 0.6,
+    "ruido_graus": 0.15,
+    "tempo_calibracao_s": 2.0
+  },
+
+  "cor_reflexao": {
+    "_comentario": "Pro1616 (V2), mesma geometria do robo.json. Atenção ao código da equipe: rgb_dir() lê o TCS 1 e direito_externo() o IR 0, que pela convenção do Mariola são os da ESQUERDA (o mesmo com rgb_esq()/esquerdo_exeterno() à direita). Se o sensor estiver montado girado no robô, mude aqui.",
+    "tcs": [ {"x": 71, "y": 20}, {"x": 71, "y": 0}, {"x": 71, "y": -20} ],
+    "ir":  [ {"x": 80, "y": 26.6}, {"x": 80, "y": 8.9}, {"x": 80, "y": -8.9}, {"x": 80, "y": -26.6} ],
+    "ruido": 3,
+    "tempo_calibra_branco_s": 7.0,
+    "tempo_calibra_preto_s": 2.2
+  },
+  "cores_piso": {
+    "_comentario": "Escala do firmware: branco ~127 no TCS, IR 0 = preto e ~100 = branco; o prata lê MENOS que o branco no IR (~80). Valores estimados: troque pelos lidos no robô. (A threads/cores.py da equipe espera o cinza/prata entre 180 e 210.)",
+    "branco":   {"rgbc": [127, 128, 126, 127], "ir": 100},
+    "preto":    {"rgbc": [3, 3, 4, 5],         "ir": 2},
+    "prata":    {"rgbc": [190, 195, 200, 205], "ir": 80},
+    "azul":     {"rgbc": [20, 45, 115, 66],    "ir": 70},
+    "vermelho": {"rgbc": [115, 25, 22, 58],    "ir": 85}
+  },
+
+  "leds": {
+    "_comentario": "índices do set_led_rgb_one do Mariola. A equipe acende todos com set_led_rgb_all quando acha vítima (os 8 e 9 contam para o juiz).",
+    "camera_esquerda": [0, 1, 2, 3],
+    "camera_direita": [4, 5, 6, 7],
+    "vitima": [8, 9]
+  },
+  "led_vitima": "mariola_rgb",
+
+  "_cameras": "A equipe usa uma câmera USB (/dev/video_usb3) e OpenCV, que não funcionam no simulador. As câmeras daqui só servem ao módulo deteccaoVitimas do simulador (o código da equipe não usa).",
+  "cameras": [
+    {"nome": "esquerda", "x": 0, "y":  60, "angulo":  90, "fov": 70, "alcance_mm": 230},
+    {"nome": "direita",  "x": 0, "y": -60, "angulo": -90, "fov": 70, "alcance_mm": 230}
+  ],
+  "deteccao": {
+    "_comentario": "probabilidades por chamada, para testar robustez do algoritmo",
+    "exige_iluminacao": true,
+    "tempo_processamento_s": 0.1,
+    "falso_negativo": 0.0,
+    "falso_positivo": 0.0,
+    "vitimas_falsas_enganam": 0.0
+  },
+
+  "kits": {
+    "capacidade": 8,
+    "tempo_por_kit_s": 0.7,
+    "distancia_lateral_mm": 15
+  },
+
+  "terreno": {
+    "lombada_giro_graus": 1.2,
+    "lombada_pitch_graus": 6,
+    "detritos_giro_graus": 2.0,
+    "escada_atrito": 0.65,
+    "tempo_no_ar_s": 0.04
+  },
+
+  "tela": {"barramento": 0, "endereco": 60},
+  "teclado": {"barramento": 0, "endereco": 56, "leds_acendem_com": 1},
+
+  "arquivos_rodada": []
+}

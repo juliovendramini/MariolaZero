@@ -85,6 +85,7 @@ def main():
 
 
 def roda_sem_janela(sim, tempo, arq_resultado=None):
+    sim.enter_automatico = True          # ninguém para apertar Enter: o input() do programa segue na hora
     sim.nova_rodada()
     sim.iniciar_rodada()
     j = sim.juiz

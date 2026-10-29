@@ -41,6 +41,14 @@ Opções: `--robo outro_robo.json`, `--semente N` (repete a mesma rodada), `--lo
 `--tempo 480`, `--resultado arq.json` (sem janela: grava o placar em JSON), `--tempo-real` (modo
 antigo do relógio, veja abaixo).
 
+**`input()` como pausa.** No robô, rodando pelo terminal ssh, um `input('pare')` segura o programa até
+alguém apertar Enter. No simulador funciona igual: o console mostra o texto, aparece uma faixa amarela
+"O programa está parado no input(...)" e o programa segue com a tecla **Enter** ou o botão **⏎ Enter**
+da faixa (o `input()` devolve `''`). Enquanto isso o tempo continua andando, como no robô: as outras
+threads seguem rodando e os motores mantêm o último comando até o timeout de 5 s do firmware. Use
+**Pausar** (espaço) para congelar tudo. Sem janela (e no `avalia.py`) o Enter é automático, com um aviso
+no console. Não confunda com o botão Enter do teclado do brick, que fica no F4.
+
 ## Desafios e avaliação automática (`avalia.py`)
 
 Uma rodada só não diz se o programa é bom: o ruído muda com a semente e uma rodada de sorte
@@ -297,6 +305,26 @@ Os valores que vieram são **estimativas**. Para o simulador ficar fiel, meça n
 Uma forma prática de calibrar: rode o mesmo teste (ex.: andar 1 m, girar 360°) no robô e no
 simulador e ajuste `rpm_livre`, `forca_max_N`, `atrito_lateral` e `deriva_graus_min` até baterem.
 
+### Robô da equipe Maze 2026 — `robo_maze2026.json`
+
+Ligado como no código da equipe (repositório `maze2026`, `defs.py`), que roda sem nenhuma mudança:
+
+```bash
+python simulador.py --robo robo_maze2026.json --programa ../../maze2026/main.py
+```
+
+| o quê | no robô da equipe |
+|---|---|
+| motores | Mariola canal 1 (traseira esquerda, invertido) e 2; placas no `SERIAL2` a 250000: id 5 na dianteira esquerda (invertida), id 72 na dianteira direita |
+| giroscópio / cor | `SERIAL4` / `SERIAL6` (Pro1616) |
+| VL53 | 4 nas laterais: borda esquerda `I2C1`, meio esquerdo `I2C3`, meio direito `I2C6`, borda direita `I2C7`. As bordas ficam perto da frente e 13 mm (esq.) e 37 mm (dir.) para dentro, o mesmo que o código desconta |
+| para-choque | P1 esquerdo, P8 direito |
+| encoder e calibração | deduzidos do código: 1 cm = 1000/45,7 contagens do Mariola (481 por volta da roda de 70 mm) e calibração 32 nas placas (16 no Mariola) |
+
+O resto (medidas, posições x/y, cores do piso) é o mesmo do `robo.json` e continua estimado.
+A câmera da equipe (OpenCV em `/dev/video_usb3`) não existe no simulador: a thread dela só avisa
+"Falha ao capturar frame" a cada 0,1 s.
+
 ## Programa de exemplo (`exemplo_aluno/`)
 
 Busca em profundidade ladrilho a ladrilho, com:
@@ -325,6 +353,7 @@ gira pelo giroscópio, encosta no para-choque para alinhar, detecta preto/azul/p
 simulador.py        janela / modo sem janela
 rodar.py            executa o programa do aluno com o hardware virtual
 robo.json           configuração do robô
+robo_maze2026.json  robô ligado como no código da equipe Maze 2026 (--robo robo_maze2026.json)
 sim/                mapa, física, juiz, servidor, interface
 fake_hw/            serial, smbus2, gpiod, firmware das placas, relógio virtual
 libs_mariola/       cópia das libs do Mariola (reserva, se a pasta do programa não tiver)

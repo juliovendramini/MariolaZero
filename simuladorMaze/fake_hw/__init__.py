@@ -23,6 +23,8 @@ def instalar(pasta_programa, pasta_libs):
     from . import cliente
     cliente.conectar()
     cliente.relogio.instala()
+    import builtins
+    builtins.input = cliente.entrada     # o Enter vem da janela do simulador
 
     from . import fake_serial, fake_smbus2, fake_gpiod, sim_modulos
 

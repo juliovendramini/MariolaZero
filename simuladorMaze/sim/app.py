@@ -34,6 +34,10 @@ class Simulacao:
         self.auto_botao = True              # aperta o botão de início sozinho ao iniciar o programa
         self.em_lop = False
         self._auto_pendente = False
+        # input() do programa: no robô ele espera o Enter do terminal (ssh); aqui, o da janela
+        self.entrada = None                 # texto do input() que está esperando (None = nenhum)
+        self._resposta_entrada = None
+        self.enter_automatico = False       # sem janela: responde o input() na hora
         self.servidor = Servidor(self, porta)
         self._t_ref = 0.0
         self._real_ref = time.perf_counter()
@@ -207,6 +211,7 @@ class Simulacao:
         if not self.programa or self.programa_rodando():
             return
         self.pedido_parar = False
+        self.entrada = None
         self.mundo.oled = None              # ligar o robô: tela apagada, teclado com os LEDs no estado inicial
         self.mundo.teclado_leds = 0x0F
         env = dict(os.environ)
@@ -238,6 +243,8 @@ class Simulacao:
             # um \r no meio (barra de progresso) deixa só o que foi escrito por último
             self._log(linha.decode('utf-8', 'replace').rstrip('\r\n').split('\r')[-1])
         proc.wait()
+        if self.proc is proc:
+            self.entrada = None
         self._log(f'---- programa terminou (código {proc.returncode}) ----')
         if self.proc is proc or self.proc is None or self.proc.poll() is not None:
             self.sinc_fim()
@@ -262,6 +269,26 @@ class Simulacao:
         self.pedido_parar = False
         with self.mundo.lock:
             self.mundo.para_tudo()
+
+    def pede_entrada(self, prompt):
+        """O programa chamou input(prompt). Devolve a resposta se já houver (sem janela)."""
+        if self.enter_automatico:
+            self._log(f'[simulador] input({prompt!r}): Enter automático (sem janela)')
+            return ''
+        self._resposta_entrada = None
+        self.entrada = prompt
+        return None
+
+    def responde_entrada(self, texto=''):
+        """Enter na janela: libera o input() que está esperando."""
+        if self.entrada is None:
+            return
+        self._resposta_entrada = texto
+        self.entrada = None
+
+    def le_resposta_entrada(self):
+        r, self._resposta_entrada = self._resposta_entrada, None
+        return r
 
     def reiniciar_programa(self):
         self.parar_programa()

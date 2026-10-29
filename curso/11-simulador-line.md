@@ -61,6 +61,14 @@ python simulador.py --editor                               # abre no editor de m
 | F1–F4, clique nos botões do painel | botões do teclado do brick (Voltar, Baixo, Cima, Enter) |
 | O | mostra/esconde a **tela e o teclado do brick** (canto de baixo à direita do mapa) |
 | C | mostra/esconde o que a **câmera de linha** viu por último (módulo 10.6) |
+| Enter, botão **⏎ Enter** | continua o programa parado num `input()` (veja abaixo) |
+
+**`input()` como pausa.** No robô, rodando pelo terminal (ssh), `input('pare')` segura o programa
+até você apertar Enter: dá para olhar com calma o que o robô fez. No simulador é igual. Uma faixa
+amarela aparece no alto do console, e o Enter do teclado (ou o botão da faixa) faz o programa seguir.
+Enquanto isso o tempo continua andando, como no robô: as outras threads continuam rodando e os
+motores param sozinhos depois de 5 s sem comando. Para congelar tudo, use **Pausar**. Sem janela
+(`--sem-janela`, `avalia.py`), o Enter é automático.
 
 O **painel** mostra: tempo, placar, eventos do juiz, os 4 canais IR, os 12 ITR8307 um a um, a cor
 de cada TCS, giroscópio, encoders, VL53, para-choque, e (no 4x4) servos, garra, caçamba e o que a

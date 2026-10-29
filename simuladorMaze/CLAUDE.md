@@ -54,6 +54,21 @@ volta ao modo antigo. Detalhes desta pasta:
   tempo, como no Mariola.
 * Por causa do relógio, os desafios M01–M06 exigem 3 de 3 (antes, com relógio real, 2 de 3).
 
+## `input()` do programa (29/10/2026)
+
+A equipe usa `input('pare')` como pausa quando roda o programa pelo ssh. O `fake_hw` troca o
+`builtins.input` por `cliente.entrada()`, que funciona assim:
+* imprime o texto;
+* faz a operação `entrada` (o simulador guarda o texto em `Simulacao.entrada`);
+* consulta `entrada_estado` a cada 50 ms reais até chegar a resposta.
+
+Na janela, a tecla Enter ou o botão da faixa amarela no alto do console chamam
+`responde_entrada()`. No relógio sincronizado, a thread parada no `input()` conta como esperando para
+sempre (`espera_externa()`, acorda em `math.inf`). Se todas as threads estão assim, o `_coordena` usa
+`avanca livre`: o tempo anda pelo relógio real, na velocidade escolhida, e o timeout de 5 s dos
+motores acontece como no robô. Sem janela, `enter_automatico` responde na hora (o teste de referência
+continua 415). Levado para a Line no mesmo dia; o `fake_hw/cliente.py` é o mesmo arquivo nos dois.
+
 ## Desafios e `avalia.py`
 
 * `avalia.py` é o mesmo da Line (detecta a Maze por não ter `sim/resgate.py`); o da Line ganhou o
@@ -76,6 +91,34 @@ volta ao modo antigo. Detalhes desta pasta:
 * Para-choque P1 (esq) / P2 (dir), botão de início P3.
 * `cores_piso` na escala do firmware (branco 127 / IR 100; prata TCS ~200, IR ~80): estimados,
   trocar pelos lidos no robô.
+
+### `robo_maze2026.json` (29/10/2026): o robô do código da equipe
+
+O código real da equipe fica fora deste repositório, em `Documents\Arduino\maze2026` (GitHub
+IzadoraVB/maze2026). Ele roda sem mudança com
+`python simulador.py --robo robo_maze2026.json --programa ../../maze2026/main.py`.
+A ligação veio do `defs.py` da equipe:
+* motores: Mariola canal 1 invertido; placas no `SERIAL2`: id 5 invertida na dianteira esquerda,
+  id 72 na direita, como os nomes do código (o Julio confirmou). O `velocidade_4x4`/`potencia_4x4`
+  da equipe manda a velocidade da esquerda para a 72 e a da direita para a 5. É um **bug do código
+  deles**, e o simulador reproduz: reto não muda nada, mas nas curvas as rodas da frente giram contra
+  as de trás. Não "conserte" no `robo.json`;
+* giroscópio no `SERIAL4`;
+* 4 VL53 laterais (borda esq `I2C1`, meio esq `I2C3`, meio dir `I2C6`, borda dir `I2C7`). Pelo Julio,
+  as bordas ficam na frente; elas estão 13 e 37 mm para dentro, o desconto que o código faz;
+* para-choque P1/P8.
+
+Contagens (481/962 por volta) e calibração (16 no Mariola, 32 nas placas) foram deduzidas do código
+(1 cm = 1000/45,7 e `calibracao_manual(32, -32)`). Falta medir.
+
+Conferido com os `movimentos.py` da equipe:
+* andar 30 cm → 302 mm;
+* `girar(+90)` → 92,6° horário (giroscópio +93);
+* 4 rodas juntas.
+
+As libs da equipe (`maze2026/libs/`) são mais antigas, entram pelo pacote `libs` (o `fake_hw` põe
+`pasta/libs` no `__path__`) e ainda usam o `botoes.py`, que abre o `gpiochip0`: o `gpiod` falso
+aceita qualquer chip, então o simulador não pega o problema do kernel 6.18.
 
 ### 6 VL53L0X atrás do mux I2C (TCA9548A)
 

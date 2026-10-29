@@ -5,6 +5,8 @@ programa siga a velocidade escolhida no simulador (1x, 2x, pausa...).
 """
 
 import _thread
+import contextlib
+import math
 import os
 import socket
 import sys
@@ -145,6 +147,22 @@ class RelogioSinc:
             finally:
                 self.esperando.pop(tid, None)
 
+    @contextlib.contextmanager
+    def espera_externa(self):
+        """A thread fica parada esperando algo de fora do programa (o Enter do input()). Conta como
+        esperando, sem hora para acordar: o tempo anda pelo relógio real, na velocidade escolhida,
+        como no robô parado no input() (as outras threads e o timeout de 5 s dos motores seguem)."""
+        tid = threading.get_ident()
+        with self.cond:
+            self.ja_esperou = True
+            self.esperando[tid] = math.inf
+            self.cond.notify_all()
+        try:
+            yield
+        finally:
+            with self.cond:
+                self.esperando.pop(tid, None)
+
     def _participantes(self):
         return [t.ident for t in threading.enumerate() if t.ident not in self.internos and t.is_alive()]
 
@@ -159,7 +177,14 @@ class RelogioSinc:
                 alvo = min(self.esperando.values()) if self.esperando else None
             agora = _real_perf()
             try:
-                if todos and alvo is not None:
+                if todos and alvo == math.inf:
+                    # só esperas sem hora para acabar (input()): o tempo anda pelo relógio real
+                    todos_em = agora
+                    if agora - livre_em < 0.01:
+                        continue
+                    livre_em = agora
+                    r = self.conn.chamar('avanca', livre=True)
+                elif todos and alvo is not None:
                     todos_em = agora
                     r = self.conn.chamar('avanca', ate=alvo)
                 elif self.ja_esperou and agora - todos_em > self.LIVRE_APOS and agora - livre_em > 0.01:
@@ -194,6 +219,21 @@ class RelogioSinc:
 conexao = None
 relogio = None
 config = None
+
+
+def entrada(prompt=''):
+    """input() do programa. No robô, rodando pelo ssh, ele espera o Enter do terminal (a equipe usa
+    como pausa); aqui espera o Enter da janela do simulador (sem janela, responde na hora)."""
+    sys.stdout.write(f'{prompt}\n')
+    sys.stdout.flush()
+    r = conexao.chamar('entrada', prompt=str(prompt))
+    if not r['pronto']:
+        espera = getattr(relogio, 'espera_externa', None)
+        with espera() if espera else contextlib.nullcontext():
+            while not r['pronto']:
+                _real_sleep(0.05)
+                r = conexao.chamar('entrada_estado')
+    return r['texto']
 
 
 def conectar():

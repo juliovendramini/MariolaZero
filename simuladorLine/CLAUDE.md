@@ -58,6 +58,20 @@ confira rodando o mesmo teste em `--velocidade 1` e `8` e comparando o placar. T
 No Paçoca o relógio é do programa (`sim_t_ns`) e a ponte só leva a física até ele quando precisa do
 mundo ou a cada 10 ms (detalhes no `pacoca/LEIAME.md`).
 
+## `input()` do programa (29/10/2026, igual na Maze)
+
+As equipes usam `input('pare')` como pausa quando rodam pelo ssh. O `fake_hw` troca o `builtins.input`
+por `cliente.entrada()`. Ela faz a op `entrada` (o simulador guarda o texto em `Simulacao.entrada`) e
+depois consulta `entrada_estado` a cada 50 ms reais.
+
+* Na janela, Enter ou o botão da faixa amarela (no alto do console) chamam `responde_entrada()`.
+* No relógio sincronizado, a thread parada conta como esperando para sempre (`espera_externa()`,
+  `math.inf`). Se só restam esperas assim, o `_coordena` usa `avanca livre`: o tempo anda pelo
+  relógio real, como no robô parado no `input()`.
+* Sem janela, `enter_automatico` responde na hora.
+* O `cliente.py` é o mesmo arquivo nos dois simuladores.
+* O Paçoca (`.ino`) não passa por isso.
+
 ## Brick Paçoca
 
 * Partes do Paçoca espalhadas em arquivos do simulador (não regredir): `sim/fisica.py` (`Motor.dc`,

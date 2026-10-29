@@ -78,6 +78,12 @@ class Servidor:
         if op == 'avanca':
             t = sim.avanca_sinc(r.get('ate'), bool(r.get('livre')))
             return {'t': t, 'parar': sim.pedido_parar}
+        if op == 'entrada':                  # input() do programa
+            texto = sim.pede_entrada(str(r.get('prompt', '')))
+            return {'pronto': texto is not None, 'texto': texto or ''}
+        if op == 'entrada_estado':
+            texto = sim.le_resposta_entrada()
+            return {'pronto': texto is not None, 'texto': texto or ''}
         if sim._lop_ate is not None:
             # LoP: o programa antigo está sendo encerrado e não pode mexer no robô nem gastar
             # o ruído dos sensores (senão a rodada deixa de se repetir igual)

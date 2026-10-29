@@ -91,6 +91,17 @@ Opções: `--semente N` (ruído dos sensores; padrão 1, `-1` sorteia a cada rod
 `--tempo 480`, `--tempo-real` (modo antigo do relógio, veja abaixo), `--resultado arq.json` (sem
 janela: grava o placar em JSON).
 
+**`input()` como pausa.** No robô, rodando pelo terminal ssh, um `input('pare')` segura o programa até
+alguém apertar Enter. No simulador funciona igual:
+* o console mostra o texto;
+* aparece uma faixa amarela, "O programa está parado no input(...)";
+* o programa segue com a tecla **Enter** ou com o botão **⏎ Enter** da faixa (o `input()` devolve `''`).
+
+Enquanto isso o tempo continua andando, como no robô: as outras threads seguem rodando e os motores
+mantêm o último comando até o timeout de 5 s do firmware. Use **Pausar** (espaço) para congelar tudo.
+Sem janela (e no `avalia.py`) o Enter é automático, com um aviso no console. Não confunda com o botão
+Enter do teclado do brick, que fica no F4.
+
 ## Desafios e avaliação automática (`avalia.py`)
 
 Uma rodada só não diz se o programa é bom: o ruído muda com a semente e uma rodada de sorte
