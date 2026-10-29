@@ -9,7 +9,7 @@ SUBSYSTEM=="video4linux", \
 KERNEL=="video*", \
 ENV{ID_V4L_CAPABILITIES}=="*:capture:*", \
 ATTR{index}=="0", \
-DEVPATH=="*5100400.usb*", \
+DEVPATH=="*5101400.usb*", \
 SYMLINK+="video_usb1"
 
 SUBSYSTEM=="video4linux", \

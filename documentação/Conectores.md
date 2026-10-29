@@ -56,6 +56,20 @@ para a direita:
 | furinho quadrado | LEDs verde e vermelho do Banana Pi M4 Zero |
 | **USB-C** (2) | dados e alimentação do Banana Pi |
 
+## Portas USB e câmeras
+
+O brick numera as portas USB, e cada câmera ganha um nome fixo conforme a porta em que está ligada.
+Assim o programa abre sempre a mesma câmera (regra `instalacao/99-cameras.rules`, seção 11 do
+[`INSTALACAO.md`](../INSTALACAO.md)):
+
+| Porta | Onde | Câmera no programa |
+|---|---|---|
+| **1** | USB-C mais à direita (olhando de fora do brick) | `cv2.VideoCapture('/dev/video_usb1')` |
+| **2** | USB-C do meio | `cv2.VideoCapture('/dev/video_usb2')` |
+| **3** | conector **USB** de cima (4 pinos) | `cv2.VideoCapture('/dev/video_usb3')` |
+
+Uma câmera ligada por um hub fica com o nome da porta onde o hub está.
+
 ## Cuidados
 
 * Não use os conectores TELA/TECLADO para outros fins: eles não têm proteção.

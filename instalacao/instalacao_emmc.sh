@@ -8,23 +8,35 @@
 #       sudo bash /instalacao_emmc.sh              (pergunta antes de apagar a eMMC)
 #       sudo bash /instalacao_emmc.sh -y           (sem perguntar)
 #       sudo bash /instalacao_emmc.sh --verifica   (depois compara a eMMC com a imagem; dobra o tempo)
+#       sudo bash /instalacao_emmc.sh --mac ac:12:34:56:78:bd   (MAC do Wi-Fi escolhido, em vez de sorteado)
+#       sudo bash /instalacao_emmc.sh --mesmo-mac  (mantem o MAC do Wi-Fi da imagem)
+#
+# Depois de gravar, troca o MAC do Wi-Fi (wlan0) no netplan da eMMC: a imagem fixa um MAC
+# ("macaddress:" no /etc/netplan/armbian.yaml), e bricks com o mesmo MAC brigam pelo mesmo IP na rede.
+# O novo mantem o primeiro e o ultimo grupo e sorteia os 4 do meio.
 set -u
 
 EMMC=/dev/mmcblk2
 SD=/dev/mmcblk0
 P3=${SD}p3
 PASTA=/mnt
+NETPLAN=etc/netplan/armbian.yaml     # dentro da raiz da eMMC
 
 msg()  { echo -e "\n\033[1;36m==>\033[0m $*"; }
 erro() { echo -e "\033[1;31mERRO:\033[0m $*" >&2; exit 1; }
+FORMATO_MAC='^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$'
 
-SIM=0; VERIFICA=0
-for a in "$@"; do
-    case $a in
+SIM=0; VERIFICA=0; MAC=sorteia
+while (( $# )); do
+    case $1 in
         -y) SIM=1 ;;
         --verifica) VERIFICA=1 ;;
-        *) erro "opcao desconhecida: $a" ;;
+        --mesmo-mac) MAC=mantem ;;
+        --mac) shift; MAC=${1:-}
+               [[ $MAC =~ $FORMATO_MAC ]] || erro "--mac precisa de um MAC no formato ac:12:34:56:78:bd" ;;
+        *) erro "opcao desconhecida: $1" ;;
     esac
+    shift
 done
 
 [[ $EUID -eq 0 ]] || erro "rode com sudo: sudo bash $0"
@@ -100,6 +112,34 @@ if (( VERIFICA )); then
     msg "Comparando a eMMC com a imagem (demora quase o mesmo tanto)"
     echo 3 > /proc/sys/vm/drop_caches
     cmp -n "$TAM_IMG" "$IMAGEM" $EMMC && echo "  eMMC igual a imagem - ok" || erro "a eMMC ficou DIFERENTE da imagem"
+fi
+
+# --- 7. MAC do Wi-Fi ------------------------------------------------------------------
+# (depois da conferencia: a troca muda a eMMC, que deixa de ser igual a imagem)
+if [[ $MAC != mantem ]]; then
+    msg "Trocando o MAC do Wi-Fi no netplan da eMMC"
+    RAIZ_EMMC=/run/raiz_emmc         # a raiz do cartao e somente leitura: monta na /run
+    partprobe $EMMC 2>/dev/null; udevadm settle
+    mkdir -p $RAIZ_EMMC
+    mount ${EMMC}p1 $RAIZ_EMMC || erro "nao montei ${EMMC}p1 (a eMMC foi gravada; so o MAC nao foi trocado)"
+    trap 'cd /; umount $RAIZ_EMMC 2>/dev/null; umount $PASTA 2>/dev/null' EXIT
+    ARQ=$RAIZ_EMMC/$NETPLAN
+    [[ -f $ARQ ]] || erro "$ARQ nao existe (a eMMC foi gravada; so o MAC nao foi trocado)"
+    # o primeiro "macaddress:" depois de "wifis:" (o da wlan0; o da end0 fica antes, em "ethernets:")
+    ANTIGO=$(awk '/^[[:space:]]*wifis:/ { w = 1 }
+                  w && /^[[:space:]]*macaddress:/ { sub(/^[[:space:]]*macaddress:[[:space:]]*/, ""); gsub(/["'\'']/, ""); print; exit }' "$ARQ")
+    [[ $ANTIGO =~ $FORMATO_MAC ]] || erro "nao achei o macaddress do Wi-Fi em $ARQ (a eMMC foi gravada; so o MAC nao foi trocado)"
+    if [[ $MAC == sorteia ]]; then
+        MAC=$(printf '%s:%02x:%02x:%02x:%02x:%s' "${ANTIGO%%:*}" $(( RANDOM % 256 )) $(( RANDOM % 256 )) \
+              $(( RANDOM % 256 )) $(( RANDOM % 256 )) "${ANTIGO##*:}")
+    fi
+    MAC=${MAC,,}
+    sed -i "s/$ANTIGO/$MAC/I" "$ARQ"
+    grep -qi "macaddress:.*$MAC" "$ARQ" || erro "a troca do MAC nao ficou no $ARQ"
+    sync
+    umount $RAIZ_EMMC
+    echo "  Wi-Fi (wlan0): $ANTIGO -> $MAC"
+    echo "  Anote no brick: o roteador vai ver este MAC (e dar outro IP, se o DHCP for por MAC)."
 fi
 
 msg "Concluido. Desligue, tire o cartao e ligue: o brick vai subir pela eMMC."

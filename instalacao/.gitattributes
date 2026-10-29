@@ -1,2 +1,4 @@
-# os scripts rodam no brick (bash): sempre com LF, mesmo num clone no Windows
+# os scripts (bash) e as regras do udev rodam no brick: sempre com LF, mesmo num clone no Windows
+# (com CRLF, o "\" de continuacao das regras do udev para de funcionar)
 *.sh text eol=lf
+*.rules text eol=lf

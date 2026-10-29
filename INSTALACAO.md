@@ -500,14 +500,30 @@ campo `interface-name`.
 A regra [`instalacao/99-cameras.rules`](instalacao/99-cameras.rules) cria links fixos para a
 **primeira** interface de captura de cada câmera, conforme o controlador USB em que ela está:
 
-| Link | Controladores (`DEVPATH`) |
-|---|---|
-| `/dev/video_usb1` | `5101000.usb`, `5100400.usb` |
-| `/dev/video_usb2` | `5311000.usb`, `5311400.usb` |
-| `/dev/video_usb3` | `5200000.usb`, `5200400.usb` |
+| Link | Porta do brick | Controladores (`DEVPATH`) |
+|---|---|---|
+| `/dev/video_usb1` | **1**: USB-C mais à direita (olhando de fora do brick) | `5101000.usb`, `5101400.usb` (USB0, em modo host pelo overlay `bananapi-m4-zero-usb0-host`) |
+| `/dev/video_usb2` | **2**: USB-C do meio | `5311000.usb`, `5311400.usb` |
+| `/dev/video_usb3` | **3**: conector USB de cima (HX, 4 pinos) | `5200000.usb`, `5200400.usb` |
+
+O par de cada porta é EHCI (USB 2.0) + OHCI (câmera USB 1.1). Uma câmera atrás de um hub ligado
+na porta também ganha o link, porque o `DEVPATH` continua passando pelo controlador. O
+`5310000.usb` é o hub interno dos 4 conversores seriais do Mariola (`ttyUSB0`–`3`) e não tem link.
 
 Assim o programa abre sempre a mesma câmera, não importa a ordem em que o Linux numerou os
 `/dev/videoN`.
+
+Conferido em 28/10/2026 no brick Line/Maze com uma câmera UC60:
+* porta 2, atrás de um hub: `video_usb2`;
+* porta 3: `video_usb3`;
+* porta 1: `video_usb1`, também direto e atrás do hub (o Julio conferiu).
+
+Até 27/10 a regra tinha `5100400.usb` no lugar de `5101400.usb`, endereço que não existe no H618.
+Uma câmera USB 1.1 na porta 1 ficava sem link. As câmeras USB 2.0 usam o outro controlador do par
+e não eram afetadas.
+
+O arquivo tem de estar com quebra de linha **LF**: com CRLF, o `\` no fim das linhas para de
+funcionar. O `instalacao/.gitattributes` garante isso num clone do Windows.
 
 ```bash
 scp instalacao/99-cameras.rules banana@192.168.2.151:~
@@ -983,7 +999,7 @@ O cartão de reserva (16 GB) tem três partições:
 |---|---|---|
 | `p1` | 6,3 GB | clone da raiz da eMMC (mesmo UUID): o brick dá boot por ele |
 | `p2` | 1 GB | clone da `/home` da eMMC (mesmo UUID) |
-| `p3` | 7,6 GB | ext4 com **um arquivo**: a imagem crua da eMMC inteira, `backupMariolaZeroAAAA-MM-DD.img` (7.818.182.656 bytes = a `mmcblk2` toda: tabela de partições, U-Boot e as duas partições). A atual é a de **20/10/2026** (kernel 6.18.42, ajustes do apêndice C, menu novo) |
+| `p3` | 7,6 GB | ext4 com **um arquivo**: a imagem crua da eMMC inteira, `backupMariolaZeroAAAA-MM-DD.img` (7.818.182.656 bytes = a `mmcblk2` toda: tabela de partições, U-Boot e as duas partições). A atual é a de **28/10/2026** (kernel 6.18.42, ajustes do apêndice C, menu novo, `~/firmware_mariola`, regra das câmeras corrigida) |
 
 A `p3` comporta **uma** imagem só: para gravar uma nova, apague a antiga antes. Ela só cabe usando
 a reserva de 5% do ext4 para o root (o `dd` com `sudo` usa; um `df` como usuário comum mostra
@@ -997,7 +1013,20 @@ Dois scripts em [`instalacao/`](instalacao/) fazem os procedimentos abaixo, com 
 * **`instalacao_emmc.sh`** (fica na raiz do cartão, `/instalacao_emmc.sh`): grava a imagem na eMMC.
   Só roda com o boot pelo cartão, desmonta o que for da eMMC (a `/home`), pega a imagem mais nova da
   `p3`, pede para digitar `SIM` (ou `-y`) e opcionalmente compara a eMMC com a imagem
-  (`--verifica`).
+  (`--verifica`). No fim, **troca o MAC do Wi-Fi** da eMMC (veja abaixo).
+
+  **MAC do Wi-Fi:**
+  * O netplan da imagem (`/etc/netplan/armbian.yaml`) fixa os MACs: `macaddress:` da `wlan0`
+    (`ac:7a:a3:3c:0e:bd` na imagem de 27/10/2026) e da `end0` (`de:ad:be:ef:00:01`). Todo brick
+    gravado com a mesma imagem sairia com o mesmo MAC e brigaria pelo mesmo IP no DHCP.
+  * Depois de gravar e conferir, o script monta a raiz da eMMC e troca o MAC da `wlan0`: mantém o
+    primeiro e o último grupo e sorteia os 4 do meio (ex.: `ac:5e:09:c2:7f:bd`). Ele mostra o MAC
+    antigo e o novo; anote no brick.
+  * `--mac ac:12:34:56:78:bd` usa um MAC escolhido (útil para regravar um brick e manter o IP
+    reservado no roteador). `--mesmo-mac` não troca.
+  * O MAC da `end0` (rede cabeada) não é trocado.
+  * Para ver ou trocar à mão num brick já gravado: `sudo nano /etc/netplan/armbian.yaml` (com a
+    raiz gravável, seção 14), depois `sudo netplan apply` ou reinicie.
 
   **Por que na raiz:** no boot pelo cartão, a `/home` costuma vir da **eMMC** (os UUIDs são iguais),
   e a eMMC inteira vai ser regravada, então a `/home` precisa ser desmontada antes. Um script guardado
@@ -1211,8 +1240,9 @@ atualizado está só no cartão:** a raiz da eMMC (`mmcblk2p1`) ainda é a antig
 `90-gpio.rules`); `force-fsck-root.service`; `menuPrincipal.service`; `~/.bashrc` ativando o
 `meu_venv`; Samba da seção 15; `fancontrol` ativo no PWM1; áudio (cards `Codec` e `HDMI`); seriais
 `ttyS0`, `ttyS2`–`ttyS7` e quatro CH340 (`ttyUSB0`–`ttyUSB3`); `i2c-0`, `i2c-1` (e `i2c-5`/`i2c-6`);
-a `end0` existe (sem cabo); Wi-Fi pelo netplan do Armbian (`/etc/netplan/armbian.yaml`, não lido:
-só o root lê, e tem a senha da rede).
+a `end0` existe (sem cabo); Wi-Fi pelo netplan do Armbian (`/etc/netplan/armbian.yaml`: só o root
+lê, porque tem a senha da rede; lido em 28/10 com a senha escondida: fixa os MACs da `end0` e da
+`wlan0`, veja o MAC do Wi-Fi na seção 17).
 
 **Vale ajustar no brick** (nada foi mudado):
 
