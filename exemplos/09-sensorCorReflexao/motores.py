@@ -39,7 +39,53 @@ class Motores:
     ATIVA_VENTOINHA = 0xF2 #242
     LED_RGB_ALL_PORTA4 = 0xF1 #241
     LED_RGB_ONE_PORTA4 = 0xF0 #240
+    TOCA_BUZZER = 0xEF #239
+    TOCA_SOM = 0xEE #238
+    CONSULTA_BUZZER = 0xED #237
+    CONFIGURA_BUZZER = 0xEC #236
+    BUZZER_LIGA_LOW = 0   # padrão: o buzzer apita com o pino em LOW (repouso em HIGH)
+    BUZZER_LIGA_HIGH = 1
     NUM_LEDS_PORTA4 = 10  # numLeds do LEDStrip da porta 4 no firmware
+
+    # O Timer2 do Mariola atende só uma função: servos, ventoinha ou buzzer. A primeira que for usada
+    # fica com ele até o brick reiniciar e os comandos das outras são ignorados pelo firmware.
+    TIMER2_LIVRE = 0
+    TIMER2_SERVOS = 1
+    TIMER2_VENTOINHA = 2
+    TIMER2_BUZZER = 3
+    _NOMES_TIMER2 = {0: 'livre', 1: 'servos', 2: 'ventoinha', 3: 'buzzer'}
+    _DONO_TIMER2 = {1: 'os servos', 2: 'a ventoinha', 3: 'o buzzer'}  # para as mensagens de erro
+
+    # status das respostas do buzzer
+    _BUZZER_RECUSADO = 0
+    _BUZZER_OK = 1
+    _BUZZER_SOM_INVALIDO = 2
+
+    # sons do buzzer (número do som no firmware)
+    SOM_BIPE = 1
+    SOM_BIPE_DUPLO = 2
+    SOM_SUCESSO = 3
+    SOM_ERRO = 4
+    SOM_ALERTA = 5
+    SOM_LIGANDO = 6
+    SOM_DESLIGANDO = 7
+    SOM_LARGADA = 8
+    SOM_RE = 9
+    SOM_SIRENE_DOIS_TONS = 10
+    SOM_SIRENE = 11
+    SOM_MOEDA = 12
+    SOM_POWER_UP = 13
+    SOM_LASER = 14
+    SOM_BATERIA_FRACA = 15
+    SOM_ROBO = 16
+    MELODIA_ESCALA = 17
+    MELODIA_PARABENS = 18
+    MELODIA_BRILHA_ESTRELINHA = 19
+    MELODIA_ODE_ALEGRIA = 20
+    MELODIA_JINGLE_BELLS = 21
+    MELODIA_FUR_ELISE = 22
+    MELODIA_GRAN_VALS = 23  # o toque clássico de celular
+    QUANTIDADE_SONS = 23
 
     def __init__(self, atualiza_instantaneo=False):
         #qualquer lista que for enviada deve ter o mesmo tamanho sempre. Para evitar problemas de sincronismo
@@ -48,6 +94,8 @@ class Motores:
         self.lista_pid = [self.ENVIA_PID, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.lista_led = [self.LED_RGB_ALL, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.ventoinha_ativa = False
+        self.buzzer_ativo = False
+        self.servos_ativos = False  # algum servo já recebeu ângulo: o Timer2 ficou com os servos
         portas = Portas()
         self.ser = portas.abre_porta_serial(Portas._SERIAL0, 250000)
         if self.ser is None:
@@ -62,6 +110,8 @@ class Motores:
         self.para_motores()
         if self.ventoinha_ativa:
             self.desliga_ventoinha()  # o timeout do firmware não desliga a ventoinha
+        if self.buzzer_ativo:
+            self.para_buzzer()
         self.ser.close()
         if self.DEBUG:
             print('Fechando a porta serial do motores')
@@ -71,8 +121,9 @@ class Motores:
             return
         if servo > 6:
             return
-        if self.ventoinha_ativa:
-            raise Exception('Servos desativados: com a ventoinha ligada o Mariola não gera pulso de servo '
+        if self.ventoinha_ativa or self.buzzer_ativo:
+            dono = self._DONO_TIMER2[self.TIMER2_VENTOINHA if self.ventoinha_ativa else self.TIMER2_BUZZER]
+            raise Exception(f'Servos desativados: o Timer2 do Mariola já está com {dono} '
                             '(reinicie o brick para voltar a usar os servos)')
         angulo = max(angulo, 0)
         angulo = min(angulo, 180)
@@ -93,6 +144,8 @@ class Motores:
             # print(f'retorno_serial: {retorno_serial}')
         if len(retorno_serial) == 1:
             if retorno_serial[0] == self.ENVIA_SERVOS:
+                if any(angulo <= 180 for angulo in self.lista_servos[1:7]):
+                    self.servos_ativos = True  # o firmware reservou o Timer2 para os servos
                 return True
         raise Exception('Erro ao ler o estado dos servos')
 
@@ -590,11 +643,14 @@ class Motores:
         raise Exception('Erro ao calibrar os motores')
 
     # Ventoinha no pino 11 (o TX do serialDebug), PWM do Timer2 a ~976 Hz.
-    # O primeiro comando desliga TODOS os servos do Mariola e o serialDebug: os servos também usam o
-    # Timer2, então com a ventoinha ligada eles param de funcionar até o brick reiniciar (ligar um
-    # servo de novo estragaria o PWM da ventoinha). O timeout de 5 s do firmware NÃO desliga a
-    # ventoinha: ela fica girando até receber potência 0.
+    # Servos, ventoinha e buzzer dividem o Timer2: o primeiro que for usado fica com ele até o brick
+    # reiniciar. Se a ventoinha for a primeira, o firmware desliga TODOS os servos e o serialDebug.
+    # O timeout de 5 s do firmware NÃO desliga a ventoinha: ela fica girando até receber potência 0.
     def set_ventoinha(self, potencia):  # potencia de 0 a 100 (%)
+        if self.servos_ativos or self.buzzer_ativo:
+            dono = self._DONO_TIMER2[self.TIMER2_SERVOS if self.servos_ativos else self.TIMER2_BUZZER]
+            raise Exception(f'Ventoinha indisponível: o Timer2 do Mariola já está com {dono} '
+                            '(reinicie o brick para usar a ventoinha)')
         potencia = max(0, min(potencia, 100))
         pwm = round(potencia * 255 / 100)
         self.ventoinha_ativa = True
@@ -617,3 +673,99 @@ class Motores:
 
     def desliga_ventoinha(self):
         return self.set_ventoinha(0)
+
+    # Buzzer no pino 11 (PB3), gerado pelo Timer2. Tudo é feito pelo firmware sem travar a placa:
+    # depois de mandar o som o programa continua na hora, e os motores seguem funcionando enquanto ele toca.
+    # Servos, ventoinha e buzzer dividem o Timer2: o primeiro que for usado fica com ele até o brick
+    # reiniciar. Se o buzzer for o primeiro, o firmware desliga TODOS os servos e o serialDebug.
+
+    # Toca um dos sons prontos (SOM_... ou MELODIA_...).
+    # vezes: quantas vezes toca (0 = repete até chamar para_buzzer())
+    # velocidade: % do andamento original (100 = normal, 200 = duas vezes mais rápido, 50 = metade), de 10 a 255
+    # esperar: True espera o som terminar antes de voltar
+    def toca_som(self, som, vezes=1, velocidade=100, esperar=False):
+        if som < 1 or som > self.QUANTIDADE_SONS:
+            raise ValueError(f'Som {som} não existe (use de 1 a {self.QUANTIDADE_SONS})')
+        if vezes == 0 and esperar:
+            raise ValueError('Com vezes=0 o som repete para sempre: não dá para esperar ele terminar')
+        repeticoes = 255 if vezes == 0 else max(0, min(int(vezes) - 1, 254))
+        velocidade = max(10, min(int(velocidade), 255))
+        self._envia_buzzer([self.TOCA_SOM, som, repeticoes, velocidade, 0, 0, 0, 0, 0, 0])
+        if esperar:
+            self.espera_buzzer()
+        return True
+
+    # Toca um tom de 'frequencia' Hz (31 a 20000) por 'duracao_ms' milissegundos (até 65535).
+    def toca_tom(self, frequencia, duracao_ms, esperar=False):
+        frequencia = max(0, min(int(frequencia), 20000))
+        duracao_ms = max(0, min(int(duracao_ms), 65535))
+        self._envia_buzzer([self.TOCA_BUZZER,
+                            (frequencia >> 8) & 0xFF, frequencia & 0xFF,
+                            (duracao_ms >> 8) & 0xFF, duracao_ms & 0xFF,
+                            0, 0, 0, 0, 0])
+        if esperar:
+            self.espera_buzzer()
+        return True
+
+    # Para o som. Pode chamar sempre: o firmware não reserva o Timer2 para o buzzer só por causa do
+    # comando de parar (se o Timer2 for dos servos ou da ventoinha, não muda nada).
+    def para_buzzer(self):
+        self._envia_buzzer([self.TOCA_SOM, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        return True
+
+    # True enquanto o buzzer estiver tocando
+    def buzzer_tocando(self):
+        tocando, _ = self._envia_buzzer([self.CONSULTA_BUZZER, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        return tocando == 1
+
+    # Nível que liga o buzzer: BUZZER_LIGA_LOW (padrão) ou BUZZER_LIGA_HIGH. Fica salvo na EEPROM do
+    # Mariola, então só precisa configurar uma vez por brick. Não reserva o Timer2.
+    def set_nivel_buzzer(self, nivel):
+        if nivel not in (self.BUZZER_LIGA_LOW, self.BUZZER_LIGA_HIGH):
+            raise ValueError('Use Motores.BUZZER_LIGA_LOW ou Motores.BUZZER_LIGA_HIGH')
+        salvo, _ = self._envia_buzzer([self.CONFIGURA_BUZZER, nivel, 0, 0, 0, 0, 0, 0, 0, 0])
+        if salvo != nivel:
+            raise Exception('Erro ao salvar o nível do buzzer')
+        return True
+
+    def nivel_buzzer(self):
+        nivel, _ = self._envia_buzzer([self.CONFIGURA_BUZZER, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0])  # 0xFF = só consulta
+        return nivel
+
+    # Espera o som atual terminar. timeout em segundos (None = sem limite); retorna False se estourou
+    def espera_buzzer(self, timeout=None):
+        inicio = time.monotonic()
+        while self.buzzer_tocando():
+            if timeout is not None and time.monotonic() - inicio > timeout:
+                return False
+            time.sleep(0.05)
+        return True
+
+    # Envia um comando do buzzer. O firmware responde [comando, status, modo do Timer2].
+    def _envia_buzzer(self, lista):
+        comando = lista[0]
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
+        self.ser.write(bytes(lista))
+        if self.DEBUG:
+            print(f'Enviando buzzer: {lista}')
+        retorno_serial = self.ser.read(3)
+        if self.DEBUG:
+            print("retorno_serial (int):", [int(b) for b in retorno_serial])
+        if len(retorno_serial) != 3 or retorno_serial[0] != comando:
+            raise Exception('Erro ao enviar dados do buzzer')
+        status = retorno_serial[1]
+        modo = retorno_serial[2]
+        if comando in (self.CONSULTA_BUZZER, self.CONFIGURA_BUZZER):
+            return status, modo
+        if status == self._BUZZER_SOM_INVALIDO:
+            raise ValueError('Som inválido para o firmware do Mariola')
+        if status == self._BUZZER_RECUSADO:
+            dono = self._DONO_TIMER2.get(modo, f'o modo {modo}')
+            raise Exception(f'Buzzer indisponível: o Timer2 do Mariola já está com {dono} '
+                            '(reinicie o brick para usar o buzzer)')
+        if modo == self.TIMER2_BUZZER and not self.buzzer_ativo:
+            self.buzzer_ativo = True
+            for servo in range(1, 7):
+                self.lista_servos[servo] = 200  # o firmware já desligou os servos
+        return status, modo

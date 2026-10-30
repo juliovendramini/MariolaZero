@@ -151,6 +151,24 @@ cria partições novas na eMMC em vez de copiar o cartão.)
 
 Como a eMMC de 8 GB tem 7,3 GB úteis, as partições do cartão precisam caber nela (seção 2).
 
+Com o brick ligado pelo cartão (`lsblk`: a eMMC é o disco com `boot0`/`boot1`, normalmente a
+`mmcblk2`; o cartão é a `mmcblk0`):
+
+```bash
+sudo systemctl stop menuPrincipal smbd nmbd     # nada escrevendo no cartão durante a cópia
+sync
+sudo dd if=/dev/mmcblk0 of=/dev/mmcblk2 bs=4M count=1864 conv=fsync status=progress
+```
+
+O `count=1864` (× 4 MiB = 7.818.182.656 bytes, o tamanho da eMMC) copia só o começo do cartão, onde
+ficam a tabela, o U-Boot e as duas partições. Em cartão maior que a eMMC, o `dd` sem ele pararia com
+"No space left on device" no fim, o que também não estraga nada. A cópia de um sistema em uso pode
+ficar com a `/home` "suja": no primeiro boot pela eMMC o `fsck` resolve. Se a raiz já estiver
+somente leitura (seção 14), melhor.
+
+Para um brick novo igual aos da equipe, use a imagem pronta (seção 17, "Gravar a imagem num brick
+novo") em vez de refazer a instalação.
+
 > **Depois de copiar, tire o cartão.** O BROM do H618 tenta o **cartão SD antes da eMMC**, e com
 > os UUIDs iguais o Linux pode montar a raiz de um e a `/home` do outro. Foi o que aconteceu no
 > brick conferido: raiz do cartão (`mmcblk0p1`) e `/home` da eMMC (`mmcblk2p2`). Em compensação, um
@@ -1044,6 +1062,39 @@ Dois scripts em [`instalacao/`](instalacao/) fazem os procedimentos abaixo, com 
 Na imagem @Work (32 GB) não há cartão de reserva com imagem: o próprio cartão @Work é a
 recuperação, e o `clona_sd_emmc.sh` passa ele para a eMMC (apêndice D).
 
+### Gravar a imagem num brick novo (download)
+
+Para montar um brick Line/Maze igual aos da equipe, não precisa refazer a instalação. Baixe o
+**clone do cartão de reserva**:
+[`backup-mariola20261029.dd.zst`](https://drive.google.com/file/d/1IQyD2rV-8efRTjCFtb1gyCD6qlDG-dNe/view?usp=sharing)
+(Google Drive).
+
+O que é o arquivo:
+* É o cartão de 16 GB **inteiro**, comprimido com zstd pelo USBImager: as três partições da tabela
+  acima, com a imagem da eMMC de 28/10/2026 na `p3` e o `/instalacao_emmc.sh` na raiz.
+* Grave num cartão de **16 GB ou mais**. Um "16 GB" de outra marca pode ter alguns MB a menos e não
+  caber; na dúvida, use um de 32 GB (o que sobra fica sem uso).
+
+1. **Grave o cartão.**
+   * **No Windows**, com o [USBImager](https://gitlab.com/bztsrc/usbimager): escolha o `.zst` direto
+     (não precisa descompactar), marque **Verify**, escolha o cartão e clique em **Write**.
+   * **No Linux** (troque `sdX` pelo cartão; confira com `lsblk`, porque o `dd` apaga o disco que
+     receber):
+     ```bash
+     zstd -dc backup-mariola20261029.dd.zst | sudo dd of=/dev/sdX bs=4M conv=fsync status=progress
+     ```
+2. **Dê boot pelo cartão.** Ponha o cartão no brick e ligue: o SD dá boot antes da eMMC. A imagem
+   já conecta nas redes Wi-Fi da equipe; o acesso é `ssh banana@IP` ou pela serial (seção 3).
+3. **Grave a eMMC** (demora uns 15 a 20 minutos):
+   ```bash
+   cd /
+   sudo bash /instalacao_emmc.sh
+   ```
+   Digite `SIM` quando ele pedir e **anote o MAC do Wi-Fi** que ele mostra no fim: cada brick recebe
+   um MAC sorteado (veja acima).
+4. **Passe a usar a eMMC.** Desligue (`sudo shutdown -h now`), **tire o cartão** e ligue: o brick sobe
+   pela eMMC. Guarde o cartão: ele é a recuperação desse brick.
+
 **Detectar o cartão com o brick ligado.** Colocado com o brick já ligado, o cartão pode não
 aparecer (o pino de detecção do slot não avisa o kernel). Religue o driver do slot do cartão, o
 `4020000.mmc` (a eMMC é o `4022000.mmc` e não é afetada):
@@ -1098,12 +1149,15 @@ perde. Copie antes o que importar (ex.: os programas das equipes).
 2. Cole um comando de cada vez (aperte Enter duas vezes em cada; às vezes o terminal engasga):
    ```
    ext4load mmc 1:1 0x42000000 /boot/Image
-   ext4load mmc 1:1 0x47000000 /boot/dtb-6.6.75-current-sunxi64/allwinner/sun50i-h618-bananapi-m4-zero.dtb
-   ext4load mmc 1:1 0x60000000 /boot/uInitrd-6.6.75-current-sunxi64
+   ext4load mmc 1:1 0x47000000 /boot/dtb/allwinner/sun50i-h618-bananapi-m4-zero.dtb
+   ext4load mmc 1:1 0x60000000 /boot/uInitrd
    booti 0x42000000 0x60000000 0x47000000
    ```
-   Os nomes `6.6.75` são do kernel antigo: com o 6.18, troque pelos nomes que existem no seu
-   `/boot` (`ls /boot`).
+   `/boot/Image`, `/boot/dtb` e `/boot/uInitrd` são links para os arquivos do kernel instalado (no
+   brick de 20/10/2026, o `dtb` aponta para `dtb-6.18.43-current-sunxi64`); o script de boot do
+   Armbian usa os mesmos. Se o U-Boot não achar algum, use o nome com a versão (`ls /boot` num brick
+   que funcione). Antes eram `dtb-6.6.75-current-sunxi64` e `uInitrd-6.6.75-current-sunxi64`, do
+   kernel antigo.
 3. Quando o sistema subir, verifique a raiz: `fsck.ext4 -f -p /dev/mmcblk1p1` (confira o
    dispositivo: a numeração muda entre boots).
 4. Desligue e ligue de novo.

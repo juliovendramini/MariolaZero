@@ -23,7 +23,9 @@ Usado pelas equipes Titãs da Robótica (Ifes Colatina) na RoboCupJunior Rescue 
 
 ## Por onde começar
 
-* **Montar um brick novo:** [`INSTALACAO.md`](INSTALACAO.md).
+* **Montar um brick novo:** baixe a imagem pronta da Line/Maze e grave a eMMC por ela
+  ([`INSTALACAO.md`](INSTALACAO.md), seção 17, "Gravar a imagem num brick novo"), ou faça a
+  instalação completa pelo mesmo arquivo.
 * **Programar o robô:** o [curso](https://juliovendramini.github.io/MariolaZero/curso/), a partir
   do módulo 1.
 * **Testar sem o robô:** os simuladores (`simuladorLine/README.md`, `simuladorMaze/README.md`).
