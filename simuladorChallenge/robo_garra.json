@@ -1,0 +1,301 @@
+{
+ "_comentario": "Robô PROVISÓRIO da RCB Challenge com uma garra simples na frente (brick Mariola + 4 rodas mecanum). Mesma base do robo_mecanum.json, mais a garra, o VL53 da frente baixo e um TCS34725 entre os dedos. Unidades: mm, graus, kg. Robô: x para frente, y para a esquerda, origem no centro da caixa do robô. Tudo marcado A DEFINIR é chute.",
+ "nome": "garra (provisório)",
+ "geometria": {
+  "_comentario": "A DEFINIR. A regra deixa até 300 x 300 (com as garras abertas), mas entre dois cubos-obstáculo (quadrados marrons) a rua tem só 250 mm livres: para passar seguindo a linha, menos de ~240 mm de largura.",
+  "comprimento": 200,
+  "largura": 200,
+  "altura": 120,
+  "massa_kg": 1.6
+ },
+ "rodas": {
+  "_comentario": "tipo mecanum: cada motor tem 'rolete' = ângulo do eixo dos roletes que TOCAM O CHÃO, visto de cima (graus, anti-horário a partir da frente). Montagem padrão: dianteira esquerda e traseira direita +45, as outras -45; assim, para andar de lado para a esquerda, dianteira esquerda e traseira direita giram para trás e as outras para frente. Montou trocado? O simulador anda errado igual ao robô. atrito_rolete = resistência dos roletes ao rolar (fração do peso). eficiencia_lateral = quanto do caminho ideal o robô faz andando de lado (A MEDIR: mande andar de lado 1 m pelo encoder e meça; 0,9 = 90 cm).",
+  "tipo": "mecanum",
+  "diametro": 60,
+  "largura": 30,
+  "atrito": 0.8,
+  "atrito_rolete": 0.06,
+  "eficiencia_lateral": 0.9
+ },
+ "motores": [
+  {
+   "nome": "traseira_esquerda",
+   "x": -65,
+   "y": 80,
+   "rolete": -45,
+   "controlador": "mariola",
+   "canal": 1,
+   "sentido": 1
+  },
+  {
+   "nome": "traseira_direita",
+   "x": -65,
+   "y": -80,
+   "rolete": 45,
+   "controlador": "mariola",
+   "canal": 2,
+   "sentido": -1
+  },
+  {
+   "nome": "dianteira_esquerda",
+   "x": 65,
+   "y": 80,
+   "rolete": 45,
+   "controlador": "placa",
+   "porta": "SERIAL1",
+   "id": 8,
+   "sentido": 1
+  },
+  {
+   "nome": "dianteira_direita",
+   "x": 65,
+   "y": -80,
+   "rolete": -45,
+   "controlador": "placa",
+   "porta": "SERIAL1",
+   "id": 51,
+   "sentido": -1
+  }
+ ],
+ "motor_padrao": {
+  "_comentario": "A DEFINIR: hoje é o motor de aspirador do robô da Maze. Contagens por volta da roda = pulsos_encoder_motor x reducao x multiplicador (Mariola x2: um canal nas duas bordas; placa x4: quadratura). rpm_livre = rotação da roda com PWM 100%; no PID o comando 100 = 80% disso. Medidas reais (contagens_por_volta_*, calibracao_*) têm prioridade.",
+  "contagens_por_volta_mariola": null,
+  "contagens_por_volta_placa": null,
+  "calibracao_mariola": null,
+  "calibracao_placa": null,
+  "pulsos_encoder_motor": 17,
+  "reducao": 34,
+  "multiplicador_mariola": 2,
+  "multiplicador_placa": 4,
+  "rpm_livre": 130,
+  "tau_s": 0.06,
+  "forca_max_N": 6.0
+ },
+ "portas_serial": {
+  "SERIAL0": "mariola",
+  "SERIAL1": "barramento_motores",
+  "SERIAL5": "giroscopio",
+  "SERIAL6": "cor_reflexao_v2"
+ },
+ "latencia_serial_ms": 1.0,
+ "_vl53": "altura = mm do chão até o sensor. Cubos e plataformas têm 50 mm: um sensor mais alto que isso só vê o cubo de longe (quando ele entra no cone).",
+ "vl53": [
+  {
+   "nome": "frente",
+   "mux": "I2C1",
+   "x": 100,
+   "y": 0,
+   "angulo": 0,
+   "altura": 35
+  },
+  {
+   "nome": "tras",
+   "mux": "I2C2",
+   "x": -100,
+   "y": 0,
+   "angulo": 180,
+   "altura": 35
+  },
+  {
+   "nome": "esquerda",
+   "mux": "I2C3",
+   "x": 0,
+   "y": 100,
+   "angulo": 90,
+   "altura": 35
+  },
+  {
+   "nome": "direita",
+   "mux": "I2C4",
+   "x": 0,
+   "y": -100,
+   "angulo": -90,
+   "altura": 35
+  }
+ ],
+ "vl53_params": {
+  "alcance_mm": 1200,
+  "ruido_mm": 3.0,
+  "ruido_percentual": 1.0,
+  "cone_graus": 25,
+  "tempo_medida_ms": 33,
+  "fora_alcance": 8190,
+  "offset_mm": 0
+ },
+ "_tcs_i2c": "TCS34725 (lib tcs34725.py) no mux I2C, entre os dedos da garra, olhando para frente a 25 mm do chão: lê a cor do cubo preso na garra (garra embaixo) e a da plataforma à frente (com a garra alta o cubo fica acima do feixe). Não pode ficar no mesmo canal de um VL53 (os dois usam o endereço 0x29).",
+ "tcs_i2c": [
+  {
+   "nome": "frente",
+   "mux": "I2C5",
+   "x": 100,
+   "y": 0,
+   "angulo": 0,
+   "altura": 25
+  }
+ ],
+ "_garra": "Garra simples na frente: dois dedos (servo_abre) num braço que sobe e desce (servo_sobe). Servos do Mariola (portas SERVO1..4; lib motores.py: move_servo(n, ângulo) e atualiza_servos()). angulo_fechada/aberta -> abertura_fechada/aberta_mm (distância entre os dedos, linear); angulo_baixa/alta -> 0 a altura_max_mm (altura da parte de baixo dos dedos = do cubo preso). Fechando com um cubo entre os dedos e a garra embaixo (menos de 15 mm), o cubo fica preso. Abrindo com a garra a mais de 45 mm e o centro do cubo em cima de uma plataforma, o cubo fica nela; senão cai no chão. A plataforma tem 50 mm de altura. ATENÇÃO: com os servos ligados o Timer2 do Mariola fica com eles, e o buzzer não toca (avise o cubo branco com os LEDs). A DEFINIR.",
+ "garra": {
+  "servo_abre": 1,
+  "angulo_fechada": 0,
+  "angulo_aberta": 90,
+  "abertura_fechada_mm": 30,
+  "abertura_aberta_mm": 100,
+  "servo_sobe": 2,
+  "angulo_baixa": 0,
+  "angulo_alta": 90,
+  "altura_max_mm": 80,
+  "x": 100,
+  "comprimento_dedos_mm": 65,
+  "espessura_dedo_mm": 4,
+  "vel_servo_graus_s": 300,
+  "vel_queda_graus_s": 120
+ },
+ "botao_inicio": {
+  "pino": "P3"
+ },
+ "giroscopio": {
+  "_comentario": "escala: unidades por grau (1 = graus inteiros, 10 = décimos). z_continuo=false faz Z voltar entre -180 e 180.",
+  "escala": 1,
+  "z_continuo": true,
+  "z_horario_positivo": true,
+  "deriva_graus_min": 0.6,
+  "ruido_graus": 0.15,
+  "tempo_calibracao_s": 2.0
+ },
+ "cor_reflexao": {
+  "_comentario": "Pro1616 (V2), mesma geometria da Line e da Maze: 4 canais IR (centro de cada grupo de 3 ITR8307: ±26,6 e ±8,9 mm; canal 0 = esquerda) e 3 TCS34725 a 20 mm um do outro (TCS1 = esquerda), 9 mm atrás da fileira IR. x = distância à frente do centro do robô (A DEFINIR). Cada ponto lê a média de um disco de 5 mm de raio (19 amostras).",
+  "tcs": [
+   {
+    "x": 71,
+    "y": 20
+   },
+   {
+    "x": 71,
+    "y": 0
+   },
+   {
+    "x": 71,
+    "y": -20
+   }
+  ],
+  "ir": [
+   {
+    "x": 80,
+    "y": 26.6
+   },
+   {
+    "x": 80,
+    "y": 8.9
+   },
+   {
+    "x": 80,
+    "y": -8.9
+   },
+   {
+    "x": 80,
+    "y": -26.6
+   }
+  ],
+  "ruido": 3,
+  "tempo_calibra_branco_s": 7.0,
+  "tempo_calibra_preto_s": 2.2
+ },
+ "cores_piso": {
+  "_comentario": "Escala do firmware: o TCS é calibrado no branco e manda METADE (branco ~127). IR: 0 = preto, ~100 = branco calibrado. Valores ESTIMADOS para a lona impressa: troque pelos lidos no robô. 'cinza' = contorno cinza muito claro dos quadrados dos cubos; 'fora' = mesa fora da lona.",
+  "branco": {
+   "rgbc": [
+    127,
+    128,
+    126,
+    127
+   ],
+   "ir": 100
+  },
+  "preto": {
+   "rgbc": [
+    3,
+    3,
+    4,
+    5
+   ],
+   "ir": 2
+  },
+  "vermelho": {
+   "rgbc": [
+    115,
+    25,
+    22,
+    58
+   ],
+   "ir": 85
+  },
+  "azul": {
+   "rgbc": [
+    18,
+    40,
+    112,
+    60
+   ],
+   "ir": 65
+  },
+  "verde": {
+   "rgbc": [
+    18,
+    62,
+    26,
+    38
+   ],
+   "ir": 55
+  },
+  "amarelo": {
+   "rgbc": [
+    125,
+    118,
+    28,
+    92
+   ],
+   "ir": 95
+  },
+  "marrom": {
+   "rgbc": [
+    42,
+    22,
+    12,
+    25
+   ],
+   "ir": 40
+  },
+  "cinza": {
+   "rgbc": [
+    112,
+    113,
+    112,
+    112
+   ],
+   "ir": 92
+  },
+  "fora": {
+   "rgbc": [
+    30,
+    30,
+    32,
+    30
+   ],
+   "ir": 25
+  }
+ },
+ "leds": {
+  "_comentario": "índices do set_led_rgb_one do Mariola (10 LEDs RGB). Qualquer LED aceso (ou o buzzer tocando) com a frente do robô a menos de 20 cm de um cubo branco vale como aviso ao árbitro (+50, uma vez por cubo)."
+ },
+ "_tela_teclado": "Placa da tela + teclado no conector TELA (barramento I2C 0): OLED SSD1306 128x64 em 0x3C (tela.py) e o teclado em 0x38 (teclado.py, use Teclado(i2c_bus=0)). Botões: Voltar, Baixo, Cima, Enter. LEDs: branco, vermelho, laranja, verde.",
+ "tela": {
+  "barramento": 0,
+  "endereco": 60
+ },
+ "teclado": {
+  "barramento": 0,
+  "endereco": 56,
+  "leds_acendem_com": 1
+ },
+ "arquivos_rodada": []
+}

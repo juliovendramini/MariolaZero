@@ -414,6 +414,23 @@ Pela lib `tcs34725.py` (I2C, mux). Leem a cor do que está na frente deles, na a
 parede do triângulo, a parede da área ou uma vítima. A leitura cai com a distância (o LED do módulo
 ilumina). O de trás confirma que o robô encostou no triângulo certo antes de soltar.
 
+Com `"chao": true` o TCS olha para o chão: lê a cor do material embaixo dele (tabela `cores_piso`,
+branco ~127) multiplicada por `ganho / 127` (fração do branco a ~1 cm, como os horizontais). Serve
+para quem procura a fita prata com um TCS avulso em vez do Pro1616.
+
+### Outras montagens do mecanismo de resgate
+
+* `resgate.garra.traseira: true`: garra atrás, abrindo para trás (`x_base` = distância do centro do
+  robô até onde ela começa). Os dedos `esq`/`dir` e os lados da caçamba continuam sendo os lados do
+  robô. Ponha a câmera atrás também (`camera.angulo: 180`, `x` negativo).
+* `resgate.cacamba.saida_x` positivo: a caçamba solta as bolinhas **pela frente** (caem
+  `distancia_queda` mm à frente de `saida_x`).
+* VL53 com `"na_cacamba": {"lado": "esq", "bolas": 1, "com_bola": 50, "vazia": 200}`: sensor dentro da
+  caçamba que mede `com_bola` mm quando aquele lado tem pelo menos `bolas` bolinhas (senão `vazia`).
+  O raio não é traçado.
+
+Exemplo dessas montagens: o robô de uma equipe em `professor/` (privado).
+
 ---
 
 ## Física

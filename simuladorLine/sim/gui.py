@@ -690,10 +690,11 @@ class Interface:
     def _desenha_mecanismo(self, tela, L, mec, e, w):
         cfg = w.cfg['resgate']
         g = cfg.get('garra', {})
-        xb = float(g.get('x_base', w.L / 2))
-        comp = float(g.get('comprimento', 60))
+        sx = -1.0 if g.get('traseira') else 1.0
+        xb = sx * abs(float(g.get('x_base', w.L / 2)))
+        comp = sx * float(g.get('comprimento', 60))
         a = max(0.0, min(1.0, mec['braco']))
-        # vista de cima: a garra aponta para a frente no chão e "deita" sobre o robô no alto
+        # vista de cima: a garra aponta para fora no chão e "deita" sobre o robô no alto
         ponta = xb + comp * (1.0 - 2.0 * a)
         cor = (255, 150, 40) if a < 0.12 else (240, 200, 110)
         larg = max(2, int(6 * e))
@@ -704,29 +705,32 @@ class Interface:
         pygame.draw.circle(tela, (90, 70, 40), L(xb, 0), max(2, int(5 * e)))
         if mec['garra']:
             self._desenha_bola(tela, L((xb + ponta) / 2, mec['yb']), mec['garra'], e)
-        # caçamba (dois lados) na traseira
+        # caçamba (dois lados) do lado da saída (traseira, ou frente se saida_x > 0)
+        sc = 1.0 if float(cfg.get('cacamba', {}).get('saida_x', -1)) > 0 else -1.0
         hl = w.L / 2
         for lado, sinal in (('esq', 1), ('dir', -1)):
-            r0 = [L(-hl + 8, sinal * 6), L(-hl + 52, sinal * 6), L(-hl + 52, sinal * 58), L(-hl + 8, sinal * 58)]
+            r0 = [L(sc * (hl - 8), sinal * 6), L(sc * (hl - 52), sinal * 6), L(sc * (hl - 52), sinal * 58),
+                  L(sc * (hl - 8), sinal * 58)]
             aberto = (mec['porta'] <= -0.6 and lado == 'esq') or (mec['porta'] >= 0.6 and lado == 'dir')
             pygame.draw.polygon(tela, (255, 220, 120) if aberto else (120, 125, 140), r0, 2)
             for k, tipo in enumerate(mec['cacamba'][lado]):
-                self._desenha_bola(tela, L(-hl + 30, sinal * (20 + 22 * k)), tipo, e * 0.7)
+                self._desenha_bola(tela, L(sc * (hl - 30), sinal * (20 + 22 * k)), tipo, e * 0.7)
 
     def _desenha_camera(self, tela, L, zs, e, w):
         c = w.resgate._cfg_cam()
         cx, cy = float(c['x']), float(c['y'])
+        a0 = math.radians(float(c.get('angulo', 0)))
         meia = math.radians(float(c['fov_graus'])) / 2
         tapada = zs['mec'] and zs['mec']['braco'] < 0.12
         cor = (255, 80, 80) if tapada else (120, 200, 255)
         Lc = 260
         for s_ in (-1, 1):
-            pygame.draw.line(tela, cor, L(cx, cy), L(cx + Lc * math.cos(s_ * meia), cy + Lc * math.sin(s_ * meia)), 1)
+            pygame.draw.line(tela, cor, L(cx, cy), L(cx + Lc * math.cos(a0 + s_ * meia), cy + Lc * math.sin(a0 + s_ * meia)), 1)
         for tipo, (t, dets) in zs['cam'].items():
             if zs['t'] - t > 0.6:
                 continue
             for d in dets:
-                ang = math.radians(d['angulo'])
+                ang = a0 + math.radians(d['angulo'])
                 dist = d['distancia']
                 p = L(cx + dist * math.cos(ang), cy + dist * math.sin(ang))
                 if tipo == 'vitimas':

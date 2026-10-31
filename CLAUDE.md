@@ -15,6 +15,7 @@ equipes Titãs da Robótica). Tudo em português: código, comentários, commits
 | `exemplos/`, `menuPrincipal/`, `telemetria/` | programas do robô real |
 | `simuladorLine/` | simulador da RoboCupJunior Rescue Line (tem `CLAUDE.md` próprio) |
 | `simuladorMaze/` | simulador da RoboCupJunior Rescue Maze (tem `CLAUDE.md` próprio) |
+| `simuladorChallenge/` | simulador da RCB Challenge (CBR 2026), começado em 30/10/2026: arena, cubos e plataformas, mecanum, juiz e o robô real **Bombertinho** (`robo_bombertinho.json`, 31/10: duas garras de paralelogramo, medido no DXF do Julio); os robôs provisórios continuam; **falta o adversário** (tem `CLAUDE.md` próprio) |
 | `curso/` | curso para os alunos (público): 18 módulos em Markdown, `referencia/`, `codigos/`, `curso-mariola.html` (tem `CLAUDE.md` próprio) |
 | `professor/` | material do professor: **NUNCA vai para o GitHub** (`.gitignore` = `*`; tem `CLAUDE.md` próprio) |
 | `simuladorLine.zip` | zip antigo do simulador; o zip atual para os laboratórios sai de `simuladorLine/ferramentas/monta_portatil.py` |

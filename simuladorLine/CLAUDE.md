@@ -211,6 +211,12 @@ depois consulta `entrada_estado` a cada 50 ms reais.
   rodada nas curvas fechadas); L03 não (passa dos 30 s); L04 6/6 (205, 0 LoP); mesmo placar em 2x e 8x.
 * Sensores do 4x4 no resgate: VL53 na garra, um de cada lado no meio, um na frente na altura do
   triângulo, TCS na frente (talvez um atrás).
+* Montagens de outras equipes (30/10/2026, para o robô Boberto 2026 em `professor/boberto2026/`):
+  `resgate.garra.traseira` (o `Mecanismo` calcula tudo como se a garra estivesse na frente e espelha
+  o x com `sx` em `local()`/`mundo()`; esq/dir continuam os do robô), `cacamba.saida_x > 0` (solta pela
+  frente), VL53 `na_cacamba` (`Mecanismo.vl53_cacamba`, sem raio) e `tcs_i2c[].chao` (`Mundo.rgbc_piso`
+  × `ganho`/127). A janela desenha a câmera do stub girada pelo `camera.angulo`. Sem essas chaves nada
+  muda (teste de referência continua 295).
 
 ## Desafios e `avalia.py`
 

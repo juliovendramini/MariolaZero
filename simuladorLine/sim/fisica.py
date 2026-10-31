@@ -1102,6 +1102,11 @@ class Mundo:
         alcance = float(pr['alcance_mm'])
         cone = math.radians(float(pr['cone_graus']))
         altura = sc.get('altura')          # mm do chão; só vê o que for mais alto que isso
+        if sc.get('na_cacamba'):
+            mec = self.resgate.mec
+            d = mec.vl53_cacamba(sc) if mec else float(sc['na_cacamba'].get('vazia', 200))
+            self.raios[sc['nome']] = (p0, p0, None, self.t)
+            return max(0, int(round(d + self.rng_vl53.gauss(0, float(pr['ruido_mm'])))))
         if sc.get('na_garra'):
             mec = self.resgate.mec
             r = mec.vl53_garra(sc, alcance) if mec else None
@@ -1216,6 +1221,10 @@ class Mundo:
                     dd = _dist_pts_seg(pts[sel], d)
                     out[sel[dd < 1.6]] = LT.M_MADEIRA
         return out
+
+    def rgbc_piso(self, p):
+        """[r, g, b, c] da tabela cores_piso para o material do chão no ponto p (mundo)."""
+        return self.rgbc_mat[self.materiais(np.array([[p[0], p[1]]], dtype=float))[0]]
 
     def leitura_sensor(self, ruido=True):
         """Lê o sensor de linha. Devolve dict com os 12 IR, 4 canais, 3 RGBC e os 16 bytes

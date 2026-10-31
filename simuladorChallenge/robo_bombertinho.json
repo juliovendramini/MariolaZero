@@ -1,0 +1,452 @@
+{
+ "_comentario": "Robô real da RCB Challenge 2026 (Bombertinho). Geometria: desenho 'Bombertinho 2026 - Nacional CBR' (DXF de 31/10/2026) com as rodas reais de 58 mm. Ligações (portas, canais do mux, servos, sentido dos motores, encoder de 75 contagens/cm) e cores: do código da equipe (CBR-2026, commit 4f613f5 de 30/10/2026). O que foi deduzido do código está em _deducoes. Unidades: mm, graus, kg. Robô: x para frente (lado do sensor de cor e do VL53 baixos), y para a esquerda, origem no centro entre as 4 rodas. Alturas a partir do chão. Tudo marcado A DEFINIR é chute.",
+ "nome": "Bombertinho 2026",
+ "geometria": {
+  "_comentario": "Caixa do corpo (sem as garras): base de 172 x 117 mm, com as rodas por fora (145 de largura) e os VL53 da frente e de trás a ±90,7 mm. massa_kg A DEFINIR (pesar o robô).",
+  "comprimento": 180,
+  "largura": 145,
+  "altura": 132,
+  "massa_kg": 1.6
+ },
+ "rodas": {
+  "_comentario": "Mecanum de 58 mm (medida) e 26,5 de largura (desenho). rolete: ângulo do eixo dos roletes que tocam o chão, visto de cima (A DEFINIR: conferir no robô; padrão = dianteira esquerda e traseira direita +45). eficiencia_lateral A MEDIR (mande andar de lado 1 m pelo encoder e meça).",
+  "tipo": "mecanum",
+  "diametro": 58,
+  "largura": 26.5,
+  "atrito": 0.8,
+  "atrito_rolete": 0.06,
+  "eficiencia_lateral": 0.9
+ },
+ "motores": [
+  {
+   "nome": "traseira_direita",
+   "x": -68.5,
+   "y": -59.3,
+   "rolete": 45,
+   "controlador": "mariola",
+   "canal": 1,
+   "sentido": 1
+  },
+  {
+   "nome": "traseira_esquerda",
+   "x": -68.5,
+   "y": 59.3,
+   "rolete": -45,
+   "controlador": "mariola",
+   "canal": 2,
+   "sentido": -1
+  },
+  {
+   "nome": "dianteira_esquerda",
+   "x": 68.5,
+   "y": 59.3,
+   "rolete": 45,
+   "controlador": "placa",
+   "porta": "SERIAL2",
+   "id": 8,
+   "sentido": 1
+  },
+  {
+   "nome": "dianteira_direita",
+   "x": 68.5,
+   "y": -59.3,
+   "rolete": -45,
+   "controlador": "placa",
+   "porta": "SERIAL2",
+   "id": 51,
+   "sentido": -1
+  }
+ ],
+ "motor_padrao": {
+  "_comentario": "A DEFINIR: hoje é o motor de aspirador do robô da Maze. Contagens por volta da roda = pulsos_encoder_motor x reducao x multiplicador (Mariola x2: um canal nas duas bordas; placa x4: quadratura). rpm_livre = rotação da roda com PWM 100%; no PID o comando 100 = 80% disso. Medidas reais (contagens_por_volta_*, calibracao_*) têm prioridade.",
+  "contagens_por_volta_mariola": 1367,
+  "contagens_por_volta_placa": 2734,
+  "calibracao_mariola": null,
+  "calibracao_placa": null,
+  "pulsos_encoder_motor": 17,
+  "reducao": 34,
+  "multiplicador_mariola": 2,
+  "multiplicador_placa": 4,
+  "rpm_livre": 130,
+  "tau_s": 0.06,
+  "forca_max_N": 6.0
+ },
+ "portas_serial": {
+  "_comentario": "defs.py da equipe: linha frontal SERIAL1, barramento dos motores SERIAL2, linha lateral SERIAL3, giroscópio SERIAL5.",
+  "SERIAL0": "mariola",
+  "SERIAL1": "cor_reflexao_v2",
+  "SERIAL2": "barramento_motores",
+  "SERIAL3": "cor_reflexao_v2",
+  "SERIAL5": "giroscopio"
+ },
+ "latencia_serial_ms": 1.0,
+ "_vl53": "Um VL53 virado para cada lado (desenho). altura = mm do chão até o meio do sensor. Os canais do mux são A DEFINIR.",
+ "vl53": [
+  {
+   "nome": "frente",
+   "mux": "I2C4",
+   "x": 90.7,
+   "y": -11.4,
+   "angulo": 0,
+   "altura": 24.3
+  },
+  {
+   "nome": "tras",
+   "mux": "I2C7",
+   "x": -90.8,
+   "y": 0.0,
+   "angulo": 180,
+   "altura": 33.7
+  },
+  {
+   "nome": "esquerda",
+   "mux": "I2C2",
+   "x": 14.8,
+   "y": 69.7,
+   "angulo": 90,
+   "altura": 18.8
+  },
+  {
+   "nome": "direita",
+   "mux": "I2C5",
+   "x": 4.2,
+   "y": -48.8,
+   "angulo": -90,
+   "altura": 43.8
+  }
+ ],
+ "vl53_params": {
+  "alcance_mm": 1200,
+  "ruido_mm": 3.0,
+  "ruido_percentual": 1.0,
+  "cone_graus": 25,
+  "tempo_medida_ms": 33,
+  "fora_alcance": 8190,
+  "offset_mm": 60
+ },
+ "_tcs_i2c": "defs.py: sensor_cor_frontal I2C3 (o baixo da frente, lê as lixeiras), garra lateral I2C6, garra frontal I2C8. ganho = brilho na distância de leitura (deduzido); ambiente 0.",
+ "tcs_i2c": [
+  {
+   "nome": "frente",
+   "mux": "I2C3",
+   "x": 86.0,
+   "y": -31.0,
+   "angulo": 0,
+   "altura": 31.3,
+   "ganho": 1.15,
+   "ambiente": 0.0
+  },
+  {
+   "nome": "garra_frente",
+   "mux": "I2C8",
+   "garra": "frente",
+   "u": 3,
+   "v": 0,
+   "angulo": 0,
+   "altura": 34,
+   "ganho": 0.95,
+   "ambiente": 0.0
+  },
+  {
+   "nome": "garra_esquerda",
+   "mux": "I2C6",
+   "garra": "esquerda",
+   "u": 3,
+   "v": 0,
+   "angulo": 0,
+   "altura": 34,
+   "ganho": 0.95,
+   "ambiente": 0.0
+  }
+ ],
+ "_garras": "Duas garras iguais de paralelogramo (sim/garra.py, GarraParalela), uma na frente e uma na esquerda. x, y = eixo do servo de subir (furo de baixo do suporte verde); angulo = para onde a garra aponta. barra_mm = distância entre os furos das barras (a da frente é mais curta porque a base é retangular). altura_eixo_mm = altura do eixo do servo; base_cubo_mm = base do cubo preso em relação ao furo de baixo da cabeça (com as barras na horizontal o cubo fica a 66 - 12 = 54 mm do chão, acima da plataforma de 50). Servo de subir: angulo_horizontal = ângulo do servo com as barras na horizontal, sentido_sobe = +1 se aumentar o ângulo levanta a garra (A DEFINIR os dois). A barra desce até a parede de trás da cabeça encostar no chão. Servo de abrir: engrenagem de 24 dentes módulo 1 (raio 12 mm) na cremalheira, 0,2094 mm por grau; angulo_fechada = ângulo do servo com a comporta fechada (50 mm entre a comporta e a parede de trás), sentido_abre = +1 se aumentar o ângulo abre, curso_max_mm = quanto a comporta abre no máximo (A DEFINIR os três; 25 = o rasgo da peça no desenho). Pega o cubo fechando a comporta com a base do cubo a até altura_max_pegar_mm do chão. Servos do Mariola (portas SERVO1..4, lib motores.py: move_servo + atualiza_servos; A DEFINIR quem é quem). ATENÇÃO: com os servos ligados o Timer2 do Mariola fica com eles e o buzzer não toca (avise o cubo branco com os LEDs). Com o código da equipe: a mão abre até 180° = 37,7 mm (curso_max_mm 37,7: conferir se a cremalheira anda isso); o tronco vai de 20 (embaixo: a parede de trás encosta no chão) a 180 (barras de pé).",
+ "garras": [
+  {
+   "nome": "frente",
+   "tipo": "paralelogramo",
+   "x": 49.5,
+   "y": 0.0,
+   "angulo": 0,
+   "barra_mm": 66.5,
+   "altura_eixo_mm": 66.0,
+   "base_cubo_mm": -12.0,
+   "servo_sobe": 3,
+   "angulo_horizontal": 90,
+   "sentido_sobe": 1,
+   "angulo_barra_max": 90,
+   "servo_abre": 4,
+   "angulo_fechada": 0,
+   "sentido_abre": 1,
+   "mm_por_grau": 0.2094,
+   "curso_max_mm": 37.7,
+   "altura_max_pegar_mm": 17,
+   "vel_servo_graus_s": 300,
+   "vel_queda_graus_s": 120
+  },
+  {
+   "nome": "esquerda",
+   "tipo": "paralelogramo",
+   "x": 0.0,
+   "y": 34.0,
+   "angulo": 90,
+   "barra_mm": 79.0,
+   "altura_eixo_mm": 66.0,
+   "base_cubo_mm": -12.0,
+   "servo_sobe": 2,
+   "angulo_horizontal": 90,
+   "sentido_sobe": 1,
+   "angulo_barra_max": 90,
+   "servo_abre": 1,
+   "angulo_fechada": 0,
+   "sentido_abre": 1,
+   "mm_por_grau": 0.2094,
+   "curso_max_mm": 37.7,
+   "altura_max_pegar_mm": 17,
+   "vel_servo_graus_s": 300,
+   "vel_queda_graus_s": 120
+  }
+ ],
+ "botao_inicio": {
+  "pino": "P3"
+ },
+ "giroscopio": {
+  "_comentario": "escala: unidades por grau (1 = graus inteiros, 10 = décimos). z_continuo=false faz Z voltar entre -180 e 180.",
+  "escala": 1,
+  "z_continuo": true,
+  "z_horario_positivo": false,
+  "deriva_graus_min": 0.6,
+  "ruido_graus": 0.15,
+  "tempo_calibracao_s": 2.0
+ },
+ "_cor_reflexao": "Dois Pro1616 (frente: SERIAL1; lateral esquerdo: SERIAL3) com os IR na ordem trocada: canal 0 da frente à direita, canal 0 do lateral para a frente. TCS na ordem normal (ver _deducoes).",
+ "cor_reflexao": [
+  {
+   "nome": "frente",
+   "porta": "SERIAL1",
+   "tcs": [
+    {
+     "x": 71,
+     "y": 20
+    },
+    {
+     "x": 71,
+     "y": 0
+    },
+    {
+     "x": 71,
+     "y": -20
+    }
+   ],
+   "ir": [
+    {
+     "x": 80,
+     "y": -26.6
+    },
+    {
+     "x": 80,
+     "y": -8.9
+    },
+    {
+     "x": 80,
+     "y": 8.9
+    },
+    {
+     "x": 80,
+     "y": 26.6
+    }
+   ],
+   "ruido": 3,
+   "tempo_calibra_branco_s": 7.0,
+   "tempo_calibra_preto_s": 2.2
+  },
+  {
+   "nome": "esquerda",
+   "porta": "SERIAL3",
+   "tcs": [
+    {
+     "x": -20,
+     "y": 57
+    },
+    {
+     "x": 0,
+     "y": 57
+    },
+    {
+     "x": 20,
+     "y": 57
+    }
+   ],
+   "ir": [
+    {
+     "x": 26.6,
+     "y": 66
+    },
+    {
+     "x": 8.9,
+     "y": 66
+    },
+    {
+     "x": -8.9,
+     "y": 66
+    },
+    {
+     "x": -26.6,
+     "y": 66
+    }
+   ],
+   "ruido": 3,
+   "tempo_calibra_branco_s": 7.0,
+   "tempo_calibra_preto_s": 2.2
+  }
+ ],
+ "cores_piso": {
+  "_comentario": "Deduzidas das faixas HSV120 da equipe (threads/cores.py, area_verde.py) e dos limiares de RGB do alinhamento (verde < 43 < 57 < vermelho no canal R; vermelho < 76 < 90 < amarelo no G). IR > 85 nas cores da área (reflexao_alinhada).",
+  "branco": {
+   "rgbc": [
+    127,
+    128,
+    126,
+    127
+   ],
+   "ir": 100
+  },
+  "preto": {
+   "rgbc": [
+    3,
+    3,
+    4,
+    5
+   ],
+   "ir": 2
+  },
+  "vermelho": {
+   "rgbc": [
+    85,
+    39,
+    37,
+    54
+   ],
+   "ir": 92
+  },
+  "azul": {
+   "rgbc": [
+    53,
+    58,
+    85,
+    65
+   ],
+   "ir": 88
+  },
+  "verde": {
+   "rgbc": [
+    34,
+    53,
+    40,
+    42
+   ],
+   "ir": 92
+  },
+  "amarelo": {
+   "rgbc": [
+    170,
+    162,
+    85,
+    139
+   ],
+   "ir": 98
+  },
+  "marrom": {
+   "rgbc": [
+    42,
+    22,
+    12,
+    25
+   ],
+   "ir": 40
+  },
+  "cinza": {
+   "rgbc": [
+    112,
+    113,
+    112,
+    112
+   ],
+   "ir": 92
+  },
+  "fora": {
+   "rgbc": [
+    30,
+    30,
+    32,
+    30
+   ],
+   "ir": 25
+  }
+ },
+ "leds": {
+  "_comentario": "índices do set_led_rgb_one do Mariola (10 LEDs RGB). Qualquer LED aceso (ou o buzzer tocando) com a frente do robô a menos de 20 cm de um cubo branco vale como aviso ao árbitro (+50, uma vez por cubo)."
+ },
+ "_tela_teclado": "Placa da tela + teclado no conector TELA (barramento I2C 0): OLED SSD1306 128x64 em 0x3C (tela.py) e o teclado em 0x38 (teclado.py, use Teclado(i2c_bus=0)). Botões: Voltar, Baixo, Cima, Enter. LEDs: branco, vermelho, laranja, verde.",
+ "tela": {
+  "barramento": 0,
+  "endereco": 60
+ },
+ "teclado": {
+  "barramento": 0,
+  "endereco": 56,
+  "leds_acendem_com": 1
+ },
+ "arquivos_rodada": [],
+ "_deducoes": {
+  "vl53_offset_mm": "60: o código recua o robô até o VL53 marcar 115 mm do cubo (coleta_cubos.DISTANCIA_ALVO_CUBO) e alinha a plataforma em 102-105 mm. Pelo desenho, com o robô no cruzamento o cubo do lado está a 55 mm do VL53 da esquerda (55 + 60 = 115) e só dá para pegar o da frente com ele a 29-61 mm de verdade. Sem esse desvio nenhuma das duas garras alcança o cubo. MEDIR: cubo a 5 cm do sensor, quanto ele lê?",
+  "giroscopio": "z cresce no sentido anti-horário: é o que o cidade.ajeitar_angulo() supõe (BAIXO = alvo - 90).",
+  "sensores_linha": "Só os IR estão na ordem trocada: o le_reflexao() da lib deles inverte ('ta invertido pq depende do sensor'), e para o seguidor (erro = direita - esquerda) e o alinhar_interseccao() corrigirem para o lado certo o canal 0 do sensor da frente fica à DIREITA e o do lateral fica para a FRENTE. Os TCS estão na ordem normal (TCS1 à esquerda de quem olha na direção do sensor): é o que os comentários do alinhar_cor_e_verde() dizem e o que faz o alinhamento no canto vermelho fechar.",
+  "motores": "defs.py: canal 1 do Mariola = traseira direita (velocidade_motores(dir, esq)), canal 2 invertido no programa; placa 51 (dianteira direita) invertida no programa. 'sentido' = montagem física que faz o robô andar para frente com essas inversões.",
+  "encoder": "movimentos.andar_reto_distancia: 75 contagens do canal 1 por cm (= 1367 por volta da roda de 58 mm); as placas contam o dobro (o código usa 2x a calibração do Mariola nas placas).",
+  "servos": "movimentos.py: tronco (subir) frontal = servo 3, lateral = 2; mão (abrir) frontal = 4, lateral = 1. Ângulos usados: tronco 170 (início), 20 (embaixo), 120 (lixeira, não usado), 180 (levantada); mão 0 = fechada, 180 = aberta. angulo_horizontal 90 é chute (120 deixa o cubo a ~87 mm, acima da plataforma).",
+  "cores": "cores_piso (Pro1616) e refletancia (TCS dos cubos e das plataformas) tiradas do meio das faixas HSV120 de threads/cores.py, threads/sensores_I2C.py e area_verde.py; ganho dos TCS ajustado para a distância em que o código lê a cor (garra aberta embaixo: cubo a ~38 mm; plataforma a ~34 mm)."
+ },
+ "refletancia": {
+  "_comentario": "fração do branco (r, g, b) vista pelos TCS do mux, já com o MAX de cada canal da lib deles (R 1580, G 1880, B 1770).",
+  "vermelho": [
+   0.334,
+   0.099,
+   0.078
+  ],
+  "marrom": [
+   0.156,
+   0.145,
+   0.124
+  ],
+  "verde": [
+   0.09,
+   0.152,
+   0.096
+  ],
+  "amarelo": [
+   0.458,
+   0.452,
+   0.162
+  ],
+  "azul": [
+   0.076,
+   0.167,
+   0.244
+  ],
+  "preto": [
+   0.073,
+   0.081,
+   0.076
+  ],
+  "branco": [
+   0.95,
+   1.102,
+   1.038
+  ],
+  "robo": [
+   0.2,
+   0.2,
+   0.22
+  ]
+ }
+}

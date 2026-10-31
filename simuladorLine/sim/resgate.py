@@ -650,6 +650,10 @@ class AreaResgate:
         sc = self.tcs_cfg[idx]
         corpo = self.w.corpo
         p0 = corpo.local_to_world((float(sc['x']), float(sc['y'])))
+        if sc.get('chao'):
+            # olhando para o chão: a cor do material embaixo dele (cores_piso, branco ~127) x ganho
+            rgbc = self.w.rgbc_piso(p0) * (float(sc.get('ganho', 1.0)) / 127.0)
+            return [max(0.0, float(v) * (1 + self.rng_tcs.gauss(0, 0.01))) for v in rgbc]
         ang = corpo.angle + math.radians(float(sc.get('angulo', 0)))
         h = float(sc.get('altura', 30))
         amb = float(sc.get('ambiente', 0.03))
@@ -797,12 +801,15 @@ class Mecanismo:
         self.porta_serial = cfg.get('porta_serial', 'SERIAL1')
         self.cfg_servo = cfg.get('servo', {})
         g = cfg.get('garra', {})
-        self.x_base = float(g.get('x_base', mundo.L / 2))
+        # garra traseira: tudo da garra é calculado como se ela estivesse na frente e o x é
+        # espelhado (sx = -1) ao passar para o robô. esq/dir continuam sendo os lados do robô.
+        self.sx = -1.0 if g.get('traseira') else 1.0
+        self.x_base = abs(float(g.get('x_base', mundo.L / 2)))
         self.comp = float(g.get('comprimento', 60.0))
         self.W = float(g.get('abertura', 60.0)) / 2
         cc = cfg.get('cacamba', {})
         self.cap = int(cc.get('capacidade_lado', 2))
-        self.saida_x = float(cc.get('saida_x', -mundo.L / 2))
+        self.saida_x = float(cc.get('saida_x', -mundo.L / 2))   # > 0: caçamba solta na frente
         self.saida_y = float(cc.get('saida_y', 30.0))
         self.queda = float(cc.get('distancia_queda', 20.0))
         self.altura_saida = float(cc.get('altura_saida', 100.0))
@@ -882,6 +889,15 @@ class Mecanismo:
         y = self.W * (1.0 - c)
         return y if lado == 'esq' else -y
 
+    def local(self, p):
+        """Ponto do mundo no referencial da garra (x para onde ela abre, y para a esquerda do robô)."""
+        lx, ly = self.w.corpo.world_to_local(p)
+        return self.sx * lx, ly
+
+    def mundo(self, x, y):
+        """Ponto do referencial da garra no mundo."""
+        return self.w.corpo.local_to_world((self.sx * x, y))
+
     def bola_na_garra(self):
         return self.na_garra is not None
 
@@ -924,10 +940,9 @@ class Mecanismo:
             return self.na_garra, self.na_garra['local'][1]
         if self.braco() > 0.2 or not self.area.ativa:
             return None
-        corpo = self.w.corpo
         melhor = None
         for bola in self.area.bolas_no_chao():
-            lx, ly = corpo.world_to_local(bola['corpo'].position)
+            lx, ly = self.local(bola['corpo'].position)
             if self.x_base + 4 <= lx <= self.x_base + self.comp + RAIO_BOLA * 0.4 and \
                     self.y_dedo('dir') - RAIO_BOLA * 0.3 < ly < self.y_dedo('esq') + RAIO_BOLA * 0.3:
                 if melhor is None or lx < melhor[2]:
@@ -970,9 +985,8 @@ class Mecanismo:
         ye, yd = self.y_dedo('esq'), self.y_dedo('dir')
         novo = min(max(yb, yd + RAIO_BOLA), ye - RAIO_BOLA) if ye - yd >= 2 * RAIO_BOLA else (ye + yd) / 2
         if abs(novo - yb) > 0.05:
-            corpo = self.w.corpo
-            lx, _ = corpo.world_to_local(bola['corpo'].position)
-            bola['corpo'].position = corpo.local_to_world((lx, novo))
+            lx, _ = self.local(bola['corpo'].position)
+            bola['corpo'].position = self.mundo(lx, novo)
             self.area.space.reindex_shapes_for_body(bola['corpo'])
 
     def _atualiza_dedos(self):
@@ -981,7 +995,7 @@ class Mecanismo:
         baixa = self.braco() < 0.25
         for lado, s in self.dedos.items():
             y = self.y_dedo(lado)
-            s.unsafe_set_endpoints((self.x_base + 2, y), (self.x_base + self.comp, y))
+            s.unsafe_set_endpoints((self.sx * (self.x_base + 2), y), (self.sx * (self.x_base + self.comp), y))
             mask = (CAT_BOLA | CAT_OBST) if baixa else 0
             if s.filter.mask != mask:
                 s.filter = pymunk.ShapeFilter(categories=CAT_GARRA, mask=mask)
@@ -999,8 +1013,7 @@ class Mecanismo:
                 if r is not None:
                     bola, yb = r
                     if self.y_dedo('esq') - self.y_dedo('dir') <= 2 * RAIO_BOLA + 1.5:
-                        corpo = self.w.corpo
-                        lx, ly = corpo.world_to_local(bola['corpo'].position)
+                        lx, ly = self.local(bola['corpo'].position)
                         area.space.remove(bola['corpo'], bola['forma'])
                         bola['estado'] = 'garra'
                         bola['local'] = (lx, ly)
@@ -1028,8 +1041,8 @@ class Mecanismo:
     def _cai_da_garra(self, bola, a):
         corpo = self.w.corpo
         x = self.x_base + (self.comp * 0.6 if a < 0.5 else 15.0)
-        p = corpo.local_to_world((x, 0))
-        v = corpo.velocity + corpo.rotation_vector.rotated(self.rng.uniform(-0.6, 0.6)) * 60
+        p = self.mundo(x, 0)
+        v = corpo.velocity + corpo.rotation_vector.rotated(self.rng.uniform(-0.6, 0.6)) * (60 * self.sx)
         self.na_garra = None
         self.area.coloca_bola(bola, p, v)
 
@@ -1045,10 +1058,10 @@ class Mecanismo:
             self._deposita(bola, lado)
 
     def _deposita(self, bola, lado):
-        """A bolinha cai da caçamba a ~10 cm do chão, um pouco atrás do robô."""
+        """A bolinha cai da caçamba a ~10 cm do chão, um pouco atrás do robô (ou na frente, se saida_x > 0)."""
         corpo = self.w.corpo
         y = self.saida_y if lado == 'esq' else -self.saida_y
-        p = corpo.local_to_world((self.saida_x - self.queda, y))
+        p = corpo.local_to_world((self.saida_x + math.copysign(self.queda, self.saida_x), y))
         area = self.area
         if not area.ativa:
             bola['estado'] = 'fora'
@@ -1091,7 +1104,14 @@ class Mecanismo:
         """VL53 da garra: olha para a frente a partir do fundo da garra."""
         if self.na_garra is not None:
             lx = self.na_garra['local'][0]
-            return max(0.0, lx - RAIO_BOLA - float(sc.get('x', self.x_base)))
+            return max(0.0, lx - RAIO_BOLA - self.sx * float(sc.get('x', self.sx * self.x_base)))
         if not self.garra_abaixada():
             return None
         return 'raio'
+
+    def vl53_cacamba(self, sc):
+        """VL53 dentro da caçamba (na_cacamba: lado, bolas, com_bola, vazia): mede com_bola mm
+        quando aquele lado tem pelo menos 'bolas' bolinhas, senão vazia mm."""
+        c = sc['na_cacamba']
+        n = len(self.cacamba[c.get('lado', 'esq')])
+        return float(c.get('com_bola', 40) if n >= int(c.get('bolas', 1)) else c.get('vazia', 200))

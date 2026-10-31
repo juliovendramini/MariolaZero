@@ -1,0 +1,18 @@
+{
+ "formato": "rcb_challenge_cenario_1",
+ "nome": "vazio",
+ "plataformas": {},
+ "cubos": {},
+ "inicio": {
+  "esq": [
+   380.0,
+   750.0,
+   0.0
+  ],
+  "dir": [
+   2460.0,
+   750.0,
+   180.0
+  ]
+ }
+}

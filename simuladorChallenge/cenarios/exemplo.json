@@ -1,0 +1,46 @@
+{
+ "formato": "rcb_challenge_cenario_1",
+ "nome": "exemplo",
+ "plataformas": {
+  "P1": "azul",
+  "P1'": "azul",
+  "P2": "vermelho",
+  "P2'": "vermelho",
+  "P3": "verde",
+  "P3'": "verde",
+  "P4": "amarelo",
+  "P4'": "amarelo",
+  "P5": "preto",
+  "P5'": "preto"
+ },
+ "cubos": {
+  "A1": "vermelho",
+  "A1'": "vermelho",
+  "A3": "azul",
+  "A3'": "azul",
+  "B2": "azul",
+  "B2'": "azul",
+  "D2": "verde",
+  "D2'": "verde",
+  "E1": "branco",
+  "E1'": "branco",
+  "G3": "amarelo",
+  "G3'": "amarelo",
+  "X2": "preto",
+  "X2'": "preto",
+  "Y3": "marrom",
+  "Y3'": "marrom"
+ },
+ "inicio": {
+  "esq": [
+   380.0,
+   750.0,
+   0.0
+  ],
+  "dir": [
+   2460.0,
+   750.0,
+   180.0
+  ]
+ }
+}
