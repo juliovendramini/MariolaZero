@@ -250,6 +250,15 @@ depois consulta `entrada_estado` a cada 50 ms reais.
   de nome ou os robôs ganharem campos novos obrigatórios, atualize essas cópias.
 * `curso/mapas/curso_pista.json` e `curso_area.json` são cópias dos de `mapas/`: mude os dois.
 
+## "Jogar bolinhas" (01/11/2026)
+
+Botão da janela (tecla J) e `--semente-bolinhas N`: `Simulacao.jogar_bolinhas()` guarda uma semente em
+`AreaResgate.semente_bolinhas` e chama `nova_rodada()`. Com ela, o `sorteia_vitimas()` usa um
+`random.Random` próprio (não o `rng` da rodada) e ignora as posições fixas do mapa, mas mantém os
+tipos e a quantidade da lista. Vale nas rodadas seguintes, e também ao trocar de robô. Volta a
+`None` ao abrir outro mapa. Com a rodada andando, não faz nada: trocar bolinhas que estão na garra
+bagunçaria o mecanismo. Sem a semente, nada muda (referência 295).
+
 ## Pendências e decisões
 
 * "Sugestão 2" (aproximar do robô real: motor perdendo rotação com carga, leitura "velha" do VL53,

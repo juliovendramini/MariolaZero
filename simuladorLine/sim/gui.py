@@ -152,7 +152,8 @@ class Interface:
              Botao('', self._troca_robo)],
             [Botao('Editar mapa', lambda: self._muda_modo('editar')),
              Botao('Abrir mapa', self._abrir),
-             Botao('Caminho (P)', self._alterna_caminho, ligado=lambda: self.mostrar_caminho)],
+             Botao('Caminho (P)', self._alterna_caminho, ligado=lambda: self.mostrar_caminho),
+             Botao('Jogar bolinhas', self._jogar_bolinhas, dica='J')],
             [Botao('', self._escolhe_programa)],
         ]
         fer =[Botao(n, (lambda k=k: self._set_ferramenta(k)), ligado=(lambda k=k: self.ferramenta == k))
@@ -190,6 +191,17 @@ class Interface:
     def _nova_rodada(self):
         self.sim.nova_rodada()
         self.trilha = []
+
+    def _jogar_bolinhas(self):
+        if not self.sim.mundo.resgate.ativa:
+            self._aviso('o mapa não tem área de resgate')
+            return
+        sem = self.sim.jogar_bolinhas()
+        if sem is None:
+            self._aviso('pare a rodada antes de jogar as bolinhas de novo')
+            return
+        self.trilha = []
+        self._aviso(f'bolinhas em lugares novos (para repetir: --semente-bolinhas {sem})')
 
     def _pausa(self):
         self.sim.set_pausa(not self.sim.pausado)
@@ -350,6 +362,7 @@ class Interface:
                 self._aviso(f'erro ao abrir: {e}')
                 return
             self.sim.parar_programa()
+            self.sim.mundo.resgate.semente_bolinhas = None    # mapa novo: vítimas como o mapa diz
             self.sim.mundo.mapa.__dict__.update(novo.__dict__)
             self._aplica_mapa()
             av = getattr(novo, 'avisos_importacao', None)
@@ -946,7 +959,7 @@ class Interface:
                 y = self._txt(linha[:66], x, y, self.f12)
         y += 4
         ajuda = ('Arraste o robô com o mouse (programa parado); Q/E giram 90°, roda do mouse 5°. '
-                 'Teclas: espaço pausa, B botão, L LoP, R raios, T trilha, P caminho, 1–5 velocidade, F5 inicia, '
+                 'Teclas: espaço pausa, B botão, L LoP, R raios, T trilha, P caminho, J joga as bolinhas, 1–5 velocidade, F5 inicia, '
                  'O tela/teclado do brick (botões: clique ou F1–F4), Enter responde o input() do programa.')
         for linha in _quebra(ajuda, 70):
             y = self._txt(linha, x, y, self.f12, COR_TEXTO2)
@@ -1364,6 +1377,8 @@ class Interface:
                 s.apertar_botao()
             elif k == pygame.K_l:
                 s.lop_manual()
+            elif k == pygame.K_j and self.modo == 'simular':
+                self._jogar_bolinhas()
             elif k == pygame.K_r and self.modo == 'editar':
                 self.rot_paleta = (self.rot_paleta + 90) % 360
             elif k == pygame.K_r:

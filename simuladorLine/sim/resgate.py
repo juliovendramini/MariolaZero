@@ -350,6 +350,9 @@ class AreaResgate:
         self.space = None
         self.rng = random.Random(1)
         self.rng_cam = random.Random(2)
+        # botão "Jogar bolinhas" / --semente-bolinhas: sorteia as posições por esta semente, mesmo
+        # num mapa com as vítimas fixas (None = lista do mapa ou sorteio pela semente da rodada)
+        self.semente_bolinhas = None
         self.mec = None
         cfg = mundo.cfg.get('resgate') or {}
         if cfg.get('ativo', True) and cfg.get('braco'):
@@ -489,10 +492,11 @@ class AreaResgate:
             return False
         return all(math.hypot(x - o[0], y - o[1]) >= folga for o in outros)
 
-    def _posicao_livre(self, outros):
+    def _posicao_livre(self, outros, rng=None):
+        rng = rng or self.rng
         X0, Y0, X1, Y1 = self.mapa.interior_zona()
         for _ in range(500):
-            p = (self.rng.uniform(X0 + 60, X1 - 60), self.rng.uniform(Y0 + 60, Y1 - 60))
+            p = (rng.uniform(X0 + 60, X1 - 60), rng.uniform(Y0 + 60, Y1 - 60))
             if self._livre(p, outros):
                 return p
         return ((X0 + X1) / 2, (Y0 + Y1) / 2)
@@ -508,13 +512,18 @@ class AreaResgate:
         z = self.mapa.zona
         X0, Y0, X1, Y1 = self.mapa.retangulo_zona()
         lista = z.get('vitimas')
+        tipos = [v['tipo'] for v in lista] if lista else ['viva', 'viva', 'morta']
+        rng = self.rng
+        if self.semente_bolinhas is not None:
+            lista = None                    # as mesmas vítimas do mapa, em lugares sorteados
+            rng = random.Random(self.semente_bolinhas)
         usados = []
         if lista:
             itens = [(v['tipo'], (X0 + float(v['u']), Y0 + float(v['v']))) for v in lista]
         else:
             itens = []
-            for tipo in ('viva', 'viva', 'morta'):
-                p = self._posicao_livre(usados)
+            for tipo in tipos:
+                p = self._posicao_livre(usados, rng)
                 usados.append(p)
                 itens.append((tipo, p))
         for i, (tipo, p) in enumerate(itens):
@@ -523,7 +532,7 @@ class AreaResgate:
             self.bolas.append(bola)
             usados.append(p)
         for _ in range(int(z.get('falsas', 0))):
-            p = self._posicao_livre(usados)
+            p = self._posicao_livre(usados, rng)
             usados.append(p)
             self.falsas.append({'pos': p, 'id': len(self.falsas)})
         self.inicio_bolas = [(b['tipo'], tuple(b['corpo'].position)) for b in self.bolas]

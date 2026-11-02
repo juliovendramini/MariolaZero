@@ -40,6 +40,7 @@ python simulador.py --editor                               # abre no editor de m
 | `--sem-janela` | roda uma rodada sem interface e imprime o placar |
 | `--velocidade 4` | até 4x mais rápido (o resultado é o mesmo, veja 11.6) |
 | `--semente N` | o "sorteio" do ruído e das vítimas; mesma semente = mesma rodada |
+| `--semente-bolinhas N` | vítimas em outros lugares (o número que o botão **Jogar bolinhas** mostra) |
 | `--tempo 480` | duração máxima da rodada (s) |
 | `--lop reiniciar` / `botao` | no LoP, reinicia o programa ou só aperta o botão |
 
@@ -55,6 +56,7 @@ python simulador.py --editor                               # abre no editor de m
 | **Robô** | troca entre os `robo_*.json` |
 | **Programa** | escolhe outro programa sem fechar o simulador; depois é só apertar ▶ Iniciar |
 | **Caminho** (P) | mostra o número de cada passo do caminho |
+| **Jogar bolinhas** (J) | põe as vítimas em lugares novos na área de resgate (com a rodada parada); elas ficam lá nas próximas rodadas |
 | **Pausar** (espaço), **Vel.** (1–5) | pausa / velocidade de 0,25x a 4x |
 | arrastar, Q/E, roda do mouse | reposiciona o robô (programa parado) |
 | R, T | raios dos VL53, trilha |

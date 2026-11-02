@@ -42,6 +42,9 @@ def main():
     ap.add_argument('--tempo', type=float, default=480, help='(sem janela) duração máxima da rodada em s simulados')
     ap.add_argument('--semente', type=int, default=1,
                     help='semente do ruído: a mesma semente repete a rodada igual (-1 = sorteia a cada rodada)')
+    ap.add_argument('--semente-bolinhas', type=int, default=None,
+                    help='sorteia as posições das vítimas por esta semente, mesmo num mapa com as vítimas fixas '
+                         '(é o número que o botão "Jogar bolinhas" mostra)')
     ap.add_argument('--tempo-real', action='store_true',
                     help='modo antigo: o programa corre no relógio real (o resultado muda com a velocidade e o PC)')
     ap.add_argument('--porta', type=int, default=0, help='porta TCP local (0 = automática)')
@@ -77,6 +80,8 @@ def main():
     sim.modo_lop = a.lop
     sim.set_fator(a.velocidade)
     sim.pasta_trabalho = a.pasta_trabalho
+    if a.semente_bolinhas is not None:
+        sim.jogar_bolinhas(a.semente_bolinhas)
 
     if a.sem_janela:
         roda_sem_janela(sim, a.tempo, a.resultado)

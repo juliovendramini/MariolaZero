@@ -87,7 +87,9 @@ python simulador.py --robo robo_pacoca_ev3.json            # Paçoca com os moto
 python simulador.py --mapa mapas/completo.json --sem-janela --velocidade 2
 ```
 
-Opções: `--semente N` (ruído dos sensores; padrão 1, `-1` sorteia a cada rodada), `--lop botao|reiniciar`,
+Opções: `--semente N` (ruído dos sensores; padrão 1, `-1` sorteia a cada rodada),
+`--semente-bolinhas N` (as vítimas em lugares sorteados por N, mesmo num mapa com as vítimas fixas: é o
+número que o botão **Jogar bolinhas** mostra), `--lop botao|reiniciar`,
 `--tempo 480`, `--tempo-real` (modo antigo do relógio, veja abaixo), `--resultado arq.json` (sem
 janela: grava o placar em JSON).
 
@@ -173,6 +175,7 @@ como no robô.
 | **Robô: 4x4 / esteira / Paçoca** | troca o robô (os `robo_*.json` da pasta). Robô do Paçoca roda `.ino`; os do Mariola, `.py`: ao trocar, o programa troca junto (o último usado com aquele brick ou o exemplo) |
 | **Programa: pasta/arquivo (trocar)** | escolhe outro programa sem fechar o simulador (`.py` nos robôs do Mariola, `.ino` no Paçoca): para o que está rodando, volta à rodada nova e o próximo ▶ Iniciar já roda o escolhido |
 | **Caminho (P)** | mostra o número de cada passo do caminho esperado, como no editor oficial |
+| **Jogar bolinhas** (J) | sorteia lugares novos para as vítimas (e as marcas falsas) na área de resgate e volta à rodada nova. Os lugares valem nas rodadas seguintes, até jogar de novo ou abrir outro mapa. Só com a rodada parada. O aviso mostra o número para repetir os mesmos lugares (`--semente-bolinhas N`) |
 | **Pausar** (espaço) / **Vel.** (1–5) | pausa ou muda a velocidade (0,25x a 4x). O resultado é o mesmo em qualquer velocidade |
 | arrastar o robô / Q, E / roda do mouse | reposiciona o robô (com o programa parado) |
 | R, T | raios dos VL53, trilha |

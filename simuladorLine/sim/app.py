@@ -3,6 +3,7 @@
 import collections
 import json
 import os
+import random
 import subprocess
 import sys
 import threading
@@ -345,6 +346,18 @@ class Simulacao:
                 except FileNotFoundError:
                     pass
 
+    def jogar_bolinhas(self, semente=None):
+        """Sorteia posições novas para as vítimas (e as marcas falsas) e começa uma rodada nova.
+        Valem nas rodadas seguintes, até jogar de novo ou abrir outro mapa. A mesma semente repete
+        as posições (--semente-bolinhas). Com a rodada em andamento não faz nada (devolve None)."""
+        if self.juiz.ativo and not self.juiz.fim:
+            return None
+        if semente is None:
+            semente = random.randrange(1, 100000)
+        self.mundo.resgate.semente_bolinhas = semente
+        self.nova_rodada()
+        return semente
+
     def iniciar_rodada(self):
         with self.mundo.lock:
             self.juiz.iniciar()
@@ -429,6 +442,9 @@ class Simulacao:
         velho = self.mundo
         with velho.lock:
             novo = Mundo(velho.mapa, cfg, velho.semente)
+            if velho.resgate.semente_bolinhas is not None:
+                novo.resgate.semente_bolinhas = velho.resgate.semente_bolinhas
+                novo.resgate.sorteia_vitimas()
             juiz = Juiz(novo)
             juiz.on_lop = self._lop
             juiz.on_fim = self._fim
