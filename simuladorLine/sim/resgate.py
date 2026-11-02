@@ -588,6 +588,26 @@ class AreaResgate:
             return
         bola.pop('no_triangulo', None)
 
+    def bola_em(self, p, folga=10):
+        """Bolinha no chão sob o ponto p (para arrastar com o mouse), ou None."""
+        for bola in self.bolas:
+            q = bola['corpo'].position
+            if bola['estado'] == 'chao' and math.hypot(p[0] - q.x, p[1] - q.y) < RAIO_BOLA + folga:
+                return bola
+        return None
+
+    def fixa_bolinhas(self):
+        """Grava as posições de agora no mapa (zona['vitimas']): a rodada nova começa com elas e o
+        "Salvar" do editor grava no arquivo. Bolinha fora do chão (garra, resgatada) fica onde começou."""
+        X0, Y0, _, _ = self.mapa.retangulo_zona()
+        lista = []
+        for bola, (_, p0) in zip(self.bolas, self.inicio_bolas):
+            p = tuple(bola['corpo'].position) if bola['estado'] == 'chao' else p0
+            lista.append({'tipo': bola['tipo'], 'u': round(p[0] - X0, 1), 'v': round(p[1] - Y0, 1)})
+        self.mapa.zona['vitimas'] = lista
+        self.semente_bolinhas = None
+        return lista
+
     def coloca_bola(self, bola, pos, vel=(0, 0)):
         """Põe uma bolinha de volta no chão (caiu da garra, LoP...)."""
         X0, Y0, X1, Y1 = self.mapa.interior_zona()

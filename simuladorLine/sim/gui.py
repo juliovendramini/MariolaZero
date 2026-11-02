@@ -117,6 +117,7 @@ class Interface:
         self.rects_paleta = []
         self.rect_area_paleta = pygame.Rect(0, 0, 0, 0)
         self.arrasta_robo = None
+        self.arrasta_bola = None
         self.mostrar_raios = True
         self.mostrar_trilha = True
         self.mostrar_caminho = False
@@ -958,7 +959,7 @@ class Interface:
             for linha in w.debug['texto'].split('\n')[:3]:
                 y = self._txt(linha[:66], x, y, self.f12)
         y += 4
-        ajuda = ('Arraste o robô com o mouse (programa parado); Q/E giram 90°, roda do mouse 5°. '
+        ajuda = ('Arraste o robô e as bolinhas com o mouse (programa parado); Q/E giram 90°, roda do mouse 5°. '
                  'Teclas: espaço pausa, B botão, L LoP, R raios, T trilha, P caminho, J joga as bolinhas, 1–5 velocidade, F5 inicia, '
                  'O tela/teclado do brick (botões: clique ou F1–F4), Enter responde o input() do programa.')
         for linha in _quebra(ajuda, 70):
@@ -1351,12 +1352,25 @@ class Interface:
                 elif self.modo == 'simular' and ev.button == 1 and not s.programa_rodando():
                     x, y = self.W(*ev.pos)
                     rx, ry, _ = s.mundo.pose()
-                    if math.hypot(x - rx, y - ry) < 120:
+                    rg = s.mundo.resgate
+                    with s.mundo.lock:
+                        bola = rg.bola_em((x, y)) if rg.ativa else None
+                    if bola:
+                        self.arrasta_bola = bola
+                    elif math.hypot(x - rx, y - ry) < 120:
                         self.arrasta_robo = (x - rx, y - ry)
         elif ev.type == pygame.MOUSEBUTTONUP:
             self.brick.mouse_up(s.mundo)
             self.arrasta_robo = None
+            if self.arrasta_bola is not None:
+                self.arrasta_bola = None
+                with s.mundo.lock:
+                    s.mundo.resgate.fixa_bolinhas()
+                self._aviso('bolinhas fixas aqui nas próximas rodadas (Salvar no editor grava no mapa)')
         elif ev.type == pygame.MOUSEMOTION:
+            if self.arrasta_bola is not None:
+                with s.mundo.lock:
+                    s.mundo.resgate.coloca_bola(self.arrasta_bola, self.W(*ev.pos))
             if self.arrasta_robo is not None:
                 x, y = self.W(*ev.pos)
                 with s.mundo.lock:

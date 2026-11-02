@@ -259,6 +259,11 @@ tipos e a quantidade da lista. Vale nas rodadas seguintes, e também ao trocar d
 `None` ao abrir outro mapa. Com a rodada andando, não faz nada: trocar bolinhas que estão na garra
 bagunçaria o mecanismo. Sem a semente, nada muda (referência 295).
 
+Arrastar uma bolinha com o mouse (programa parado; a bolinha tem prioridade sobre o robô no clique):
+o `gui.py` usa `AreaResgate.bola_em()` e `coloca_bola()`. Ao soltar, `fixa_bolinhas()` grava as
+posições de todas em `mapa.zona['vitimas']` (u, v a partir do `retangulo_zona()`) e zera a
+`semente_bolinhas`. Assim a rodada nova parte delas e o "Salvar" do editor grava no arquivo.
+
 ## Pendências e decisões
 
 * "Sugestão 2" (aproximar do robô real: motor perdendo rotação com carga, leitura "velha" do VL53,

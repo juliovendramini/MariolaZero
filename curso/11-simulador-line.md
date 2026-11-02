@@ -59,6 +59,7 @@ python simulador.py --editor                               # abre no editor de m
 | **Jogar bolinhas** (J) | põe as vítimas em lugares novos na área de resgate (com a rodada parada); elas ficam lá nas próximas rodadas |
 | **Pausar** (espaço), **Vel.** (1–5) | pausa / velocidade de 0,25x a 4x |
 | arrastar, Q/E, roda do mouse | reposiciona o robô (programa parado) |
+| arrastar uma bolinha | põe a vítima onde quiser (programa parado); ela fica lá nas próximas rodadas |
 | R, T | raios dos VL53, trilha |
 | F1–F4, clique nos botões do painel | botões do teclado do brick (Voltar, Baixo, Cima, Enter) |
 | O | mostra/esconde a **tela e o teclado do brick** (canto de baixo à direita do mapa) |

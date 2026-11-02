@@ -178,6 +178,7 @@ como no robô.
 | **Jogar bolinhas** (J) | sorteia lugares novos para as vítimas (e as marcas falsas) na área de resgate e volta à rodada nova. Os lugares valem nas rodadas seguintes, até jogar de novo ou abrir outro mapa. Só com a rodada parada. O aviso mostra o número para repetir os mesmos lugares (`--semente-bolinhas N`) |
 | **Pausar** (espaço) / **Vel.** (1–5) | pausa ou muda a velocidade (0,25x a 4x). O resultado é o mesmo em qualquer velocidade |
 | arrastar o robô / Q, E / roda do mouse | reposiciona o robô (com o programa parado) |
+| arrastar uma bolinha | com o programa parado, põe a vítima onde você quiser (para testar posições difíceis). Ao soltar, as posições vão para a lista de vítimas do mapa aberto (`zona.vitimas`): as rodadas seguintes começam com elas e o **Salvar** do editor grava no arquivo. **Jogar bolinhas** sorteia de novo |
 | R, T | raios dos VL53, trilha |
 | O | mostra/esconde a tela e o teclado do brick (botões: clique ou F1–F4) |
 | C | mostra/esconde o último quadro que o programa leu da câmera de linha (canto de baixo à esquerda) |
