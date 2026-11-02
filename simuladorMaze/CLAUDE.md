@@ -16,13 +16,17 @@ painel da tela/teclado): ao corrigir algo comum aqui, veja se vale lá também, 
 # apague exemplo_aluno/checkpoint_maze.json antes de cada rodada sem janela
 # (senão o programa retoma do checkpoint da rodada anterior)
 python simulador.py --sem-janela --programa exemplo_aluno/main.py --mapa mapas/exemplo1.json --velocidade 5 --tempo 480 --semente 1
-#   → TOTAL 415
+#   → TOTAL 415, rodada de 320,6 s
 python avalia.py --desafio M01 --programa exemplo_aluno/main.py
-#   o exemplo cumpre 3/3 em cada desafio, de M01 a M06
+#   o exemplo cumpre 3/3 em M01-M04 e M06; M05 2/3 (31/10, ver "VL53 em leque" abaixo)
 ```
 
 Com o relógio sincronizado a velocidade não muda o resultado: em 19/10, `--velocidade 5` e `20` deram o
-mesmo 415 (mesmo tempo de rodada, 320,5 s). A velocidade 20 só fica limitada pela CPU (~70 s reais).
+mesmo 415 (mesmo tempo de rodada, 320,5 s); em 31/10, `2` e `8` deram o mesmo log, linha a linha
+(320,6 s). A velocidade 20 só fica limitada pela CPU (~70 s reais).
+Cada rodada do `avalia.py` roda numa pasta de trabalho própria (ver "Pasta de trabalho por rodada"),
+mas dois `avalia.py` ao mesmo tempo ainda gravam os mesmos `resultados/logs/` (o nome é
+desafio + semente): o log de um sobrescreve o do outro.
 A nota antiga "com 20 o exemplo fica instável" era do relógio real e não vale mais.
 Na janela, "Nova rodada" apaga os arquivos de `arquivos_rodada` (`checkpoint_maze.json`); sem janela,
 apague à mão.
@@ -35,8 +39,7 @@ As libs reais (pasta do programa, depois `libs_mariola/`) não sabem que estão 
 falso conversa com o simulador por TCP local (JSON com prefixo de tamanho; `sim/protocolo.py`,
 `sim/servidor.py`: `mariola_quadro`, `placa_quadro`, `cor`, `vl53`, `gpio_*`, `vitimas`, `kit`, `debug`).
 Física 2D em pymunk a 240 Hz, unidades em mm, tração skid-steer com atrito longitudinal e lateral por
-roda (motor trava ou a roda patina). O ruído do VL53 é por raio num cone de 25°; os raios da borda só
-enxergam perto e ignoram retorno rasante (senão pegavam o pilar da parede).
+roda (motor trava ou a roda patina). VL53 em leque de 25° (21 raios), ver "VL53 em leque" abaixo.
 `deteccaoVitimas`, `dispensadorKits` e `simdebug` são módulos do simulador (`fake_hw/sim_modulos.py`);
 os de `robo_real/` são os modelos para pôr no robô.
 
@@ -53,6 +56,15 @@ volta ao modo antigo. Detalhes desta pasta:
   chega `deteccao.tempo_processamento_s` depois (0,1 s no `robo.json`), com o robô andando nesse meio
   tempo, como no Mariola.
 * Por causa do relógio, os desafios M01–M06 exigem 3 de 3 (antes, com relógio real, 2 de 3).
+* Travas (desde 31/10): o `RelogioSinc.instala()` troca `threading.Lock`/`RLock` do programa por
+  `_TravaVigiada`/`_TravaVigiadaR` (`fake_hw/cliente.py`). Esperar uma trava conta como espera, e o
+  `release()` passa a trava direto para a primeira da fila, já tirando ela da lista de espera, com o
+  `cond` do relógio na mão. Sem isso, uma thread parada no lock enquanto a dona dormia segurava o
+  relógio e, depois de `LIVRE_APOS`, ele ia pelo tempo real (a partida da equipe Challenger mudava
+  com a velocidade). A primeira versão (do Challenge, que só embrulhava o lock real com
+  `espera_externa()`) deixava o relógio andar entre o `release()` e a thread da fila voltar a rodar:
+  aqui ela deu 320,6 s a 8x e 321,9 s a 2x. Uma thread interrompida (`KeyboardInterrupt` do fim da
+  rodada) enquanto espera na fila sai dela e, se já tinha recebido a trava, passa adiante.
 
 ## `input()` do programa (29/10/2026)
 
@@ -67,7 +79,8 @@ Na janela, a tecla Enter ou o botão da faixa amarela no alto do console chamam
 sempre (`espera_externa()`, acorda em `math.inf`). Se todas as threads estão assim, o `_coordena` usa
 `avanca livre`: o tempo anda pelo relógio real, na velocidade escolhida, e o timeout de 5 s dos
 motores acontece como no robô. Sem janela, `enter_automatico` responde na hora (o teste de referência
-continua 415). Levado para a Line no mesmo dia; o `fake_hw/cliente.py` é o mesmo arquivo nos dois.
+continua 415). Levado para a Line no mesmo dia; o `fake_hw/cliente.py` é o mesmo arquivo nos três
+simuladores (Line, Maze e Challenge): mudou um, copie para os outros e rode os testes dos três.
 
 ## Desafios e `avalia.py`
 
@@ -220,7 +233,8 @@ regravado a partir de uma cópia antiga. O `robo.json` certo tem os 6 sensores e
 * Geometria do Pro1616 no `robo.json` atualizada em 19/10 para a real (a mesma da Line): TCS em
   x = 71, y = ±20 e 0; IR em x = 80, y = ±26,6 e ±8,9 (centro de cada grupo de 3 ITR). Antes era
   TCS ±40/0 e IR ±45/±15. O exemplo continuou com 415 e M01–M06 3/3. O modelo da Maze continua mais
-  simples que o da Line (um ponto por canal com cruz de ±5 mm, sem altura nem curva do ITR8307); as
+  simples que o da Line (um ponto por canal com um disco de 5 mm, 19 amostras desde 31/10; antes
+  era uma cruz de ±5 mm; sem altura nem curva do ITR8307); as
   posições x são estimadas, falta o Julio medir.
 * "Sugestão 2" (motor com carga, leitura "velha" do VL53) adiada, a pedido do Julio; está nas limitações.
 * `threading.Event.wait(timeout)` e `Queue.get(timeout=...)` usam o relógio real e não contam como espera
@@ -231,3 +245,54 @@ regravado a partir de uma cópia antiga. O `robo.json` certo tem os 6 sensores e
   `exemplo_aluno/main.py` e do `navegacao.py` com uma mudança (entrar na zona de perigo); o
   `ex1_mao_esquerda.py` é o `curso/codigos/09_maze/mao_direita.py` espelhado. Mudou o exemplo ou o
   tutorial? Refaça as cópias e confira os números no `professor/gabarito/16-projeto-rescue-maze.md`.
+
+## Trazido do simuladorChallenge (31/10/2026; nada commitado ainda)
+
+* **Travas no relógio:** feito (ver "Relógio sincronizado"). O `cliente.py` é o mesmo nos três.
+* **VL53 em leque** (`sim/fisica.py` `vl53()`, desenho no `sim/gui.py` com `_leque()`, numa
+  superfície só do tamanho do leque: ver o porquê no `simuladorChallenge/CLAUDE.md`), igual ao Challenge: 21 raios
+  (`RAIOS_VL53`), peso exp(-1,2 k²), sinal = fração do feixe na forma × (alcance/d)² ≥ 1, vale a
+  forma mais perto com sinal. Aqui a forma é o segmento de parede (`segmentos_parede()` já junta as
+  colineares). Antes eram 5 raios, os da borda com alcance fixo (35%/70%). O teste de referência
+  continuou 415 (320,6 s), mas o exemplo ficou mais frágil: o leque pega a ponta de uma parede
+  vizinha com mais frequência (com o robô torto 11° os dois modelos leem 138 mm; com 6°, só o
+  antigo lia 194). Resultados comparados com o simulador antigo:
+  * M05: 3/3 → 2/3. No `labirinto_medio_2`, semente 2, o `le_paredes()` do exemplo (que usa
+    `min()` dos dois VL53 do lado) marca parede à direita no 3º ladrilho (robô torto ~11°, um sensor
+    lê 151 mm e o outro 626), acha que explorou tudo e volta aos 34 s: 0 pontos;
+  * `M01_exemplo.json`, sementes 1-6: o exemplo se perde na volta nas sementes 4 e 6 (340);
+  * `maze2026_simplificado`: 2 das 5 rodadas do `LEIAME` não acham o caminho de volta.
+  Com o `fisica.py` antigo e o `cliente.py` novo, todas essas voltam ao início: a causa é o leque.
+  O Julio decidiu (31/10) **manter o leque por enquanto**, sem mexer no exemplo. Se for reforçar o
+  exemplo depois: parede lateral só com os dois sensores do lado perto (hoje é o `min()`).
+* **Mancha do sensor de cor/reflexão:** trazida. `_amostra_piso` usa o disco de 19 pontos
+  (`PONTOS_MANCHA`) no lugar da cruz de 5 (±5 mm). M01-M06, teste de referência e 16.3/16.4 do
+  gabarito deram os mesmos números; mudaram só os tempos do `maze2026_simplificado` (ver o `LEIAME`
+  de lá). Um primeiro teste mostrou o M01 e o M02 piores, mas era a trombada de dois `avalia.py` na
+  mesma pasta (ver "Pasta de trabalho por rodada").
+
+## Pasta de trabalho por rodada e o "erro no programa" falso (01/11/2026)
+
+Dois defeitos antigos faziam o `avalia.py` marcar "erro no programa" (ou dar resultado errado) numa
+rodada que estava boa. Os dois foram corrigidos nos três simuladores.
+
+* **Checkpoint dividido:** as rodadas de um `avalia.py` correm em paralelo e o exemplo grava o
+  `checkpoint_maze.json` com caminho relativo, na pasta em que roda. Com uma pasta só, no mesmo mapa
+  (`--mapa ... --sementes 1-6`) as rodadas chegavam ao prata quase juntas e às vezes uma morria na
+  gravação (no Windows o `os.replace` falha se outro processo mexe no arquivo: 16.4, semente 1 da
+  zona, 210 em vez de 495); e uma rodada podia ler o checkpoint de outra depois de um LoP.
+  Agora o `simulador.py` tem `--pasta-trabalho` (`Simulacao.pasta_trabalho`; o `app.py` passa
+  `SIM_PASTA_TRABALHO` e o `rodar.py` faz `chdir` para ela; os `arquivos_rodada` são apagados nela).
+  O `avalia.py` (`pasta_rodada()`) copia a pasta do programa para uma pasta temporária por rodada
+  (sem `__pycache__`, `.git`, `resultados`...; pasta acima de 50 MB não é copiada) e apaga no fim. O
+  programa continua rodando do lugar original: imports e caminhos a partir de `__file__` não mudam
+  (o adaptador das equipes, que importa `../codigo`, continua funcionando); só os caminhos relativos
+  caem na cópia. O `.ino` do Paçoca não é copiado. Na janela nada muda.
+  Cuidado que já pegou: o `rodar.py` fazia `chdir` para a pasta do programa e desfazia a pasta de
+  trabalho (o exemplo leu um checkpoint velho da pasta original e o M04 deu 0 em 4 s).
+* **Fim da rodada no meio de uma conversa:** ver `_Interrupcao` no `fake_hw/cliente.py`. O
+  `KeyboardInterrupt` do fim da rodada fica guardado enquanto a thread principal está num
+  `Conexao.chamar()` e é levantado logo depois da resposta (antes, a resposta ficava no socket e
+  outra thread a lia: `KeyError: 'v'` no log).
+* Conferido: M01-M06 com os mesmos números (M05 2/3), 16.4 com 390 (exemplo) e 495 (zona) sem
+  nenhum "erro no programa", nenhum checkpoint na pasta do exemplo depois do `avalia.py`.

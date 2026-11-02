@@ -24,7 +24,8 @@ def main():
     sys.path.remove(RAIZ)
     fake_hw.instalar(pasta, os.path.join(RAIZ, 'libs_mariola'))
 
-    os.chdir(pasta)
+    # pasta de trabalho: a do programa, ou a cópia que o avalia.py/lote.py dá a cada rodada
+    os.chdir(os.environ.get('SIM_PASTA_TRABALHO') or pasta)
     sys.argv = [programa] + sys.argv[2:]
     try:
         runpy.run_path(programa, run_name='__main__')

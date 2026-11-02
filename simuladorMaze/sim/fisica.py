@@ -35,6 +35,16 @@ def canal_mux(m):
     return CANAIS_I2C[m]
 
 
+# Raios no leque de cada VL53 (vl53_params.raios no robo.json troca)
+RAIOS_VL53 = 21
+
+# Mancha que cada ponto do sensor de cor/reflexão enxerga no chão: disco de 5 mm de raio, 19 amostras
+# (centro, 6 a 2,5 mm e 12 a 5 mm), igual ao simuladorChallenge. Numa borda entre duas cores a leitura
+# passa por 19 degraus; com a cruz de 5 pontos de antes pulava de 20% em 20%.
+PONTOS_MANCHA = ((0.0, 0.0),) + tuple(
+    (round(r * math.cos(math.radians(a)), 3), round(r * math.sin(math.radians(a)), 3))
+    for r, n in ((2.5, 6), (5.0, 12)) for a in range(0, 360, 360 // n))
+
 # --------------------------------------------------------------------------- motor
 FREQ_PID = 40.0     # Hz do PID nos firmwares (TEMPO_PID = 25 ms)
 
@@ -224,7 +234,7 @@ class Mundo:
         self.oled_tam = (128, 64)
         self.kits = []             # {'x','y','t','lado'}
         self.kits_restantes = int(cfg['kits']['capacidade'])
-        self.raios = {}            # nome -> (p0, p1, dist, t)
+        self.raios = {}            # nome -> (p0, p1, dist, t, ângulo, meio cone, [(ângulo, dist) dos raios])
         self.debug = {'pose': None, 'texto': '', 'marcas': []}
         self.servos = {}
         self.construir()
@@ -475,35 +485,48 @@ class Mundo:
 
     # ---------------------------------------------------------------- sensores
     def vl53(self, idx):
-        """Distância em mm (int) do VL53 de índice idx na lista de configuração."""
+        """Distância em mm (int) do VL53 de índice idx na lista de configuração.
+
+        Campo de visão em leque (datasheet do VL53L0X: 25°), com RAIOS_VL53 raios. Cada raio pesa
+        pelo perfil do feixe (mais forte no meio, ~30% na borda). O sinal que volta de uma parede é a
+        fração do feixe que bate nela vezes (alcance/d)²: a parede que enche o feixe aparece até o
+        alcance; a ponta de uma parede (o pilar) que pega só um pedaço do feixe, só mais perto. Vale
+        a parede mais perto com sinal suficiente (igual ao simuladorChallenge)."""
         sc = self.cfg['vl53'][idx]
         pr = self.cfg['vl53_params']
         b = self.corpo
         p0 = b.local_to_world((sc['x'], sc['y']))
         a0 = b.angle + math.radians(sc['angulo'])
         alcance = float(pr['alcance_mm'])
-        cone = math.radians(float(pr['cone_graus']))
+        meia = math.radians(float(pr['cone_graus'])) / 2
         filtro = pymunk.ShapeFilter(mask=CAT_PAREDE)
+        n = max(3, int(pr.get('raios', RAIOS_VL53)))
+        objetos = {}        # forma -> [distância mais perto, peso dos raios que batem nela]
+        total = 0.0
+        pontos = []         # para a janela: (ângulo, distância ou None)
+        for i in range(n):
+            k = -1.0 + 2.0 * i / (n - 1)
+            a = a0 + k * meia
+            peso = math.exp(-1.2 * k * k)
+            total += peso
+            u = Vec2d(math.cos(a), math.sin(a))
+            q = self.space.segment_query_first(p0, p0 + u * (alcance + 200), 0, filtro)
+            if q is not None and k != 0 and abs(u.dot(q.normal)) < math.cos(math.radians(72)):
+                q = None    # retorno de superfície muito rasante (parede lateral do corredor) é fraco
+            d = (q.point - p0).length if q is not None else None
+            pontos.append((a, d))
+            if q is None:
+                continue
+            o = objetos.setdefault(q.shape, [d, 0.0])
+            o[0] = min(o[0], d)
+            o[1] += peso
         melhor = None
-        # raios no cone; os da borda do campo de visão só "enxergam" alvos mais perto
-        # (o sinal que volta da borda do cone é fraco)
-        for k, alc in ((-0.5, 0.35), (-0.25, 0.7), (0.0, 1.0), (0.25, 0.7), (0.5, 0.35)):
-            a = a0 + k * cone
-            p1 = p0 + Vec2d(math.cos(a), math.sin(a)) * (alcance + 200)
-            q = self.space.segment_query_first(p0, p1, 0, filtro)
-            if q is not None:
-                d = (q.point - p0).length
-                if k != 0 and d > alc * alcance:
-                    continue
-                if k != 0:
-                    # retorno de superfície muito rasante (parede lateral do corredor) é fraco: ignora
-                    u = (p1 - p0).normalized()
-                    if abs(u.dot(q.normal)) < math.cos(math.radians(72)):
-                        continue
-                if melhor is None or d < melhor:
-                    melhor = d
+        for d, peso in sorted(objetos.values(), key=lambda o: o[0]):
+            if peso / total * (alcance / max(d, 1.0)) ** 2 >= 1.0:
+                melhor = d
+                break
         fim = p0 + Vec2d(math.cos(a0), math.sin(a0)) * min(melhor or alcance, alcance)
-        self.raios[sc['nome']] = (p0, fim, melhor, self.t)
+        self.raios[sc['nome']] = (p0, fim, melhor, self.t, a0, meia, pontos)
         if melhor is None or melhor > alcance:
             return int(pr['fora_alcance'])
         d = melhor + float(pr.get('offset_mm', 0))
@@ -559,7 +582,7 @@ class Mundo:
         b = self.corpo
         cores = self.cfg['cores_piso']
         acc = [0.0, 0.0, 0.0, 0.0, 0.0]
-        pts = ((0, 0), (5, 0), (-5, 0), (0, 5), (0, -5))
+        pts = PONTOS_MANCHA
         for dx, dy in pts:
             p = b.local_to_world((lx + dx, ly + dy))
             lc = self._lad_em(p.x, p.y)

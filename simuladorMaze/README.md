@@ -63,7 +63,10 @@ python avalia.py --programa CAMINHO/DO/main.py --surpresa medio --mapas 3   # 3 
 ```
 
 * Rodadas em paralelo (`--paralelo N`; padrão: metade dos núcleos do PC). Como o relógio é
-  sincronizado (abaixo), rodar em paralelo não muda o resultado.
+  sincronizado (abaixo), rodar em paralelo não muda o resultado. Cada rodada roda numa cópia da
+  pasta do programa (apagada no fim): o checkpoint que uma rodada grava não aparece para a outra.
+  O programa é o original, então imports e arquivos abertos a partir de `__file__` não mudam; o
+  que ele grava com caminho relativo fica na cópia. Na janela, o programa roda na pasta dele.
 * Os desafios ficam em `desafios/desafios.json` e os mapas em `desafios/mapas/`.
 * Cada avaliação grava um relatório em `resultados/` (placar de cada rodada, se cumpriu a meta e
   uma impressão digital dos `.py` do programa) e o log de cada rodada em `resultados/logs/`.
@@ -94,8 +97,11 @@ calculando não conta; as esperas contam como no robô.
 * No robô o laço também gasta tempo calculando: um `time.sleep(0.01)` no laço principal deixa os
   dois parecidos. A detecção de vítimas espera `deteccao.tempo_processamento_s` (no `robo.json`)
   depois da foto, como o processamento da imagem no robô: meça no seu e ajuste.
-* Uma thread que fica calculando sem nunca esperar (laço sem `sleep`, ou presa num `Lock`) trava
-  esse esquema. Depois de 1 s real nessa situação, o tempo passa a andar pelo relógio real.
+* Uma thread parada num `threading.Lock`/`RLock` do programa (por exemplo, uma trava do I2C
+  enquanto outra thread mede o VL53) conta como esperando. Quem solta a trava a passa direto para
+  a próxima da fila.
+* Uma thread que fica calculando sem nunca esperar (laço sem `sleep`) trava esse esquema. Depois de
+  1 s real nessa situação, o tempo passa a andar pelo relógio real.
 * `--tempo-real` volta ao modo antigo: o programa usa o relógio real multiplicado pela velocidade.
 
 ### Na janela
@@ -210,8 +216,12 @@ iluminação. Para usar um pino como LED de vítima, troque para `"led_vitima": 
 * **Giroscópio**: Z em graus, acumulando, positivo no sentido horário (configurável); com deriva
   (`deriva_graus_min`) e ruído; X/Y mostram a inclinação em escadas e os solavancos de
   lombadas/detritos. Trocar GYRO↔GYRO2 zera Z (como `reseta_z()`).
-* **VL53L0X**: feixe em cone de 25° (a borda do cone só enxerga perto), ruído, 8190 fora do
-  alcance, medida leva `tempo_medida_ms`. A lib `vl53.py` faz toda a inicialização de registradores normalmente.
+* **VL53L0X**: campo de visão em leque de 25°, com 21 raios (`vl53_params.raios` troca). O feixe é
+  mais forte no meio (~30% na borda). Uma parede que enche o feixe aparece até o alcance; uma que
+  pega só um pedaço dele (a ponta de uma parede, um pilar de lado) só aparece mais perto. Vale a
+  parede mais perto com retorno suficiente. Ruído, 8190 fora do alcance, medida leva
+  `tempo_medida_ms`. A janela desenha o leque de cada sensor (tecla R). A lib `vl53.py` faz toda a
+  inicialização de registradores normalmente.
 * **Para-choque**: dois botões na frente (P1 esquerdo, P2 direito); apertado = nível BAIXO, como
   em `PinosDigitais`. Empurrar a parede com os dois apertados alinha o robô.
 * **Terreno**: lombadas (1 cm; 2 cm na zona de perigo), escadas (degraus de 1 cm, menos atrito,
@@ -247,7 +257,8 @@ O comportamento das placas foi tirado de `placaBrickVendra.ino`, `placaControleM
 **Sensor de cor/reflexão Pro1616**
 * Geometria igual à do simuladorLine: 4 canais IR (12 ITR8307 de 3 em 3, 65 mm do 1º ao 12º; no
   `robo.json` vai o centro de cada grupo, y = ±26,6 e ±8,9 mm) e 3 TCS a 20 mm um do outro, 9 mm
-  atrás da fileira IR. Cada ponto lê a média de uma cruz de ±5 mm no piso.
+  atrás da fileira IR. Cada ponto lê a média de um disco de 5 mm de raio no piso (19 amostras):
+  numa borda entre duas cores a leitura passa pelos valores do meio.
 * Lê a ~50 Hz e devolve o último valor; 30 s sem pedido ele para de ler e o primeiro pedido
   devolve valores velhos. Lê todos os bytes recebidos e usa só o último.
 * **IR: 0 = preto, ~100 = branco calibrado. A fita prata lê menos que o branco (~80):** quem vê o

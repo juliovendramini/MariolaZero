@@ -63,6 +63,21 @@ def _fonte(tam, negrito=False):
     return pygame.font.SysFont('dejavusans,arial,liberationsans,freesans,helvetica', tam, bold=negrito)
 
 
+def _leque(tela, borda, cor):
+    """Polígono semitransparente (o leque de um VL53) numa superfície só do tamanho dele. Uma
+    superfície do tamanho da janela por sensor e por quadro tirava tanta CPU da física (mesmo
+    processo) que a partida andava a metade da velocidade (31/10/2026)."""
+    xs = [p[0] for p in borda]
+    ys = [p[1] for p in borda]
+    x0, y0 = int(min(xs)), int(min(ys))
+    larg, alt = int(max(xs)) - x0 + 2, int(max(ys)) - y0 + 2
+    if larg < 3 or alt < 3:
+        return
+    s = pygame.Surface((larg, alt), pygame.SRCALPHA)
+    pygame.draw.polygon(s, cor + (70,), [(x - x0, y - y0) for x, y in borda])
+    tela.blit(s, (x0, y0))
+
+
 class Botao:
     def __init__(self, texto, acao, ligado=None, dica=''):
         self.texto = texto
@@ -655,10 +670,19 @@ class Interface:
                 rv = snap['raios'].get(sc['nome'])
                 if rv is None:
                     continue
-                p0, p1, d, t = rv
+                p0, p1, d, t, a0, meia, pontos = rv
                 cor = COR_RAIOS[i % len(COR_RAIOS)]
                 if snap['t'] - t > 0.5:
                     cor = tuple(c // 3 for c in cor)
+                if pontos:
+                    # leque do campo de visão (25°): cada raio até onde bateu (ou até a medida);
+                    # sem medida, um leque curto (60 mm), para não encher a pista
+                    alc = min(d, 1200.0) if d is not None else 60.0
+                    borda = [self.T(p0.x, p0.y)]
+                    for a, da in pontos:
+                        rr = min(da, alc * 1.05) if da is not None else alc
+                        borda.append(self.T(p0.x + rr * math.cos(a), p0.y + rr * math.sin(a)))
+                    _leque(tela, borda, cor)
                 if d is None:      # nada no alcance: só um toco na direção do feixe
                     p1 = p0 + (p1 - p0).normalized() * 60
                     pygame.draw.line(tela, cor, self.T(p0.x, p0.y), self.T(p1.x, p1.y), 1)

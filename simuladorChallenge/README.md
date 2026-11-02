@@ -43,8 +43,30 @@ python simulador.py --robo robo_bombertinho.json --programa exemplo_bombertinho/
 ```
 
 Outras opções: `--robo outro.json`, `--semente N` (repete a mesma partida), `--tempo 720`,
-`--resultado arq.json` (sem janela: grava o placar e a pose final), `--tempo-real` (modo antigo do
-relógio).
+`--resultado arq.json` (sem janela: grava o placar e a pose final), `--enter-automatico` (com janela, o
+`input()` do programa segue na hora, como sem janela), `--tempo-real` (modo antigo do relógio).
+
+### Lote de partidas (`lote.py`)
+
+Roda várias sementes sem janela, em paralelo, e no fim separa as partidas com problema (penalidade,
+erro no programa, programa que parou antes da hora, nenhum ponto):
+
+```bash
+# 10 partidas no cenário de exemplo, cada uma com uma semente de ruído
+python lote.py --programa ../meuRobo/main.py --robo robo_bombertinho.json --sementes 1-10
+
+# cada semente sorteia também o cenário; robô sempre na rua de baixo, olhando para a cidade
+python lote.py --programa ../meuRobo/main.py --robo robo_bombertinho.json --sortear --inicio 380,150,0 --sementes 1-20
+```
+
+Os resultados ficam em `resultados/lote_DATA/`: `resumo.txt` (as partidas sem problema numa linha e,
+para cada uma com problema, os eventos e o comando para rever na janela), `resumo.csv` (para a
+planilha) e, de cada semente, o log do programa, o placar (`semente_N.json`) e o cenário
+(`cenario_N.json`). O comando de rever usa a mesma semente, o mesmo cenário e `--enter-automatico`:
+a partida na janela é a mesma do lote. Opções: `--tempo` (padrão 720), `--velocidade` (8),
+`--paralelo` (metade dos núcleos do PC), `--saida`. Cada partida roda numa cópia da pasta do
+programa (apagada no fim), para uma não ler os arquivos que a outra grava; o programa é o original,
+então imports e arquivos abertos a partir de `__file__` não mudam.
 
 Na janela: **▶ Iniciar partida** (F5) começa a partida e o programa (o botão de início do robô é
 apertado sozinho 1,5 s depois, se "Auto-botão" estiver ligado); **Reinício (−15)** é a equipe pegando
@@ -234,9 +256,15 @@ meça com a trena).
 
 * **Sensor de linha Pro1616**: o mesmo modelo da Maze (4 IR + 3 TCS, cada ponto é a média de um
   disco de 5 mm de raio, 19 amostras). As cores da lona em `cores_piso` são **estimadas**: troque pelas lidas no robô.
-* **VL53L0X**: raios num cone de 25° (os da borda só enxergam perto). Enxergam cubos, plataformas e
-  robôs. Cada sensor tem `altura` (mm do chão): os objetos têm 50 mm de altura, e um sensor mais alto
-  que isso só vê o objeto quando ele está longe o bastante para entrar no cone.
+* **VL53L0X**: campo de visão em leque de 25° (datasheet), com 21 raios; a janela desenha o leque
+  (tecla R). O feixe é mais forte no meio (~30% na borda) e o sinal que volta de um objeto é a
+  fração do feixe que bate nele vezes (alcance/d)²: uma parede aparece até o `alcance_mm`; um cubo,
+  que enche só um pedaço do leque, aparece até uns 600 mm de frente e menos se estiver de lado.
+  Perto, vale a geometria do cone: a 150 mm um cubo com o centro até ~60 mm fora do eixo do sensor
+  ainda aparece; a 30 mm, só até ~30 mm. Vale o objeto mais perto com sinal suficiente (um cubo fraco
+  demais deixa ver a parede atrás). Enxergam cubos, plataformas e robôs. Cada sensor tem `altura` (mm
+  do chão): os objetos têm 50 mm de altura, e um sensor mais alto que isso só vê o objeto quando ele
+  está longe o bastante para entrar no cone.
 * **TCS34725** (`tcs_i2c`, lib `tcs34725.py`): leem a cor da face do que estiver à frente deles (cubo,
   plataforma), com a luz caindo com a distância, como na Line. As refletâncias de cada cor
   (`REFLETANCIA` em `sim/fisica.py`) são estimadas. O `classifica_cor()` do `exemplo_aluno/robo.py`
@@ -308,6 +336,7 @@ inverte a ordem dos IR do sensor de linha e carrega as cores da lona de `cores_l
 | arquivo | papel |
 |---|---|
 | `simulador.py`, `rodar.py`, `Simulador.bat` | entrada; o programa do aluno roda em outro processo |
+| `lote.py` | várias sementes sem janela, em paralelo; resumo com as partidas com problema (`resultados/`) |
 | `sim/arena.py` | geometria da arena, cor do piso em cada ponto, posições nomeadas, cenário e sorteio |
 | `sim/fisica.py` | `Motor`, `Objeto` (cubo, plataforma; solto, preso ou em cima da plataforma), `Robo` (rodas mecanum/comuns, sensores), `Mundo` (prende, solta) |
 | `sim/garra.py` | as garras: a simples (`Garra`) e a de paralelogramo do Bombertinho (`GarraParalela`) |

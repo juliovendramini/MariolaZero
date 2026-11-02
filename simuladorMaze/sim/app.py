@@ -38,6 +38,10 @@ class Simulacao:
         self.entrada = None                 # texto do input() que está esperando (None = nenhum)
         self._resposta_entrada = None
         self.enter_automatico = False       # sem janela: responde o input() na hora
+        # pasta em que o programa roda (cwd) e onde ficam os arquivos_rodada; None = a pasta do
+        # programa. O avalia.py (e o lote.py) dá uma cópia por rodada: em paralelo, as rodadas
+        # dividiam o checkpoint e uma às vezes morria gravando o arquivo.
+        self.pasta_trabalho = None
         self.servidor = Servidor(self, porta)
         self._t_ref = 0.0
         self._real_ref = time.perf_counter()
@@ -218,6 +222,8 @@ class Simulacao:
         env['SIM_PORTA'] = str(self.servidor.porta)
         env['PYTHONUNBUFFERED'] = '1'
         env['PYTHONIOENCODING'] = 'utf-8'
+        if self.pasta_trabalho:
+            env['SIM_PASTA_TRABALHO'] = self.pasta_trabalho     # o rodar.py muda para ela
         if self.sincronizado:
             # o robô "liga" sem gastar tempo simulado: a física espera o programa conectar
             with self._cv:
@@ -229,7 +235,7 @@ class Simulacao:
         kw = {}
         if os.name == 'nt':
             kw['creationflags'] = subprocess.CREATE_NEW_PROCESS_GROUP
-        self.proc = subprocess.Popen(cmd, env=env, cwd=os.path.dirname(self.programa),
+        self.proc = subprocess.Popen(cmd, env=env, cwd=self.pasta_trabalho or os.path.dirname(self.programa),
                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                      stdin=subprocess.DEVNULL, **kw)
         self._log('---- programa iniciado ----')
@@ -325,7 +331,7 @@ class Simulacao:
             self.mundo.reset_rodada()
             self.juiz.reset()
         if self.programa:
-            pasta = os.path.dirname(self.programa)
+            pasta = self.pasta_trabalho or os.path.dirname(self.programa)
             for nome in self.cfg.get('arquivos_rodada', []):
                 try:
                     os.remove(os.path.join(pasta, nome))

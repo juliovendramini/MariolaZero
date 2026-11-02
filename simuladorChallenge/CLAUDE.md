@@ -16,7 +16,9 @@ Nasceu da Maze (esqueleto: `app.py` com o relógio sincronizado, `servidor.py`, 
 com o hardware falso da Line (`fake_hw/` tem o TCS34725 por I2C; a câmera foi tirada porque a regra
 proíbe câmera e LiDAR). `sim/firmware.py`, `sim/buzzer_mariola.py`, `sim/painel_brick.py`,
 `fake_hw/` (menos `__init__.py` e `sim_modulos.py`) e `libs_mariola/` são **cópias da Line**: corrigiu
-lá, traga para cá. `fake_hw/cliente.py` é o mesmo arquivo nos três simuladores.
+lá, traga para cá. `fake_hw/cliente.py` é o mesmo arquivo nos três simuladores (com as travas
+vigiadas desde 31/10, ver "Relógio e travas" abaixo): mudou um, copie para os outros dois e rode os
+testes dos três.
 
 Diferenças de estrutura em relação à Maze: o robô é a classe `Robo` (corpo, motores, firmwares,
 sensores, LEDs, tela, teclado) e o `Mundo` tem o espaço, os objetos e `robos` (hoje só um). O firmware
@@ -30,7 +32,7 @@ programa continua); `_reinicio_ate` é o antigo `_lop_ate`.
 python simulador.py --sem-janela --velocidade 8 --tempo 200
 #   garra (robo_garra.json, cenarios/exemplo.json, semente 1): pega o cubo azul do A3 e entrega na
 #   plataforma azul (P1): "+100 cubo entregue" em 0:25.66,
-#   pose final x=344 y=201 ângulo=178.9°, TOTAL 100
+#   pose final x=345 y=201 ângulo=178.9°, TOTAL 100
 python simulador.py --sem-janela --velocidade 8 --tempo 120 --robo robo_mecanum.json --programa exemplo_aluno/anda_mecanum.py --cenario cenarios/vazio.json
 #   só locomoção: 3 cruzamentos, anda de lado, gira 180°, volta; pose final x=449 y=1050 ângulo=179.8°, 0 pontos
 python simulador.py --sem-janela --velocidade 8 --tempo 200 --robo robo_bombertinho.json --programa exemplo_bombertinho/main.py
@@ -38,9 +40,31 @@ python simulador.py --sem-janela --velocidade 8 --tempo 200 --robo robo_bomberti
 #   pose final x=341 y=214 ângulo=179.5° (igual a 2x); A3 amarelo: +100 em 0:44.01; A3 branco: +50 em 0:06.45
 ```
 
-Números de 31/10/2026, depois da ligação do código da equipe no Bombertinho e da mancha de 19 pontos do
+Números de 31/10/2026, depois da ligação do código da equipe no Bombertinho, da mancha de 19 pontos do
 sensor de linha (`PONTOS_MANCHA` em `sim/fisica.py`; antes era uma cruz de 5 pontos e os números eram
-0:25.60 e x=446 y=1048).
+0:25.60 e x=446 y=1048) e do VL53 em leque (antes da troca, x=344 na garra simples).
+
+* **VL53 em leque** (31/10, pedido do Julio depois do comentário de um aluno: "no simulador é uma linha
+  reta"): 21 raios no cone de 25° (`RAIOS_VL53`), peso do feixe exp(-1,2 k²) (borda ~30%), sinal =
+  fração do feixe no objeto × (alcance/d)² ≥ 1. Antes eram 5 raios, os da borda com alcance fixo
+  (35%/70%), e a janela desenhava só o do meio; a geometria perto já batia com o cone (conferido com
+  um cubo deslocado de lado). A janela agora desenha o leque. Cubo de frente some a ~600 mm.
+  O desenho do leque (`_leque()` no `sim/gui.py`, igual na Line e na Maze) usa uma superfície só do
+  tamanho do leque. A primeira versão criava uma do tamanho da janela por sensor e por quadro: o
+  quadro ia de 3,4 para 9,8 ms e, como a janela e a física dividem o processo, o código da Challenger
+  com a janela a 8x caía de 1,40x para 0,75x (um aluno reclamou de lentidão). Agora: 3,7 ms e 1,38x.
+* **Relógio e travas** (31/10): o código da equipe Challenger mudava com a velocidade (entrega aos
+  3:00.07 a 2x e 3:00.41 a 8x). Causa: a thread principal parada no `I2C_LOCK` enquanto a thread dos
+  sensores o segurava dormindo (VL53 medindo) não contava como "esperando", o relógio não andava e,
+  depois de `LIVRE_APOS`, ia pelo tempo real. `fake_hw/cliente.py` (`RelogioSinc.instala`) troca
+  `threading.Lock`/`RLock` do programa por travas vigiadas (`_TravaVigiada`/`_TravaVigiadaR`):
+  esperar uma trava conta como espera (sem hora, ou até o timeout em tempo simulado). Depois disso,
+  2x e 8x deram a mesma partida. Ao levar para a Maze, a primeira versão (que só embrulhava o lock
+  real com `espera_externa()`) ainda mudava com a velocidade (320,6 s a 8x, 321,9 s a 2x): entre a
+  dona soltar e a thread da fila voltar a rodar, esta ainda constava como esperando e o relógio podia
+  andar. Agora o estado da trava fica no `cond` do relógio, e o `release()` passa a trava direto para
+  a primeira da fila e a tira da lista de espera; uma thread interrompida na fila sai dela e passa a
+  trava adiante. Testes daqui, da Line e da Maze iguais a 2x e 8x.
 
 Em 30/10 os dois deram a mesma pose final em `--velocidade 2` e `8` (relógio sincronizado). Trocando o
 cubo do A3 (e do A3') no cenário: amarelo → procura para um lado, volta e entrega na P4 (+100);
@@ -128,11 +152,29 @@ branco → acende os LEDs e não pega (+50). Rode depois de mexer em `sim/` ou `
   mais, giroscópio crescendo para a esquerda, IR dos sensores de linha na ordem trocada com os TCS na
   normal, cores da lona e dos cubos tiradas das faixas HSV deles). Resultado no simulador: o código
   deles roda (com o adaptador), mas não entrega cubo; com o `alinhar_distancia_lixeira()` corrigido,
-  110 pontos (ver a `ANALISE.md`). Gerado por `professor/challenger2026/simulador/gera_robo.py` sobre o
+  125 pontos, iguais a 2x e 8x (ver a `ANALISE.md`; números depois do VL53 em leque e da segunda
+  versão das travas; com a primeira eram 165 e mudavam com a velocidade). Gerado por `professor/challenger2026/simulador/gera_robo.py` sobre o
   `robo_bombertinho_antes.json` de lá. O `exemplo_bombertinho` foi ajustado junto (`cores_lona.json` =
   aprende_cor).
 * `tcs_i2c[].ganho` e `refletancia` (no robo.json) existem para isso: calibrar os TCS do mux para as
   leituras de um robô real. Sem eles, vale o `REFLETANCIA` de `sim/fisica.py`.
+
+## Lote de partidas (`lote.py`, 31/10/2026)
+
+Pedido para a equipe Challenger ver só as partidas com problema. Roda o `simulador.py --sem-janela` em
+subprocessos (`ThreadPoolExecutor`, `--paralelo` = metade dos núcleos), uma semente por partida;
+`--sortear` sorteia o cenário pela mesma semente (`arena.sorteia`) e `--inicio X,Y,ÂNG` fixa o início
+(o código da equipe só funciona começando na rua de baixo: 380,150,0). Grava em `resultados/lote_DATA/`
+(no `.gitignore`) o cenário, o log e o `--resultado` de cada semente, `resumo.txt` e `resumo.csv`.
+"Problema" = evento negativo, `Traceback` no log, programa que parou antes do tempo, ou 0 pontos.
+O comando "rever" usa `--enter-automatico` (novo no `simulador.py`: com janela, o `input()` segue
+na hora como sem janela), senão a espera do Enter muda a partida. Diferente do `avalia.py` da Line:
+não tem desafios nem meta.
+Desde 01/11 cada partida roda numa cópia da pasta do programa (`pasta_rodada()`, `--pasta-trabalho`
+do `simulador.py`), como no `avalia.py` da Line e da Maze: em paralelo, as partidas dividiam os
+arquivos que o programa grava com caminho relativo. Conferido com o `exemplo_bombertinho` e com o
+código da Challenger (o adaptador importa `../codigo` e continua funcionando). O fim da partida
+também deixou de gerar `Traceback` falso (`_Interrupcao` no `cliente.py`; ver o `CLAUDE.md` da Maze).
 
 ## Pendências
 

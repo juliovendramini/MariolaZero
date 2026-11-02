@@ -33,10 +33,10 @@ O programa roda em processo separado (`rodar.py`; para `.ino`, `rodar_pacoca.py`
 
 ```bash
 python simulador.py --sem-janela --velocidade 8 --mapa mapas/completo.json
-#   exemplo em Python, robô 4x4 → TOTAL 295
+#   exemplo em Python, robô 4x4 → TOTAL 295, rodada de 73,2 s (igual a 2x)
 python simulador.py --programa exemplo_pacoca/exemplo_pacoca.ino --sem-janela --velocidade 4 --semente 1
 #   Paçoca, mapa de treino → TOTAL 160, 0 LoP
-#   com --mapa mapas/completo.json --tempo 300 → ~230, chega na fita vermelha
+#   com --mapa mapas/completo.json --tempo 300 → 230 (3 LoP), chega na fita vermelha
 python avalia.py --desafio L04 --programa exemplo_aluno/main.py
 #   exemplo → 6 de 6
 ```
@@ -44,8 +44,18 @@ python avalia.py --desafio L04 --programa exemplo_aluno/main.py
 * A EEPROM simulada do Paçoca fica em `exemplo_pacoca/eeprom_pacoca.bin`: a primeira rodada (sem o
   arquivo) sai um pouco diferente das seguintes.
 * O Paçoca precisa de g++ (Windows: pacote portátil, MSYS2 ucrt64 ou w64devkit; `PACOCA_GXX` força um).
-* Referência do exemplo nos desafios (depois da correção do cruzamento com verde, 18/10): L04-L06, L08,
-  L09, L11 6/6; L07 média ~287; L10 5/6; L12 4/6; **L13 3/6 (em aberto)**.
+* Referência do exemplo nos desafios (31/10, com o VL53 em leque): L04-L06, L08, L09, L11 6/6;
+  L07 média 290,2; L10 5/6; L12 4/6; **L13 2/6 (em aberto)**. Antes do leque o L13 era 3/6 (a pista
+  1 terminava). Na pista 1 o VL53 da frente agora vê o obstáculo a 67 mm (antes, 58), o contorno "às
+  cegas" do exemplo (170 + 420 mm) começa antes e não reencontra a linha. A pista 3, que também
+  piorou, não foi investigada.
+* "Erro no programa" falso no `avalia.py` (corrigido em 01/11/2026 nos três simuladores; detalhes
+  no `simuladorMaze/CLAUDE.md`, "Pasta de trabalho por rodada"): (1) o `KeyboardInterrupt` do fim
+  da rodada caía entre o pedido e a resposta de um `Conexao.chamar()` e a resposta ficava para outra
+  thread (`KeyError: 'v'`); agora ele espera a resposta (`_Interrupcao` no `fake_hw/cliente.py`).
+  Antes: 5 rodadas marcadas em 60 (L04-L13); depois: 0 em 48. (2) Cada rodada roda numa cópia da
+  pasta do programa (`--pasta-trabalho`), para as rodadas em paralelo não dividirem o
+  `checkpoint_line.json`. O `.ino` do Paçoca não é copiado.
 
 ## Relógio sincronizado (não quebrar)
 
@@ -54,7 +64,8 @@ serial/I2C); aí a física avança até o primeiro despertar. Mesma semente + me
 rodada **igual bit a bit** em qualquer velocidade, com ou sem janela, em paralelo ou não. Qualquer
 mudança que introduza tempo real, aleatoriedade sem a semente ou ordem dependente de thread quebra isso:
 confira rodando o mesmo teste em `--velocidade 1` e `8` e comparando o placar. Thread sem espera por
-1 s real cai no relógio real (modo de segurança). `--tempo-real` é o modo antigo.
+1 s real cai no relógio real (modo de segurança). Thread parada num `Lock`/`RLock` do programa conta
+como esperando (travas vigiadas do `cliente.py`, 31/10; explicação no `simuladorMaze/CLAUDE.md`). `--tempo-real` é o modo antigo.
 No Paçoca o relógio é do programa (`sim_t_ns`) e a ponte só leva a física até ele quando precisa do
 mundo ou a cada 10 ms (detalhes no `pacoca/LEIAME.md`).
 
@@ -69,7 +80,7 @@ depois consulta `entrada_estado` a cada 50 ms reais.
   `math.inf`). Se só restam esperas assim, o `_coordena` usa `avanca livre`: o tempo anda pelo
   relógio real, como no robô parado no `input()`.
 * Sem janela, `enter_automatico` responde na hora.
-* O `cliente.py` é o mesmo arquivo nos dois simuladores.
+* O `cliente.py` é o mesmo arquivo nos três simuladores (Line, Maze e Challenge).
 * O Paçoca (`.ino`) não passa por isso.
 
 ## Brick Paçoca
@@ -244,8 +255,27 @@ depois consulta `entrada_estado` a cada 50 ms reais.
 * "Sugestão 2" (aproximar do robô real: motor perdendo rotação com carga, leitura "velha" do VL53,
   barramento de servo não ideal) ficou para o futuro, a pedido do Julio. Já está nas limitações do
   README e do curso (11.9, 17.1).
-* L13 do exemplo em 3/6: em aberto.
+* L13 do exemplo em 2/6 (3/6 antes do VL53 em leque): em aberto.
 * A geometria nova do Pro1616 foi levada para o `robo.json` da Maze em 19/10 (só as posições; o
   modelo de leitura de lá continua o simples).
 * Mudou API, robôs, mapas ou placar? Atualize o `README.md` e confira `curso/11-simulador-line.md`,
   `curso/18-desafios.md`, `curso/codigos/` e `professor/gabarito/`.
+
+## Trazido do simuladorChallenge (31/10/2026; nada commitado ainda)
+
+* **Relógio e travas:** o `cliente.py` é o mesmo nos três simuladores (explicação no
+  `simuladorMaze/CLAUDE.md`, "Relógio sincronizado"). Uma thread interrompida (`KeyboardInterrupt`)
+  enquanto espera na fila de uma trava sai da fila e passa a trava adiante, se já a tinha recebido.
+* **VL53 em leque** no caso normal do `vl53()` (`sim/fisica.py`): 21 raios (`RAIOS_VL53`), peso
+  exp(-1,2 k²), sinal = fração do feixe na forma × (alcance/d)² ≥ 1, vale a forma mais perto com
+  sinal; a primeira forma de cada raio respeita `_visivel()` e a `altura` do sensor, e o retorno
+  rasante (> 72°) não conta. Os ramos `na_cacamba` e `na_garra` ficaram como estavam (só a tupla de
+  `self.raios` ganhou ângulo, meio cone e os raios, vazios ali). O ultrassom do Paçoca (`params`)
+  passa pelo leque também. A janela (`sim/gui.py`) desenha o leque (`_leque()`, numa superfície só
+  do tamanho dele: uma do tamanho da janela por sensor deixava a física lenta, ver o
+  `simuladorChallenge/CLAUDE.md`); sem medida, um leque de 60 mm.
+* Números depois das duas mudanças: teste de referência 295 (73,2 s; antes 71,8) igual a 2x e 8x,
+  Paçoca 160 e 230 no `completo.json`, L04-L12 como antes (L07 média 290,2; no L10 a semente 3 passou
+  a dar 220 sem LoP), **L13 2/6** (antes 3/6, ver "Testes de referência"). Gabarito 7, 14 e 15 e o
+  curso (módulos 7 e 18) refeitos. O código da Boberto continua mudando de uma rodada para outra (a
+  `professor/boberto2026/ANALISE.md` tem os números).

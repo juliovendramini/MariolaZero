@@ -47,6 +47,9 @@ PONTOS_MANCHA = ((0.0, 0.0),) + tuple(
     (round(r * math.cos(math.radians(a)), 3), round(r * math.sin(math.radians(a)), 3))
     for r, n in ((2.5, 6), (5.0, 12)) for a in range(0, 360, 360 // n))
 
+# Raios no leque de cada VL53 (vl53_params.raios no robo.json troca)
+RAIOS_VL53 = 21
+
 CUBO = A.QUADRADO                  # 50 mm
 PLATAFORMA = (50.0, 160.0)         # em x e y quando está no local de descarte
 ALTURA_OBJETO = 50.0
@@ -364,7 +367,7 @@ class Robo:
         self.teclado_leds = 0x0F   # bits dos 4 LEDs (ao ligar, todos em 1 = acesos)
         self.oled = None           # imagem da tela OLED (1 bit por pixel) ou None = apagada
         self.oled_tam = (128, 64)
-        self.raios = {}            # nome -> (p0, p1, dist, t)
+        self.raios = {}            # nome -> (p0, p1, dist, t, ângulo, meio cone, [(ângulo, dist) dos raios])
         self.debug = {'pose': None, 'texto': '', 'marcas': []}
         for g in self.garras:
             g.reset()
@@ -528,35 +531,49 @@ class Robo:
         return melhor
 
     def vl53(self, idx):
-        """Distância em mm (int) do VL53 de índice idx na lista de configuração."""
+        """Distância em mm (int) do VL53 de índice idx na lista de configuração.
+
+        Campo de visão em leque (datasheet do VL53L0X: 25°), com RAIOS_VL53 raios. Cada raio pesa
+        pelo perfil do feixe (mais forte no meio, ~30% na borda). O sinal que volta de um objeto é a
+        fração do feixe que bate nele vezes (alcance/d)²: uma parede que enche o feixe aparece até o
+        alcance; um cubo que pega só um pedaço do feixe, só mais perto. Vale o objeto mais perto
+        com sinal suficiente (se o cubo é fraco demais, o sensor vê a parede atrás dele)."""
         sc = self.cfg['vl53'][idx]
         pr = self.cfg['vl53_params']
         b = self.corpo
         p0 = b.local_to_world((sc['x'], sc['y']))
         a0 = b.angle + math.radians(sc['angulo'])
         alcance = float(pr['alcance_mm'])
-        cone = math.radians(float(pr['cone_graus']))
+        meia = math.radians(float(pr['cone_graus'])) / 2
         h = float(sc.get('altura', 40))
-        melhor = None
-        # raios no cone; os da borda do campo de visão só "enxergam" alvos mais perto
-        # (o sinal que volta da borda do cone é fraco)
-        for k, alc in ((-0.5, 0.35), (-0.25, 0.7), (0.0, 1.0), (0.25, 0.7), (0.5, 0.35)):
-            a = a0 + k * cone
+        n = max(3, int(pr.get('raios', RAIOS_VL53)))
+        objetos = {}        # forma -> [distância mais perto, peso dos raios que batem nela]
+        total = 0.0
+        pontos = []         # para a janela: (ângulo, distância ou None)
+        for i in range(n):
+            k = -1.0 + 2.0 * i / (n - 1)
+            a = a0 + k * meia
+            peso = math.exp(-1.2 * k * k)
+            total += peso
             q = self._raio(p0, a, alcance + 200, h)
+            if q is not None and k != 0:
+                # retorno de superfície muito rasante é fraco: não conta
+                u = Vec2d(math.cos(a), math.sin(a))
+                if abs(u.dot(q[2])) < math.cos(math.radians(72)):
+                    q = None
+            pontos.append((a, q[0] if q else None))
             if q is None:
                 continue
-            d, _, normal = q
-            if k != 0 and d > alc * alcance:
-                continue
-            if k != 0:
-                # retorno de superfície muito rasante é fraco: ignora
-                u = Vec2d(math.cos(a), math.sin(a))
-                if abs(u.dot(normal)) < math.cos(math.radians(72)):
-                    continue
-            if melhor is None or d < melhor:
+            o = objetos.setdefault(q[1], [q[0], 0.0])
+            o[0] = min(o[0], q[0])
+            o[1] += peso
+        melhor = None
+        for d, peso in sorted(objetos.values()):
+            if peso / total * (alcance / max(d, 1.0)) ** 2 >= 1.0:
                 melhor = d
+                break
         fim = p0 + Vec2d(math.cos(a0), math.sin(a0)) * min(melhor or alcance, alcance)
-        self.raios[sc['nome']] = (p0, fim, melhor, self.t)
+        self.raios[sc['nome']] = (p0, fim, melhor, self.t, a0, meia, pontos)
         if melhor is None or melhor > alcance:
             return int(pr['fora_alcance'])
         d = melhor + float(pr.get('offset_mm', 0))

@@ -45,6 +45,10 @@ def canal_mux(m):
     return CANAIS_I2C[m]
 
 
+# Raios no leque de cada VL53 (vl53_params.raios no robo.json troca)
+RAIOS_VL53 = 21
+
+
 # --------------------------------------------------------------------------- motor
 FREQ_PID = 40.0     # Hz do PID nos firmwares (TEMPO_PID = 25 ms)
 
@@ -1091,6 +1095,14 @@ class Mundo:
 
     # ---------------------------------------------------------------- VL53
     def vl53(self, idx):
+        """Distância em mm (int) do VL53 de índice idx na lista de configuração.
+
+        Caso normal: campo de visão em leque (datasheet do VL53L0X: 25°), com RAIOS_VL53 raios (igual
+        ao simuladorChallenge e ao simuladorMaze). Cada raio pesa pelo perfil do feixe (mais forte no
+        meio, ~30% na borda). O sinal que volta de um objeto é a fração do feixe que bate nele vezes
+        (alcance/d)²: uma parede que enche o feixe aparece até o alcance; uma bolinha ou a quina de
+        um obstáculo que pega só um pedaço do feixe, só mais perto. Vale o objeto mais perto com
+        sinal suficiente. Os VL53 na caçamba e na garra têm modelo próprio (sim/resgate.py)."""
         sc = self.cfg['vl53'][idx]
         pr = self.cfg['vl53_params']
         if sc.get('params'):
@@ -1100,40 +1112,59 @@ class Mundo:
         p0 = b.local_to_world((sc['x'], sc['y']))
         a0 = b.angle + math.radians(sc['angulo'])
         alcance = float(pr['alcance_mm'])
-        cone = math.radians(float(pr['cone_graus']))
+        meia = math.radians(float(pr['cone_graus'])) / 2
         altura = sc.get('altura')          # mm do chão; só vê o que for mais alto que isso
         if sc.get('na_cacamba'):
             mec = self.resgate.mec
             d = mec.vl53_cacamba(sc) if mec else float(sc['na_cacamba'].get('vazia', 200))
-            self.raios[sc['nome']] = (p0, p0, None, self.t)
+            self.raios[sc['nome']] = (p0, p0, None, self.t, a0, meia, [])
             return max(0, int(round(d + self.rng_vl53.gauss(0, float(pr['ruido_mm'])))))
         if sc.get('na_garra'):
             mec = self.resgate.mec
             r = mec.vl53_garra(sc, alcance) if mec else None
             if r is None:
-                self.raios[sc['nome']] = (p0, p0, None, self.t)
+                self.raios[sc['nome']] = (p0, p0, None, self.t, a0, meia, [])
                 return int(pr['fora_alcance'])
             if r != 'raio':
                 d = r + self.rng_vl53.gauss(0, float(pr['ruido_mm']))
-                self.raios[sc['nome']] = (p0, p0 + Vec2d(math.cos(a0), math.sin(a0)) * r, r, self.t)
+                self.raios[sc['nome']] = (p0, p0 + Vec2d(math.cos(a0), math.sin(a0)) * r, r, self.t,
+                                          a0, meia, [])
                 return max(0, int(round(d)))
         filtro = pymunk.ShapeFilter(mask=CAT_OBST | CAT_PILAR | CAT_BOLA)
+        n = max(3, int(pr.get('raios', RAIOS_VL53)))
+        objetos = {}        # forma -> [distância mais perto, peso dos raios que batem nela]
+        total = 0.0
+        pontos = []         # para a janela: (ângulo, distância ou None)
+        for i in range(n):
+            k = -1.0 + 2.0 * i / (n - 1)
+            a = a0 + k * meia
+            peso = math.exp(-1.2 * k * k)
+            total += peso
+            u = Vec2d(math.cos(a), math.sin(a))
+            q = None        # (distância, forma, normal) da primeira forma visível no raio
+            for h in self.space.segment_query(p0, p0 + u * (alcance + 200), 0, filtro):
+                if h.shape is None or not self._visivel(h.shape):
+                    continue
+                if altura is not None and getattr(h.shape, 'altura_mm', 1e9) < float(altura):
+                    continue
+                d = (h.point - p0).length
+                if q is None or d < q[0]:
+                    q = (d, h.shape, h.normal)
+            if q is not None and k != 0 and abs(u.dot(q[2])) < math.cos(math.radians(72)):
+                q = None    # retorno de superfície muito rasante é fraco: não conta
+            pontos.append((a, q[0] if q else None))
+            if q is None:
+                continue
+            o = objetos.setdefault(q[1], [q[0], 0.0])
+            o[0] = min(o[0], q[0])
+            o[1] += peso
         melhor = None
-        for k, alc in ((-0.5, 0.35), (-0.25, 0.7), (0.0, 1.0), (0.25, 0.7), (0.5, 0.35)):
-            a = a0 + k * cone
-            p1 = p0 + Vec2d(math.cos(a), math.sin(a)) * (alcance + 200)
-            for q in self.space.segment_query(p0, p1, 0, filtro):
-                if q.shape is None or not self._visivel(q.shape):
-                    continue
-                if altura is not None and getattr(q.shape, 'altura_mm', 1e9) < float(altura):
-                    continue
-                d = (q.point - p0).length
-                if k != 0 and d > alc * alcance:
-                    continue
-                if melhor is None or d < melhor:
-                    melhor = d
+        for d, peso in sorted(objetos.values(), key=lambda o: o[0]):
+            if peso / total * (alcance / max(d, 1.0)) ** 2 >= 1.0:
+                melhor = d
+                break
         fim = p0 + Vec2d(math.cos(a0), math.sin(a0)) * min(melhor or alcance, alcance)
-        self.raios[sc['nome']] = (p0, fim, melhor, self.t)
+        self.raios[sc['nome']] = (p0, fim, melhor, self.t, a0, meia, pontos)
         if melhor is None or melhor > alcance:
             return int(pr['fora_alcance'])
         d = melhor + float(pr.get('offset_mm', 0))

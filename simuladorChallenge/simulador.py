@@ -49,6 +49,12 @@ def main():
     ap.add_argument('--porta', type=int, default=0, help='porta TCP local (0 = automática)')
     ap.add_argument('--resultado', default=None,
                     help='(sem janela) grava o placar da partida neste arquivo JSON')
+    ap.add_argument('--pasta-trabalho', default=None,
+                    help='pasta em que o programa roda e onde ficam os arquivos da rodada, como o checkpoint '
+                         '(padrão: a pasta do programa; o avalia.py e o lote.py usam uma cópia por rodada)')
+    ap.add_argument('--enter-automatico', action='store_true',
+                    help='o input() do programa segue na hora, como sem janela (para rever na janela uma '
+                         'rodada do lote.py igual ao que ela foi)')
     a = ap.parse_args()
 
     robo = a.robo
@@ -76,11 +82,13 @@ def main():
     sim = Simulacao(cenario, cfg, programa, a.porta, None if a.semente < 0 else a.semente)
     sim.sincronizado = not a.tempo_real
     sim.set_fator(a.velocidade)
+    sim.pasta_trabalho = a.pasta_trabalho
 
     if a.sem_janela:
         roda_sem_janela(sim, a.tempo, a.resultado)
     else:
         from sim.gui import Interface
+        sim.enter_automatico = a.enter_automatico
         ui = Interface(sim, os.path.join(RAIZ, 'cenarios'))
         ui.rodar()
 

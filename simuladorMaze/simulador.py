@@ -44,6 +44,9 @@ def main():
     ap.add_argument('--lop', choices=['reiniciar', 'botao'], default='reiniciar')
     ap.add_argument('--resultado', default=None,
                     help='(sem janela) grava o placar da rodada neste arquivo JSON (usado pelo avalia.py)')
+    ap.add_argument('--pasta-trabalho', default=None,
+                    help='pasta em que o programa roda e onde ficam os arquivos da rodada, como o checkpoint '
+                         '(padrão: a pasta do programa; o avalia.py e o lote.py usam uma cópia por rodada)')
     a = ap.parse_args()
 
     cfg = carregar_cfg(a.robo)
@@ -55,6 +58,7 @@ def main():
     sim.sincronizado = not a.tempo_real
     sim.modo_lop = a.lop
     sim.set_fator(a.velocidade)
+    sim.pasta_trabalho = a.pasta_trabalho
 
     if a.sem_janela:
         roda_sem_janela(sim, a.tempo, a.resultado)

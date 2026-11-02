@@ -28,6 +28,7 @@ import glob
 import hashlib
 import json
 import os
+import shutil
 import statistics
 import subprocess
 import sys
@@ -109,6 +110,30 @@ def gera_surpresa(nivel, semente):
     return arq
 
 
+PASTA_MAX_MB = 50
+
+
+def pasta_rodada(programa):
+    """Cópia da pasta do programa para ser a pasta de trabalho de uma rodada (None = não copia).
+
+    As rodadas correm em paralelo e o programa grava arquivos com caminho relativo na pasta em que
+    roda (o checkpoint do exemplo): com uma pasta só, uma rodada lia o checkpoint da outra ou morria
+    gravando o arquivo (no Windows o os.replace falha se outro processo mexe nele). O programa
+    continua rodando do lugar original (imports e caminhos a partir de __file__ não mudam); só os
+    caminhos relativos caem na cópia. Pasta muito grande (> PASTA_MAX_MB) não é copiada."""
+    orig = os.path.dirname(os.path.abspath(programa))
+    fora = shutil.ignore_patterns('__pycache__', '.git', '.sim_build', '.cache', 'resultados')
+    total = 0
+    for raiz, pastas, arqs in os.walk(orig):
+        pastas[:] = [d for d in pastas if not fora(raiz, [d])]
+        total += sum(os.path.getsize(os.path.join(raiz, a)) for a in arqs)
+        if total > PASTA_MAX_MB * 1e6:
+            return None
+    destino = os.path.join(tempfile.mkdtemp(prefix='rodada_'), os.path.basename(orig))
+    shutil.copytree(orig, destino, ignore=fora)
+    return destino
+
+
 def roda(job):
     """Uma rodada sem janela. Devolve o dicionário do resultado (ou o erro)."""
     os.makedirs(os.path.join(PASTA_RES, 'logs'), exist_ok=True)
@@ -120,6 +145,10 @@ def roda(job):
            '--robo', job['robo'], '--mapa', job['mapa'], '--programa', job['programa'],
            '--semente', str(job['semente']), '--tempo', str(job['tempo']),
            '--velocidade', str(job['velocidade']), '--resultado', arq_json]
+    # pasta de trabalho própria (ver pasta_rodada); o .ino do Paçoca fica como está
+    trabalho = None if job['programa'].lower().endswith('.ino') else pasta_rodada(job['programa'])
+    if trabalho:
+        cmd += ['--pasta-trabalho', trabalho]
     t0 = time.time()
     env = dict(os.environ, PYTHONIOENCODING='utf-8')
     try:
@@ -137,6 +166,8 @@ def roda(job):
             os.remove(arq_json)
         except OSError:
             pass
+        if trabalho:
+            shutil.rmtree(os.path.dirname(trabalho), ignore_errors=True)
     try:
         with open(log, encoding='utf-8', errors='replace') as f:
             txt = f.read()

@@ -199,17 +199,17 @@ exemplo não vale).
 | L03 | `seguidor_p.py` com velocidade e ganhos maiores | cumpre: 29 s (o original leva 40 s) |
 | L04 | `exemplo_aluno` | cumpre: 6 de 6 sem LoP |
 | L05, L06 | `exemplo_aluno` | cumpre: 6 de 6 sem LoP |
-| L07 | `exemplo_aluno` | cumpre: média 286,5 |
+| L07 | `exemplo_aluno` | cumpre: média 290,2 |
 | L08 | `exemplo_aluno` (esteira) | cumpre: 6 de 6 |
 | L09 | `exemplo_aluno` | cumpre: 6 de 6 com pelo menos 1 viva |
 | L10 | `exemplo_aluno` | cumpre no limite: 5 de 6 (na semente 4 só resgata 1 viva) |
 | L11 | `exemplo_aluno` | cumpre: 6 de 6 sem LoP |
 | L12 | `exemplo_aluno` | cumpre no limite: 4 de 6 |
-| L13 | `exemplo_aluno` | **não cumpre**: 3 de 6 (duas pistas sem terminar: o exemplo se perde nas curvas fechadas desenhadas) |
+| L13 | `exemplo_aluno` | **não cumpre**: 2 de 6 (quatro pistas sem terminar ou com LoPs demais: o exemplo se perde nas curvas fechadas desenhadas e, em duas pistas, não reencontra a linha depois de contornar o obstáculo) |
 | M01 | `exemplo_aluno` (Maze) | cumpre: 3 de 3 (6 vítimas; o tempo de 300 s acaba antes de ele voltar) |
 | M02, M03 | `exemplo_aluno` (Maze) | cumpre: 3 de 3 (415 pontos, 6 vítimas, volta ao início) |
 | M04 | `exemplo_aluno` (Maze) | cumpre: 3 de 3 (4 vítimas) |
-| M05 | `exemplo_aluno` (Maze) | cumpre: 3 de 3 (5 vítimas) |
+| M05 | `exemplo_aluno` (Maze) | **não cumpre**: 2 de 3 (5 vítimas nas outras duas). No labirinto 2, logo no começo, um VL53 lateral pega a ponta de uma parede e o exemplo marca uma parede que não existe |
 | M06 | `exemplo_aluno` (Maze) | cumpre: 3 de 3 (média 6,3 vítimas) |
 
 ## Projeto final

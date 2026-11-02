@@ -116,7 +116,10 @@ python avalia.py --programa CAMINHO/DO/main.py --surpresa medio --mapas 6   # 6 
 ```
 
 * Rodadas em paralelo (`--paralelo N`; padrão: metade dos núcleos do PC). Como o relógio é
-  sincronizado, rodar em paralelo não muda o resultado.
+  sincronizado, rodar em paralelo não muda o resultado. Cada rodada roda numa cópia da pasta do
+  programa (apagada no fim): o checkpoint que uma rodada grava não aparece para a outra. O programa
+  é o original, então imports e arquivos abertos a partir de `__file__` não mudam; o que ele grava
+  com caminho relativo fica na cópia. O `.ino` do Paçoca roda na pasta dele.
 * Os desafios ficam em `desafios/desafios.json` (mapa, robô, sementes, tempo e meta) e os mapas
   em `desafios/mapas/`. O professor pode criar outros no mesmo formato.
 * Cada avaliação grava um relatório em `resultados/` (placar de cada rodada, se cumpriu a meta e
@@ -150,9 +153,11 @@ como no robô.
 * No robô de verdade o laço também gasta tempo calculando. Se o programa só funciona porque o
   simulador "congela" o tempo durante o cálculo, ele pode se comportar diferente no robô. Um
   `time.sleep(0.01)` no laço principal, como no exemplo, deixa os dois parecidos.
-* Uma thread que fica calculando sem nunca esperar (laço sem `sleep`, ou presa num `Lock`) trava
-  esse esquema. Depois de 1 s real nessa situação, o tempo passa a andar pelo relógio real, como
-  no modo antigo.
+* Uma thread parada num `threading.Lock`/`RLock` do programa (por exemplo, uma trava do I2C
+  enquanto outra thread mede o VL53) conta como esperando. Quem solta a trava a passa direto para
+  a próxima da fila (desde 31/10/2026).
+* Uma thread que fica calculando sem nunca esperar (laço sem `sleep`) trava esse esquema. Depois de
+  1 s real nessa situação, o tempo passa a andar pelo relógio real, como no modo antigo.
 * `--tempo-real` volta ao modo antigo: o programa usa o relógio real multiplicado pela velocidade.
 
 ### Na janela (modo simular)
@@ -467,7 +472,12 @@ Exemplo dessas montagens: o robô de uma equipe em `professor/` (privado).
   * Ainda há uma vibração extra no giroscópio e um pequeno desvio de direção quando a roda bate. Os
     palitos rolam um pouco quando a roda passa e o sensor os vê como madeira.
 * **Obstáculos**: caixas (60 x 60 mm por padrão) que o robô empurra (com atrito no chão) ou fixas.
-  Os VL53 e o para-choque enxergam obstáculos e pilares.
+  Os VL53 e o para-choque enxergam obstáculos e pilares. O VL53 tem campo de visão em leque de 25°,
+  com 21 raios (`vl53_params.raios` troca), mais forte no meio (~30% na borda): uma parede que enche
+  o feixe aparece até o alcance; a quina de um obstáculo ou uma bolinha que pega só um pedaço do
+  feixe, só mais perto. Vale o objeto mais perto com retorno suficiente. A janela desenha o leque
+  de cada sensor (tecla R). Os VL53 na caçamba (`na_cacamba`) e na garra (`na_garra`) têm modelo
+  próprio, e o ultrassom do Paçoca usa o mesmo leque com o cone e o alcance dele.
 * Motores, encoders, PID, timeouts e watchdog: os mesmos do simulador da Maze (firmware do
   Mariola e da placa de motor). **5 s sem pacote para o Mariola: motores soltos.** Numa rampa, o robô
   desce de ré.

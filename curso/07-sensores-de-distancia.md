@@ -28,7 +28,7 @@ time.sleep(0.034)
 leituras = {nome: s.leitura_mm() for nome, s in sensores.items()}
 ```
 
-No simulador: 132 ms (simples) contra 73 ms (rápido) para três sensores. Com 5 sensores a
+No simulador: 114 ms (simples) contra 64 ms (rápido) para três sensores. Com 5 sensores a
 diferença é maior. **8190** significa "nada à vista".
 
 ## 7.2 Ler sem parar o laço
@@ -183,7 +183,7 @@ while True:
 anda(0, 0)
 ```
 ```
-parei a 79 mm da parede
+parei a 77 mm da parede
 ```
 
 ## 7.5 Seguir uma parede
