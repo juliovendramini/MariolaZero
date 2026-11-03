@@ -27,9 +27,9 @@
 
   "motor_padrao": {
     "_comentario": "Motor de aspirador Xiaomi. Contagens por volta da roda = pulsos_encoder_motor x reducao x multiplicador (Mariola x2: um canal nas duas bordas; placa x4: quadratura). rpm_livre = rotação da roda com PWM 100%; no PID o comando 100 = 80% disso.",
-    "_deduzido_do_codigo": "A MEDIR. Tirado do código da equipe: movimentos.py converte 1 cm = 1000/45,7 contagens do Mariola, o que com a roda de 70 mm dá 481 por volta (placa: o dobro, 962). As placas recebem calibracao_manual(32, -32); supondo que a equipe igualou a velocidade da frente com a de trás, o Mariola teria calibração 16 (o que dá ~100 rpm livres). Os campos de baixo têm prioridade sobre pulsos x redução e rpm_livre.",
-    "contagens_por_volta_mariola": 481,
-    "contagens_por_volta_placa": 962,
+    "_deduzido_do_codigo": "Contagens (03/11/2026): ~940 por volta da roda no Mariola, medido pela equipe Boberto 2026 (mesmo motor e mesma roda de 70 mm); placa = o dobro (x4 contra x2), 1880. Até 03/11 eram 481/962, tirados do movimentos.py da equipe (1 cm = 1000/45,7 contagens): metade do medido. A CONFIRMAR no robô da Maze: girar uma roda de trás 1 volta à mão e ler o angulo_motor(). As placas recebem calibracao_manual(32, -32); supondo que a equipe igualou a velocidade da frente com a de trás, o Mariola teria calibração 16. Com 940/1880, essa calibração dá ~51 rpm livres (antes ~100). Os campos de baixo têm prioridade sobre pulsos x redução e rpm_livre.",
+    "contagens_por_volta_mariola": 940,
+    "contagens_por_volta_placa": 1880,
     "calibracao_mariola": 16,
     "calibracao_placa": 32,
     "pulsos_encoder_motor": 17,

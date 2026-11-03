@@ -47,7 +47,10 @@ def nova_zona(x, y, larg=4, alt=3):
     return {'x': x, 'y': y, 'larg': larg, 'alt': alt,
             'entrada': {'lado': 'O', 'i': alt - 1}, 'saida': {'lado': 'L', 'i': 0},
             'verde': 'NO', 'vermelho': 'SE',
-            'obstaculo': None,              # {'u', 'v'} em mm a partir do canto sudoeste da área
+            # obstáculos: [{'u', 'v'} em mm a partir do canto sudoeste da área + campos de
+            # OBSTACULO_PADRAO]; detritos: número de palitos (sorteados, sempre no mesmo lugar) ou
+            # lista [{'u', 'v', 'ang', 'comp'}] (postos no editor)
+            'obstaculos': [], 'detritos': 0,
             'cor_parede': [200, 200, 205],  # regra 2026: qualquer cor menos vermelho, verde e preto
             'vitimas': None,                # None = sorteio pela semente; ou [{'tipo','u','v'}]
             'falsas': 0}                    # vítimas falsas (regra 3.10.5)
@@ -616,10 +619,65 @@ class Mapa:
     def coloca_zona(self, x, y, larg=4, alt=3):
         z = nova_zona(x, y, larg, alt)
         if self.zona:   # mantém o que dá da área anterior
-            for k in ('cor_parede', 'falsas', 'vitimas'):
-                z[k] = self.zona[k]
+            for k in ('cor_parede', 'falsas', 'vitimas', 'obstaculos', 'detritos'):
+                z[k] = self.zona.get(k, z[k])
+            # obstáculos e palitos que ficariam fora da área nova saem
+            dentro = lambda p: 40 <= p['u'] <= larg * TAM - 40 and 40 <= p['v'] <= alt * TAM - 40  # noqa: E731
+            z['obstaculos'] = [ob for ob in z['obstaculos'] if dentro(ob)]
+            if isinstance(z['detritos'], list):
+                z['detritos'] = [p for p in z['detritos'] if dentro(p)]
         self.zona = z
         self.aplica_zona()
+
+    def obstaculos_zona(self):
+        """Obstáculos da área com os campos que faltam (OBSTACULO_PADRAO)."""
+        out = []
+        for ob in (self.zona or {}).get('obstaculos') or []:
+            d = dict(OBSTACULO_PADRAO)
+            d.update(ob)
+            out.append(d)
+        return out
+
+    def palitos_zona(self):
+        """Palitos da área: [{'u', 'v', 'ang', 'comp'}] (u, v do centro a partir do canto sudoeste,
+        ang em graus, comp em mm). Com zona['detritos'] = número, sorteia sempre os mesmos lugares,
+        no piso livre e fora dos triângulos."""
+        z = self.zona
+        d = (z or {}).get('detritos') or 0
+        if isinstance(d, list):
+            return d
+        n = int(d)
+        X0, Y0, _, _ = self.retangulo_zona()
+        x0, y0, x1, y1 = self.interior_zona()
+        rng = random.Random(f'detritos da área {n}')
+        out = []
+        for _ in range(n):
+            for _ in range(200):
+                x, y = rng.uniform(x0 + 40, x1 - 40), rng.uniform(y0 + 40, y1 - 40)
+                if not any(self._no_triangulo(x, y, z[c], 30) for c in ('verde', 'vermelho')):
+                    break
+            out.append({'u': round(x - X0, 1), 'v': round(y - Y0, 1), 'ang': round(rng.uniform(0, 180)),
+                        'comp': round(rng.uniform(30, 60))})
+        return out
+
+    def _no_triangulo(self, x, y, canto, folga=0.0):
+        (cx, cy), d1, d2 = self.canto(canto)
+        a = (x - cx) * d1[0] + (y - cy) * d1[1]
+        b = (x - cx) * d2[0] + (y - cy) * d2[1]
+        return a >= -folga and b >= -folga and a + b <= LADO_TRIANGULO + folga
+
+    def detritos_zona(self):
+        """Palitos da área no mundo: lista de [x1, y1, x2, y2] (como detritos_iniciais)."""
+        if not self.zona:
+            return []
+        X0, Y0, _, _ = self.retangulo_zona()
+        out = []
+        for p in self.palitos_zona():
+            a = math.radians(float(p.get('ang', 0)))
+            L = float(p.get('comp', 45)) / 2
+            cx, cy = X0 + float(p['u']), Y0 + float(p['v'])
+            out.append([cx - L * math.cos(a), cy - L * math.sin(a), cx + L * math.cos(a), cy + L * math.sin(a)])
+        return out
 
     def remove_zona(self):
         self.zona = None
@@ -740,6 +798,9 @@ class Mapa:
         if d.get('zona_resgate'):
             z = nova_zona(0, 0)
             z.update(d['zona_resgate'])
+            ob = z.pop('obstaculo', None)   # formato antigo: um obstáculo só, {'u', 'v'}
+            if ob:
+                z['obstaculos'] = list(z.get('obstaculos') or []) + [ob]
             m.zona = z
         m.aplica_zona()
         m.mudou()

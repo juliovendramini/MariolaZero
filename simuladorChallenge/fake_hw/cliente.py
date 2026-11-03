@@ -257,8 +257,20 @@ class RelogioSinc:
         # andar, e depois de LIVRE_APOS ele ia pelo relógio real: a partida mudava com a velocidade.
         # (O Condition.wait(timeout) e o Event.wait(timeout) continuam no relógio real: o "garçom"
         # deles é um lock interno do threading.)
-        threading.Lock = lambda: _TravaVigiada(self)
-        threading.RLock = lambda *a, **k: _TravaVigiadaR(self)
+        threading.Lock = _FabricaTrava(_TravaVigiada, self)
+        threading.RLock = _FabricaTrava(_TravaVigiadaR, self)
+
+
+class _FabricaTrava:
+    """O threading.Lock/RLock trocado. Um objeto com __call__ e não um lambda: biblioteca que guarda
+    threading.Lock num atributo de classe e chama self.atributo() (o werkzeug do Flask:
+    Map.lock_class) receberia o self como argumento se fosse uma função (TypeError)."""
+
+    def __init__(self, classe, relogio):
+        self.classe, self.relogio = classe, relogio
+
+    def __call__(self, *a, **k):
+        return self.classe(self.relogio)
 
 
 class _TravaVigiada:

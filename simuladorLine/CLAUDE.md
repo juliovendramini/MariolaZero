@@ -65,7 +65,8 @@ rodada **igual bit a bit** em qualquer velocidade, com ou sem janela, em paralel
 mudança que introduza tempo real, aleatoriedade sem a semente ou ordem dependente de thread quebra isso:
 confira rodando o mesmo teste em `--velocidade 1` e `8` e comparando o placar. Thread sem espera por
 1 s real cai no relógio real (modo de segurança). Thread parada num `Lock`/`RLock` do programa conta
-como esperando (travas vigiadas do `cliente.py`, 31/10; explicação no `simuladorMaze/CLAUDE.md`). `--tempo-real` é o modo antigo.
+como esperando (travas vigiadas do `cliente.py`, 31/10; explicação no `simuladorMaze/CLAUDE.md`;
+desde 03/11 a troca do `threading.Lock` é um `_FabricaTrava`, não um `lambda`, por causa do Flask). `--tempo-real` é o modo antigo.
 No Paçoca o relógio é do programa (`sim_t_ns`) e a ponte só leva a física até ele quando precisa do
 mundo ou a cada 10 ms (detalhes no `pacoca/LEIAME.md`).
 
@@ -263,6 +264,29 @@ Arrastar uma bolinha com o mouse (programa parado; a bolinha tem prioridade sobr
 o `gui.py` usa `AreaResgate.bola_em()` e `coloca_bola()`. Ao soltar, `fixa_bolinhas()` grava as
 posições de todas em `mapa.zona['vitimas']` (u, v a partir do `retangulo_zona()`) e zera a
 `semente_bolinhas`. Assim a rodada nova parte delas e o "Salvar" do editor grava no arquivo.
+
+## Obstáculos e detritos na área de resgate (02/11/2026)
+
+* `zona['obstaculos']` é uma lista, como a dos ladrilhos, mas com `u`/`v` a partir do canto sudoeste da
+  área. O `obstaculo` único antigo vira item da lista no `Mapa.de_dict`. O `Mapa.obstaculos_zona()`
+  completa os campos com o `OBSTACULO_PADRAO`. O `AreaResgate.construir` cria os corpos com
+  `MASK_ZONA` (as bolinhas batem neles) e guarda em `self.obsts` (antes era `self.obst`). O `_livre`
+  do sorteio das vítimas foge de todos os obstáculos (110 mm para o de 60 x 60, como antes).
+* `zona['detritos']` pode ser um número (palitos sorteados por `random.Random(f'detritos da área {n}')`,
+  fora dos triângulos, sempre nos mesmos lugares) ou uma lista `[{'u','v','ang','comp'}]`, que é o que
+  o editor grava: o primeiro clique converte o número na lista. O `Mundo._reset_detritos` põe cada
+  palito em todo ladrilho da área que ele toca. É **a mesma lista** em cada um, então o empurrão da
+  roda vale para todos. O snapshot da janela tira as repetições por `id()`.
+* No editor, as ferramentas Obstáculo e Detritos funcionam dentro da área (`_clique_zona`): põem
+  onde clicou, o botão direito tira o mais perto, Shift+clique troca solto/fixo e a roda gira.
+* Não pontuam (o juiz conta itens só nos ladrilhos). Referências sem mudança: 295 (`completo`) e
+  220 (`curso_area`). Também deu 220 no `curso_area` com 2 obstáculos e 10 palitos na área.
+
+## Braço com elástico (02/11/2026)
+
+`resgate.braco.repouso` (leitura do potenciômetro) é opcional. Sem ele, o braço sem força cai, como
+antes. Com ele, o braço sem força vai até essa posição, descendo ou subindo, e para nela
+(`Mecanismo.passo`). Veio do Boberto, que tem um elástico que segura a garra a ~45° (`repouso` 277).
 
 ## Pendências e decisões
 

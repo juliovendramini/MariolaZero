@@ -4,6 +4,7 @@ import glob
 import json
 import math
 import os
+import random
 import time
 
 import numpy as np
@@ -46,11 +47,13 @@ FERRAMENTAS = [
                        '(10° a 25°). Depois da rampa o caminho segue na altura nova.'),
     ('lombada', 'Lombada', 'Clique: põe uma lombada (1 cm, atravessada no caminho) onde clicou. '
                            'Botão direito tira a mais perto.'),
-    ('obstaculo', 'Obstáculo', 'Clique: põe um obstáculo em cima da linha mais perto. Botão direito tira. '
-                               'Shift+clique troca entre solto e fixo; roda do mouse gira.'),
-    ('detritos', 'Detritos', 'Clique: +1 palito solto no ladrilho. Botão direito: -1.'),
+    ('obstaculo', 'Obstáculo', 'Clique: põe um obstáculo em cima da linha mais perto (na área de resgate, '
+                               'onde clicou). Botão direito tira. Shift+clique troca entre solto e fixo; '
+                               'roda do mouse gira.'),
+    ('detritos', 'Detritos', 'Clique: +1 palito solto no ladrilho (na área de resgate, onde clicou). '
+                             'Botão direito: -1 (na área, o mais perto).'),
     ('area', 'Área resgate', 'Clique: põe a área de resgate (4 x 3 ladrilhos) com o canto de cima à esquerda '
-                             'na célula. Roda do mouse: 4x3 / 3x4. Shift+clique dentro: põe/tira o obstáculo. '
+                             'na célula. Roda do mouse: 4x3 / 3x4. Shift+clique dentro: põe/tira um obstáculo. '
                              'Botão direito dentro: tira a área.'),
     ('aberturas', 'Entrada/saída', 'Clique perto de uma parede da área: entrada (fita prata) ali. '
                                    'Botão direito: saída (fita preta). A linha precisa chegar/sair por elas.'),
@@ -513,9 +516,11 @@ class Interface:
                 p = self.T(ax - dx * 60, ay - dy * 60)
                 t_ = self.f12.render(txt, True, cor)
                 sup.blit(t_, (p[0] - t_.get_width() / 2, p[1] - t_.get_height() / 2))
-            ob = z.get('obstaculo')
-            if ob:
-                self._desenha_caixa(sup, X0 + float(ob['u']), Y0 + float(ob['v']), 60, 60, 0, False)
+            for d in m.detritos_zona():
+                pygame.draw.line(sup, (150, 110, 60), self.T(d[0], d[1]), self.T(d[2], d[3]), max(2, int(4 * e)))
+            for ob in m.obstaculos_zona():
+                self._desenha_caixa(sup, X0 + float(ob['u']), Y0 + float(ob['v']), float(ob['larg']),
+                                    float(ob['comp']), math.radians(float(ob['ang'])), ob.get('fixo'))
 
     def _desenha_itens(self, sup, m, t, r, e):
         """Lombadas, rampa, checkpoint, detritos e obstáculos (no editor) de um ladrilho."""
@@ -606,9 +611,8 @@ class Interface:
             pygame.draw.rect(tela, (90, 90, 110), r)
         zs = snap.get('zona')
         if zs:
-            if zs['obst']:
-                X, Y, ang = zs['obst']
-                self._desenha_caixa(tela, X, Y, 60, 60, ang, False)
+            for (X, Y, ang, lw, lc, fixo) in zs['obst']:
+                self._desenha_caixa(tela, X, Y, lw, lc, ang, fixo)
             for (fx, fy) in zs['falsas']:
                 pygame.draw.circle(tela, (150, 150, 150), self.T(fx, fy), max(3, int(22 * e)), 2)
             for (bx, by, tipo) in zs['bolas']:
@@ -1148,7 +1152,8 @@ class Interface:
             return
         f = self.ferramenta
         z = self.camada_ed
-        if f in ('area', 'aberturas', 'triangulos'):
+        if f in ('area', 'aberturas', 'triangulos') or \
+                f in ('obstaculo', 'detritos') and m.zona and m.eh_zona(m.lad(c[0], c[1], 0)):
             self._clique_zona(f, c, X, Y, botao, mods)
             m.mudou()
             self.sujo = True
@@ -1241,8 +1246,15 @@ class Interface:
                 return
             if dentro and mods & pygame.KMOD_SHIFT:
                 X0, Y0, X1, Y1 = m.retangulo_zona()
-                z['obstaculo'] = None if z.get('obstaculo') else {'u': round(X - X0), 'v': round(Y - Y0)}
-                m.aplica_zona()
+                obs = z.setdefault('obstaculos', [])
+                u, v = round(X - X0), round(Y - Y0)
+                perto = [ob for ob in obs if math.hypot(ob['u'] - u, ob['v'] - v) < 80]
+                if perto:
+                    obs.remove(perto[0])
+                else:
+                    ob = dict(M.OBSTACULO_PADRAO)
+                    ob.update({'u': u, 'v': v})
+                    obs.append(ob)
                 return
             larg, alt = (z['larg'], z['alt']) if z else (4, 3)
             if c[0] + larg > m.largura or c[1] + alt > m.altura:
@@ -1262,6 +1274,34 @@ class Interface:
             self._aviso('clique dentro da área de resgate')
             return
         X0, Y0, X1, Y1 = m.retangulo_zona()
+        if f == 'obstaculo':
+            # na área o obstáculo fica onde clicou (não tem linha para seguir)
+            u, v = round(X - X0), round(Y - Y0)
+            obs = z.setdefault('obstaculos', [])
+            perto = min(obs, key=lambda o: (o['u'] - u) ** 2 + (o['v'] - v) ** 2) if obs else None
+            dperto = math.hypot(perto['u'] - u, perto['v'] - v) if perto else 1e9
+            if botao == 3:
+                if perto:
+                    obs.remove(perto)
+            elif mods & pygame.KMOD_SHIFT:
+                if perto and dperto < 80:
+                    perto['fixo'] = not perto.get('fixo')
+            else:
+                ob = dict(M.OBSTACULO_PADRAO)
+                ob.update({'u': u, 'v': v})
+                obs.append(ob)
+            return
+        if f == 'detritos':
+            # a lista explícita (um número vira os palitos sorteados, para mexer neles)
+            pals = [dict(p) for p in m.palitos_zona()]
+            u, v = round(X - X0, 1), round(Y - Y0, 1)
+            if botao == 3:
+                if pals:
+                    pals.remove(min(pals, key=lambda p: (p['u'] - u) ** 2 + (p['v'] - v) ** 2))
+            else:
+                pals.append({'u': u, 'v': v, 'ang': random.randrange(0, 180, 15), 'comp': random.randrange(30, 61, 5)})
+            z['detritos'] = pals
+            return
         if f == 'aberturas':
             dist = {'N': Y1 - Y, 'S': Y - Y0, 'O': X - X0, 'L': X1 - X}
             lado = min(dist, key=dist.get)
@@ -1301,6 +1341,14 @@ class Interface:
             return
         if self.ferramenta == 'obstaculo':
             c, t, X, Y = self._lad_editor(pos)
+            if c and m.zona and m.eh_zona(m.lad(c[0], c[1], 0)) and m.zona.get('obstaculos'):
+                X0, Y0, _, _ = m.retangulo_zona()
+                u, v = X - X0, Y - Y0
+                ob = min(m.zona['obstaculos'], key=lambda o: (o['u'] - u) ** 2 + (o['v'] - v) ** 2)
+                ob['ang'] = (float(ob.get('ang', 0)) + 15 * d) % 180
+                m.mudou()
+                self.sujo = True
+                return
             if t and t.get('obstaculos'):
                 u, v = m.local(t, X, Y)
                 ob = min(t['obstaculos'], key=lambda o: (o['u'] - u) ** 2 + (o['v'] - v) ** 2)
@@ -1444,8 +1492,8 @@ class Interface:
             if rg.ativa or rg.mec:
                 zona = {'bolas': [(b['corpo'].position.x, b['corpo'].position.y, b['tipo'])
                                   for b in rg.bolas if b['estado'] == 'chao'],
-                        'obst': ((rg.obst['corpo'].position.x, rg.obst['corpo'].position.y,
-                                  rg.obst['corpo'].angle) if rg.obst else None),
+                        'obst': [(o['corpo'].position.x, o['corpo'].position.y, o['corpo'].angle,
+                                  o['larg'], o['comp'], o['fixo']) for o in rg.obsts],
                         'falsas': [fz['pos'] for fz in rg.falsas], 'mec': None,
                         'cam': dict(rg.ult_cam) if rg.camera_cfg else None, 't': w.t,
                         'resgatadas': [(b['tipo'], b.get('triangulo')) for b in rg.bolas if b['estado'] == 'resgatada'],
@@ -1463,7 +1511,8 @@ class Interface:
             return {
                 'zona': zona,
                 'pose': w.pose(),
-                'detritos': [list(map(list, v)) for v in w.detritos.values()],
+                # um palito da área pode estar em mais de um ladrilho: desenha uma vez só
+                'detritos': [[list(d) for d in {id(d): d for v in w.detritos.values() for d in v}.values()]],
                 'obst': obst,
                 'pilares': [p['pos'] for p in w.pilares],
                 'pc': {p: w.para_choque(p) for p in w.sensores_pc},

@@ -483,6 +483,52 @@ class Interface:
                 r.raios = raios              # com o programa rodando, mostra o que ELE leu
         self.leituras = d
 
+    def _desenha_garra_lado(self, g, x, y, w, h):
+        """Garra de paralelogramo vista de lado: altura da cabeça, comporta e cubo preso.
+        Cabeça verde = baixa o bastante para pegar; laranja = abaixo do topo dos cubos (bate neles);
+        cinza claro = no alto."""
+        L = g['lado']
+        base = g['altura']
+        curso = L['curso']
+        pygame.draw.rect(self.tela, (36, 39, 46), (x, y, w, h), border_radius=6)
+        if base <= L['altura_pegar']:
+            cor, onde = (90, 205, 110), 'embaixo'
+        elif base < 50:
+            cor, onde = (235, 160, 60), 'meio'
+        else:
+            cor, onde = (205, 210, 220), 'alto'
+        porta = 'fechada' if curso <= 3 else f'aberta {curso:.0f} mm'
+        cubo = ', c/ cubo' if g['preso'] else ''
+        self._txt(f'{g["nome"]}: {onde}, {porta}{cubo}'[:48], x + 5, y + 2, self.f11, cor)
+        k = (h - 24) / 200.0                       # px por mm (200 mm de altura cabem no quadro)
+        gy = y + h - 5
+        px = x + 40                                # eixo das barras (o corpo do robô fica à esquerda)
+
+        def P(u, z):
+            return (px + u * k, gy - z * k)
+        pygame.draw.line(self.tela, (110, 114, 124), (x + 3, gy), (x + w - 3, gy), 1)
+        zp = L['altura_pegar']
+        pygame.draw.line(self.tela, (50, 90, 60), (px, gy - zp * k), (x + w - 3, gy - zp * k), 1)
+        # corpo do robô e o eixo das barras
+        corpo = pygame.Rect(x + 6, int(gy - (L['h_eixo'] + 12) * k), int(px - x - 6), int((L['h_eixo'] + 4) * k))
+        pygame.draw.rect(self.tela, (80, 86, 100), corpo, border_radius=3)
+        pygame.draw.circle(self.tela, (60, 60, 66), (int(corpo.centerx), int(gy - 6 * k)), max(3, int(10 * k)))
+        b = math.radians(L['ang_barra'])
+        ue, ze = L['barra'] * math.cos(b), L['h_eixo'] + L['barra'] * math.sin(b)
+        for dz in (0.0, 14.0):                     # as duas barras do paralelogramo
+            pygame.draw.line(self.tela, (170, 176, 190), P(0, L['h_eixo'] + dz), P(ue, ze + dz), 2)
+        # cabeça: parede de trás, teto e comporta (a comporta anda com o curso)
+        alto = base + L['alto_cabeca']
+        pygame.draw.line(self.tela, cor, P(ue, ze), P(L['parede_u'], ze), 2)
+        pygame.draw.line(self.tela, cor, P(L['parede_u'], base + L['parede_baixo']), P(L['parede_u'], alto), 3)
+        pygame.draw.line(self.tela, cor, P(L['parede_u'], alto), P(L['comporta_u'], alto), 2)
+        pygame.draw.line(self.tela, cor, P(L['comporta_u'], base + L['comporta_baixo']), P(L['comporta_u'], alto), 3)
+        if g['preso']:
+            a0, a1 = P(L['parede_u'] + 1, max(0.0, base) + 50), P(L['parede_u'] + 49, max(0.0, base))
+            r = pygame.Rect(int(a0[0]), int(a0[1]), max(2, int(a1[0] - a0[0])), max(2, int(a1[1] - a0[1])))
+            pygame.draw.rect(self.tela, A.RGB.get(g['preso'], (200, 200, 200)), r)
+            pygame.draw.rect(self.tela, (20, 20, 20), r, 1)
+
     def _desenha_painel(self, x, y, larg):
         s = self.sim
         j = s.juiz
@@ -538,9 +584,17 @@ class Interface:
             pygame.draw.rect(self.tela, tuple(max(0, min(255, int(c_ * k))) for c_ in v[:3]), sw)
             pygame.draw.rect(self.tela, (0, 0, 0), sw, 1)
             y = self._txt(f'{n}: r {v[0]:.2f} g {v[1]:.2f} b {v[2]:.2f}', x + 18, y, self.f12)
-        for g in getattr(self, 'garra_info', None) or []:
-            y = self._txt(f'Garra {g["nome"]}: abertura {g["abertura"]:.0f} mm, altura {g["altura"]:.0f} mm, '
-                          f'{"segurando cubo " + g["preso"] if g["preso"] else "vazia"}', x, y, self.f12)
+        garras = getattr(self, 'garra_info', None) or []
+        lado = [g for g in garras if g.get('lado')]
+        for g in garras:
+            if not g.get('lado'):
+                y = self._txt(f'Garra {g["nome"]}: abertura {g["abertura"]:.0f} mm, altura {g["altura"]:.0f} mm, '
+                              f'{"segurando cubo " + g["preso"] if g["preso"] else "vazia"}', x, y, self.f12)
+        if lado:
+            bw = (larg - 8 * (len(lado) - 1)) / len(lado)
+            for i, g in enumerate(lado):
+                self._desenha_garra_lado(g, int(x + i * (bw + 8)), y, int(bw), 116)
+            y += 120
         y = self._txt(f'Piso embaixo do centro: {d["piso"]}', x, y, self.f12, COR_TEXTO2)
         rb = s.robo
         if rb.debug['texto']:

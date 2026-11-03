@@ -15,7 +15,10 @@ import math
 import random
 
 TAM = 300.0            # tamanho do ladrilho (mm)
-MEIA_PAREDE = 10.0     # metade da espessura da parede -> corredor de 280 mm
+# espessura das paredes (mm): a mesma em todo o mapa, campo "espessura_parede" do .json, ajustada
+# no editor ("Parede −/+"). Mapa sem o campo usa 20 mm (corredor de 280 mm), o valor antigo.
+ESPESSURA_PADRAO = 20.0
+ESPESSURA_MIN, ESPESSURA_MAX = 1.0, 50.0
 
 DIRECOES = ('N', 'L', 'S', 'O')
 DELTA = {'N': (-1, 0), 'S': (1, 0), 'L': (0, 1), 'O': (0, -1)}
@@ -76,6 +79,7 @@ class Mapa:
         self.ladrilhos = {}   # (l, c) -> {'piso':..., 'terreno':..., 'direcao':..., 'zona':bool}
         self.vitimas = []     # dicts
         self.semente = 1
+        self.espessura_parede = ESPESSURA_PADRAO
         self.caminho = None
         self.cerca_perimetro()
 
@@ -133,6 +137,15 @@ class Mapa:
 
     # --------------------------------------------------------------- geometria
     @property
+    def meia_parede(self):
+        """Metade da espessura: o eixo da parede fica na borda do ladrilho."""
+        return self.espessura_parede / 2
+
+    def muda_espessura(self, delta):
+        e = self.espessura_parede + delta
+        self.espessura_parede = min(max(e, ESPESSURA_MIN), ESPESSURA_MAX)
+
+    @property
     def largura_mm(self):
         return self.colunas * TAM
 
@@ -184,13 +197,14 @@ class Mapa:
         l, c, d = v['linha'], v['coluna'], v['parede']
         p = min(max(float(v.get('posicao', 0.5)), 0.1), 0.9)
         x0, y0 = c * TAM, self.altura_mm - (l + 1) * TAM   # canto sudoeste
+        mp = self.meia_parede
         if d == 'N':
-            return (x0 + p * TAM, y0 + TAM - MEIA_PAREDE), (0.0, -1.0)
+            return (x0 + p * TAM, y0 + TAM - mp), (0.0, -1.0)
         if d == 'S':
-            return (x0 + p * TAM, y0 + MEIA_PAREDE), (0.0, 1.0)
+            return (x0 + p * TAM, y0 + mp), (0.0, 1.0)
         if d == 'O':
-            return (x0 + MEIA_PAREDE, y0 + p * TAM), (1.0, 0.0)
-        return (x0 + TAM - MEIA_PAREDE, y0 + p * TAM), (-1.0, 0.0)
+            return (x0 + mp, y0 + p * TAM), (1.0, 0.0)
+        return (x0 + TAM - mp, y0 + p * TAM), (-1.0, 0.0)
 
     def perfil_escada(self, l, c, x, y):
         """Altura (mm) do piso dentro de um ladrilho de escada no ponto (x, y)."""
@@ -310,6 +324,7 @@ class Mapa:
             'colunas': self.colunas,
             'inicio': {'linha': self.inicio[0], 'coluna': self.inicio[1], 'direcao': self.inicio_dir},
             'semente': self.semente,
+            'espessura_parede': self.espessura_parede,
             'paredes_h': [''.join('1' if p else '0' for p in linha) for linha in self.paredes_h],
             'paredes_v': [''.join('1' if p else '0' for p in linha) for linha in self.paredes_v],
             'ladrilhos': lads,
@@ -323,6 +338,7 @@ class Mapa:
         m.inicio = (ini.get('linha', 0), ini.get('coluna', 0))
         m.inicio_dir = ini.get('direcao', 'L')
         m.semente = d.get('semente', 1)
+        m.espessura_parede = float(d.get('espessura_parede', ESPESSURA_PADRAO))
         m.paredes_h = [[ch == '1' for ch in s] for s in d['paredes_h']]
         m.paredes_v = [[ch == '1' for ch in s] for s in d['paredes_v']]
         m.ladrilhos = {}
@@ -371,5 +387,6 @@ class Mapa:
         novo.inicio = self.inicio if novo.dentro(*self.inicio) else (0, 0)
         novo.inicio_dir = self.inicio_dir
         novo.semente = self.semente
+        novo.espessura_parede = self.espessura_parede
         novo.caminho = self.caminho
         self.__dict__.update(novo.__dict__)

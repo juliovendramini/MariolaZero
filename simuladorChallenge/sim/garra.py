@@ -444,8 +444,15 @@ class GarraParalela:
         return out
 
     def info(self):
+        # 'lado': o que a janela precisa para a vista de lado (mm; u a partir do eixo da barra)
+        uh = self._uh()
+        lado = {'h_eixo': self.h_eixo, 'barra': self.barra, 'ang_barra': self._barra(), 'uh': uh,
+                'parede_u': uh + self.parede_u, 'parede_baixo': self.parede_baixo,
+                'comporta_u': uh + self.parede_u + CUBO + self.curso(), 'comporta_baixo': self.comporta_baixo,
+                'alto_cabeca': self.bracos_baixo + 12.0, 'curso': self.curso(), 'curso_max': self.curso_max,
+                'altura_pegar': self.altura_pegar}
         return {'nome': self.nome, 'abertura': self.abertura(), 'altura': self.altura(),
-                'preso': self.preso.cor if self.preso else None}
+                'preso': self.preso.cor if self.preso else None, 'lado': lado}
 
 
 def cria_garras(robo, cfg):

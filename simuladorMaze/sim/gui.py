@@ -137,6 +137,8 @@ class Interface:
              for k, n, _ in FERRAMENTAS[3:]],
             [Botao('Linha +', lambda: self._redim(1, 0)), Botao('Linha −', lambda: self._redim(-1, 0)),
              Botao('Coluna +', lambda: self._redim(0, 1)), Botao('Coluna −', lambda: self._redim(0, -1))],
+            [Botao('Parede −', lambda: self._espessura(-1)), Botao('', self._mostra_espessura),
+             Botao('Parede +', lambda: self._espessura(1))],
             [Botao('Novo', self._novo), Botao('Abrir', self._abrir), Botao('Salvar', self._salvar),
              Botao('Salvar como', lambda: self._salvar(True))],
             [Botao('Sortear pisos', self._sortear), Botao('Voltar a simular', lambda: self._muda_modo('simular'))],
@@ -237,9 +239,22 @@ class Interface:
         m.redimensiona(m.linhas + dl, m.colunas + dc)
         self.sujo = True
 
+    def _espessura(self, delta):
+        """Espessura de todas as paredes do mapa, de 1 em 1 mm (Shift: 0,5 mm)."""
+        if pygame.key.get_mods() & pygame.KMOD_SHIFT:
+            delta /= 2
+        m = self.sim.mundo.mapa
+        m.muda_espessura(delta)
+        self.sujo = True
+        self._aviso(f'paredes com {m.espessura_parede:g} mm (corredor de {M.TAM - m.espessura_parede:g} mm)')
+
+    def _mostra_espessura(self):
+        pass        # só mostra o valor (o texto é montado em _desenha_botoes)
+
     def _novo(self):
         m = self.sim.mundo.mapa
         novo = M.Mapa(6, 8, 'novo')
+        novo.espessura_parede = m.espessura_parede     # o mapa novo fica com a espessura atual
         m.__dict__.update(novo.__dict__)
         self.sujo = True
 
@@ -386,7 +401,7 @@ class Interface:
         pygame.draw.line(sup, (40, 170, 90), (cx, cy), p2, 3)
         pygame.draw.circle(sup, (40, 170, 90), (int(p2[0]), int(p2[1])), 5)
         # paredes
-        lw = max(2, int(2 * M.MEIA_PAREDE * e))
+        lw = max(2, int(2 * m.meia_parede * e))
         for (x1, y1, x2, y2) in m.segmentos_parede():
             p1, p2 = self.T(x1, y1), self.T(x2, y2)
             pygame.draw.line(sup, COR_PAREDE, p1, p2, lw)
@@ -582,6 +597,8 @@ class Interface:
                     b.texto = 'LoP: reinicia prog.' if self.sim.modo_lop == 'reiniciar' else 'LoP: só botão'
                 elif b.acao == self._auto_botao:
                     b.texto = 'Auto-botão: ' + ('sim' if self.sim.auto_botao else 'não')
+                elif b.acao == self._mostra_espessura:
+                    b.texto = f'Parede: {self.sim.mundo.mapa.espessura_parede:g} mm'
                 elif b.acao == self._escolhe_programa:
                     b.texto = 'Programa: ' + self._nome_programa() + '  (trocar)'
                 b.rect = pygame.Rect(int(x + i * (bw + 6)), y, int(bw), 30)

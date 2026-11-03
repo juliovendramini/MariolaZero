@@ -87,10 +87,13 @@ identificação errada (−5), LoP no preto, bônus de confiabilidade e **bônus
 
 Mapas em `mapas/*.json` (fáceis de editar na mão): `paredes_h`/`paredes_v` (strings de 0 e 1),
 `ladrilhos` (piso preto/prata/azul/vermelho, terreno lombada/escada/detritos, zona), `vitimas`
-(ladrilho, parede, posição, tipo).
+(ladrilho, parede, posição, tipo) e `espessura_parede` (em mm, a mesma em todas as paredes; sem ela,
+20 mm).
 
 O **editor** ("Editar mapa") faz tudo com o mouse, avisa vítima em posição proibida e ladrilho
-inalcançável, e tem "Sortear pisos" (como o dado do juiz).
+inalcançável, e tem "Sortear pisos" (como o dado do juiz). "Parede −" e "Parede +" mudam a espessura
+das paredes de 1 em 1 mm (com Shift, 0,5 mm). Meça a parede da pista em que vocês vão treinar: com
+parede de 6 mm o corredor tem 294 mm; com 20 mm, 280 mm.
 
 ## 12.7 Diferenças em relação à Line
 

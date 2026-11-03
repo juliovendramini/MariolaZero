@@ -591,6 +591,14 @@ class Mundo:
         for k, t in self.mapa.ladrilhos.items():
             if t.get('detritos'):
                 self.detritos[k] = self.mapa.detritos_iniciais(t)
+        # palitos da área de resgate: cada um entra em todo ladrilho da área que ele toca (a mesma
+        # lista, então o empurrão da roda vale para todos)
+        for d in self.mapa.detritos_zona():
+            cels = {self.mapa.celula_de(x, y) for x, y in ((d[0], d[1]), (d[2], d[3]),
+                                                             ((d[0] + d[2]) / 2, (d[1] + d[3]) / 2))}
+            for c in cels:
+                if c is not None:
+                    self.detritos.setdefault((c[0], c[1], 0), []).append(d)
 
     def reset_rodada(self):
         self.semear(self.semente)

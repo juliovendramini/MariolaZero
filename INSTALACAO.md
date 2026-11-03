@@ -337,14 +337,23 @@ Os sensores ficam no **i2c-1**, atrás do multiplexador TCA9548A; a tela e o tec
 
 ## 8. SSH sem senha
 
-1. No computador (só uma vez): `ssh-keygen -t rsa -b 4096`.
+Passo a passo para os alunos, com testes e problemas comuns: [curso, módulo 2, item 2.3, "Sem
+senha: a chave SSH"](curso/02-ambiente-e-envio.md). Resumo:
+
+1. No computador (só uma vez): `ssh-keygen -t ed25519` (Enter em tudo). Uma chave `id_rsa` antiga
+   também serve.
 2. **Linux:** `ssh-copy-id banana@192.168.2.151`.
-3. **Windows** (não tem `ssh-copy-id`): abra `C:\Users\<você>\.ssh\id_rsa.pub`, copie a linha e,
-   no robô:
-   ```bash
-   mkdir -p ~/.ssh
-   nano ~/.ssh/authorized_keys      # cole a linha, salve
+3. **Windows** (não tem `ssh-copy-id`), no PowerShell:
+   ```powershell
+   type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh banana@192.168.2.151 "mkdir -p ~/.ssh && tr -d '\r\357\273\277' >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
    ```
+   O `tr -d` tira o que o pipe do PowerShell acrescenta: o CR do fim da linha e, com
+   `$OutputEncoding` em UTF-8, o BOM (EF BB BF) do começo. Os dois estragariam a linha (conferido
+   em 03/11/2026 no PC do Julio, que manda os dois).
+
+As chaves ficam na `/home` (`~/.ssh/authorized_keys`), que vai junto na imagem da eMMC (seção 17):
+quem tinha a chave no brick da imagem entra em todos os bricks gravados com ela, e as chaves
+copiadas depois se perdem ao regravar.
 
 ## 9. Menu principal, sudo e ambiente Python
 

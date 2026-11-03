@@ -57,10 +57,75 @@ meuSeguidor/
    ```bash
    ssh banana@192.168.2.151
    ```
-4. Para não digitar senha toda vez, configure a **chave SSH** (passo a passo no `INSTALACAO.md` do
-   brick, seção 8: `ssh-keygen` no PC e a chave pública em `~/.ssh/authorized_keys` no robô).
+4. Para não digitar senha toda vez, configure a **chave SSH** (logo abaixo).
 
 Usuário: `banana`. Os projetos ficam em `/home/banana/<nome-da-pasta>/`.
+
+### Sem senha: a chave SSH
+
+Sem a chave, o `ssh`, o `scp` e o `envia.bat` pedem a senha do robô toda vez. Com ela, entram
+direto. A chave tem duas partes:
+* a **privada**, que fica só no seu computador e não é para mandar para ninguém;
+* a **pública** (`.pub`), que você copia para o robô. O robô deixa entrar quem tem a privada que
+  combina com ela.
+
+**1. Gere a chave no computador** (uma vez só, vale para todos os robôs). No PowerShell (Windows)
+ou no terminal (Linux), é o mesmo comando:
+
+```bash
+ssh-keygen -t ed25519
+```
+
+Aperte **Enter** em todas as perguntas: lugar padrão e sem senha na chave. Se ele perguntar
+`Overwrite (y/n)?`, é porque você já tem uma chave: responda **n** e siga para o passo 2 com ela.
+A chave pública fica em `~/.ssh/id_ed25519.pub`, que no Windows é
+`C:\Users\<você>\.ssh\id_ed25519.pub`.
+
+**2. Copie a chave pública para o robô** (uma vez para cada robô). Troque o IP pelo do seu robô. Ele
+vai pedir a senha do robô **pela última vez**.
+
+* **Windows** (PowerShell), tudo numa linha:
+  ```powershell
+  type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh banana@192.168.2.151 "mkdir -p ~/.ssh && tr -d '\r\357\273\277' >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
+  ```
+  Esse comando manda a chave pelo próprio `ssh` e acrescenta no fim do arquivo `authorized_keys`
+  do robô. O `tr -d` tira o que o PowerShell acrescenta no caminho e que estragaria a linha: a
+  quebra de linha do Windows (`\r`) e, em alguns PCs, 3 bytes invisíveis no começo (o "BOM").
+* **Linux:**
+  ```bash
+  ssh-copy-id banana@192.168.2.151
+  ```
+
+Se a sua chave é a antiga (`id_rsa.pub`), troque o nome no comando do Windows; o `ssh-copy-id`
+acha sozinho.
+
+**3. Teste:**
+
+```bash
+ssh banana@192.168.2.151
+```
+
+Tem de entrar **sem pedir senha**. A partir daqui o `envia.bat` (item 2.4) também não pede mais.
+
+**Se ainda pedir senha:**
+* Confira se você copiou para o usuário `banana` (e não `root`) e para o IP certo.
+* No robô, as permissões têm de ser estas (o SSH ignora a chave se a pasta estiver aberta demais):
+  ```bash
+  chmod 700 ~/.ssh
+  chmod 600 ~/.ssh/authorized_keys
+  ls -la ~/.ssh
+  ```
+* Veja se a linha da sua chave está lá: `cat ~/.ssh/authorized_keys`. Cada chave é **uma linha**,
+  começando com `ssh-ed25519` ou `ssh-rsa`.
+
+**Robô regravado ou trocado:**
+* Quem regrava a eMMC do robô pela imagem (`INSTALACAO.md`, seção 17) apaga as chaves que tinham
+  sido copiadas depois: faça o passo 2 de novo.
+* Se o PC avisar `REMOTE HOST IDENTIFICATION HAS CHANGED`, é porque o IP agora é de outro robô (ou
+  do mesmo, regravado). Apague o registro antigo e conecte de novo:
+  ```bash
+  ssh-keygen -R 192.168.2.151
+  ```
 
 ### Sem IP: pela porta de debug (serial)
 

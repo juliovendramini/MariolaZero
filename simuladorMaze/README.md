@@ -287,13 +287,17 @@ Formato `mapas/*.json` (fácil de editar na mão também):
 
 * `paredes_h`: uma string por borda horizontal (linha 0 = borda norte da fileira 0); `1` = parede.
 * `paredes_v`: uma string por fileira; posição `c` = borda oeste da coluna `c`.
+* `espessura_parede`: espessura de todas as paredes, em mm (qualquer valor de 1 a 50). O eixo da
+  parede fica na borda do ladrilho, então o corredor tem 300 − espessura. Mapa sem o campo: 20 mm.
 * `ladrilhos`: `piso` (`preto`, `prata`, `azul`, `vermelho`), `terreno` (`lombada`, `escada`,
   `detritos`) com `direcao` (`NS`/`LO`), `zona: true`.
 * `vitimas`: ladrilho, `parede` (N/S/L/O), `posicao` ao longo da parede (0–1), `tipo` `letra`
   (`H`=Φ, `S`=Ψ, `U`=Ω, outra letra = falsa) ou `cognitivo` com 5 `aneis` (soma 2/1/0, outra soma = falsa).
 
 O **editor** (botão "Editar mapa") faz tudo isso com o mouse, avisa vítimas em posição proibida e
-ladrilhos que não dá para alcançar, e tem "Sortear pisos" (como o dado do juiz).
+ladrilhos que não dá para alcançar, e tem "Sortear pisos" (como o dado do juiz). "Parede −/+" muda
+a espessura das paredes de 1 em 1 mm (Shift: 0,5 mm); o botão do meio mostra o valor. "Novo" mantém
+a espessura do mapa aberto.
 
 ## Configuração do robô — `robo.json`
 
@@ -330,7 +334,7 @@ python simulador.py --robo robo_maze2026.json --programa ../../maze2026/main.py
 | giroscópio / cor | `SERIAL4` / `SERIAL6` (Pro1616) |
 | VL53 | 4 nas laterais: borda esquerda `I2C1`, meio esquerdo `I2C3`, meio direito `I2C6`, borda direita `I2C7`. As bordas ficam perto da frente e 13 mm (esq.) e 37 mm (dir.) para dentro, o mesmo que o código desconta |
 | para-choque | P1 esquerdo, P8 direito |
-| encoder e calibração | deduzidos do código: 1 cm = 1000/45,7 contagens do Mariola (481 por volta da roda de 70 mm) e calibração 32 nas placas (16 no Mariola) |
+| encoder e calibração | 940 contagens por volta da roda no Mariola (1880 na placa), medido em 03/11/2026 no robô Boberto, que tem o mesmo motor e a mesma roda (o código da equipe usa 1 cm = 1000/45,7, ou seja, 481: metade); calibração 32 nas placas (do código) e 16 no Mariola (estimada) |
 
 O resto (medidas, posições x/y, cores do piso) é o mesmo do `robo.json` e continua estimado.
 A câmera da equipe (OpenCV em `/dev/video_usb3`) não existe no simulador: a thread dela só avisa

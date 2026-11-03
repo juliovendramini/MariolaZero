@@ -51,6 +51,13 @@ Os simuladores emulam estes firmwares byte a byte. Na dúvida sobre um comportam
 | `brickSimples` | libs do brick Paçoca (copiadas em `simuladorLine/pacoca/libs_pacoca/`) |
 | `sensorLinhaPro` | versão **antiga** do sensor de linha do Paçoca (ATmega328P, não controla os LEDs dos TCS). Só curiosidade: o Paçoca usa o Pro1616 |
 
+## Placas (EAGLE 9, fora deste repositório, em `Documents\eagle\ROBOTICA\`)
+
+| pasta | placa |
+|---|---|
+| `MariolaZeroPotencia` | placa atual do brick (BPi M4 Zero no JP1 de 40 pinos + FPC de 24) |
+| `HatRasp4Brick` | hat para o **Raspberry Pi 4** (02/11/2026), derivado da de cima: sem FPC/rede/áudio/USB2, hub USB por cabo, TPS566238 no lugar do LM2596 (bateria 2S), header remapeado, placa de 103,5 × 65 mm (tamanho da do Mariola; o Pi no canto, a placa passa dele para o lado das USB e do HDMI). Esquemático pronto, componentes posicionados, sem rotear. Decisões e tabela de pinos no `LEIAME.md` da pasta |
+
 ### brickSimples (brick Paçoca)
 
 * Brick Paçoca: ATmega328PB programado na IDE do Arduino, com a lib `brickSimples` (o aluno escreve

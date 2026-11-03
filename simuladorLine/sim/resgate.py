@@ -1,13 +1,15 @@
 """Área de resgate (regra 2026, seções 3.9 e 3.10) e o mecanismo de resgate do robô.
 
 * Área: paredes de 10 cm com o vão da entrada e da saída, triângulos (pontos de evacuação)
-  com paredes de 6 cm, obstáculo opcional, 2 vítimas vivas (prata) + 1 morta (preta) que rolam.
+  com paredes de 6 cm, obstáculos e detritos (palitos) opcionais, 2 vítimas vivas (prata) + 1 morta
+  (preta) que rolam. Os palitos da área entram nos detritos do Mundo (mesma física dos da pista).
 * Servos "inteligentes" (placaControleServo.ino unificado) no mesmo barramento das placas de
   motor: protocolo de 6 bytes, broadcast, troca de ID, calibração do tempo de trava, trava
   (1 s parado = motor desliga 2 s), 5 s sem comando = motor desliga, 10 s = placa reinicia.
 * Mecanismo: braço que abaixa a garra, dois dedos (um servo cada) e caçamba de dois lados
   com uma porta que solta um lado de cada vez.
   - O braço cai pelo peso quando o servo dele está sem força, a não ser que esteja todo levantado.
+    Com "repouso" no braço (elástico), sem força ele vai para essa posição em vez de cair.
   - Os dedos só seguram a bolinha com força enquanto os motores deles empurram. Se um deles
     desliga (trava, potência 0, timeout) com o braço se mexendo, a bolinha cai.
   - Com o braço no alto, abrir um dedo só joga a bolinha no lado da caçamba daquele dedo.
@@ -344,7 +346,7 @@ class AreaResgate:
         self.ativa = bool(self.mapa.zona)
         self.bolas = []
         self.formas = []             # formas estáticas (paredes, triângulos)
-        self.obst = None
+        self.obsts = []              # obstáculos da área (zona['obstaculos'])
         self.triangulos = {}
         self.falsas = []
         self.space = None
@@ -376,7 +378,7 @@ class AreaResgate:
         self.ativa = bool(self.mapa.zona)
         self.bolas = []
         self.formas = []
-        self.obst = None
+        self.obsts = []
         self.triangulos = {}
         self.falsas = []
         if self.mec:
@@ -406,20 +408,26 @@ class AreaResgate:
                 off = n * (e / 2 + 0.5)
                 self._segmento(space, Vec2d(*c) + off + d * 6, Vec2d(*p) + off, e / 2, M.TRIANGULO_ALTURA,
                                CORES[nome], 'triangulo', nome)
-        if z.get('obstaculo'):
-            X0, Y0, X1, Y1 = m.retangulo_zona()
-            ob = z['obstaculo']
-            massa = 1.5
-            b = pymunk.Body(massa, pymunk.moment_for_box(massa, (60, 60)))
+        X0, Y0, _, _ = m.retangulo_zona()
+        for ob in m.obstaculos_zona():
+            lw, lc = float(ob['larg']), float(ob['comp'])
+            massa = float(ob['massa_kg'])
+            if ob.get('fixo'):
+                b = pymunk.Body(body_type=pymunk.Body.STATIC)
+            else:
+                b = pymunk.Body(massa, pymunk.moment_for_box(massa, (lw, lc)))
             b.position = (X0 + float(ob['u']), Y0 + float(ob['v']))
-            s = pymunk.Poly.create_box(b, (60, 60), radius=0.5)
+            b.angle = math.radians(float(ob['ang']))
+            s = pymunk.Poly.create_box(b, (lw, lc), radius=0.5)
             s.friction = 0.5
             s.filter = pymunk.ShapeFilter(categories=CAT_OBST, mask=MASK_ZONA)
-            s.altura_mm, s.cor, s.tipo_obj = 150.0, CORES['obstaculo'], 'obstaculo'
+            s.altura_mm, s.cor, s.tipo_obj = float(ob['altura']), CORES['obstaculo'], 'obstaculo'
             space.add(b, s)
-            for j in self._atrito_chao(space, b, massa, 0.6, 60):
-                space.add(j)
-            self.obst = {'corpo': b, 'forma': s, 'pos': tuple(b.position)}
+            if not ob.get('fixo'):
+                for j in self._atrito_chao(space, b, massa, float(ob.get('atrito_chao', 0.6)), (lw + lc) / 2):
+                    space.add(j)
+            self.obsts.append({'corpo': b, 'forma': s, 'pos': tuple(b.position), 'ang': b.angle,
+                               'larg': lw, 'comp': lc, 'fixo': bool(ob.get('fixo'))})
         self.sorteia_vitimas()
 
     def _segmento(self, space, a, b, raio, altura, cor, tipo, nome=None):
@@ -488,8 +496,9 @@ class AreaResgate:
             (cx, cy), _ = m.abertura_mundo(ab)
             if math.hypot(x - cx, y - cy) < 260:
                 return False
-        if self.obst and math.hypot(x - self.obst['pos'][0], y - self.obst['pos'][1]) < 110:
-            return False
+        for o in self.obsts:
+            if math.hypot(x - o['pos'][0], y - o['pos'][1]) < max(110.0, math.hypot(o['larg'], o['comp']) / 2 + 68):
+                return False
         return all(math.hypot(x - o[0], y - o[1]) >= folga for o in outros)
 
     def _posicao_livre(self, outros, rng=None):
@@ -542,12 +551,13 @@ class AreaResgate:
             self.mec.reset()
         if not self.ativa:
             return
-        if self.obst:
-            b = self.obst['corpo']
-            b.position = self.obst['pos']
-            b.angle = 0
-            b.velocity = (0, 0)
-            b.angular_velocity = 0
+        for o in self.obsts:
+            b = o['corpo']
+            b.position = o['pos']
+            b.angle = o['ang']
+            if b.body_type == pymunk.Body.DYNAMIC:
+                b.velocity = (0, 0)
+                b.angular_velocity = 0
             self.space.reindex_shapes_for_body(b)
         self.sorteia_vitimas()
 
@@ -988,8 +998,13 @@ class Mecanismo:
         passivo = 0.0
         if sb.pwm == 0 and a0 < 0.95:
             c = self.cfg['braco']
-            passivo = -math.copysign(2.0 * abs(float(c['alto']) - float(c['baixo'])),
-                                     float(c['alto']) - float(c['baixo']))
+            vel = 2.0 * abs(float(c['alto']) - float(c['baixo']))
+            if c.get('repouso') is None:
+                passivo = -math.copysign(vel, float(c['alto']) - float(c['baixo']))
+            else:
+                # elástico: sem força o braço vai para a posição de repouso (de cima ou de baixo) e fica
+                dif = float(c['repouso']) - sb.pot
+                passivo = math.copysign(min(vel, abs(dif) / dt), dif) if abs(dif) > 0.5 and dt > 0 else 0.0
         sb.integra(dt, lo, hi, passivo)
         for nome in ('dedo_esq', 'dedo_dir'):
             lo, hi = self._limites(nome)

@@ -181,6 +181,11 @@ A da frente tem as barras mais curtas (66,5 mm contra 79), porque a base é reta
   e o centro dele fica sobre ela; senão, no chão.
 * Servo de subir solto: a cabeça desce sozinha com o peso. O pé curvo da barra de baixo, que apoia o
   cubo com a garra levantada, não entra no simulador.
+* **Na janela**, o painel mostra cada garra vista de lado (robô à esquerda, chão embaixo): as duas
+  barras, a cabeça e a comporta, e o cubo preso na cor dele. Cabeça **verde** = embaixo, baixa o
+  bastante para pegar (a linha verde fina é essa altura); **laranja** = no meio, abaixo do topo dos
+  cubos (bate neles); **cinza claro** = no alto. O título diz também se a comporta está aberta
+  (quantos mm) ou fechada. Assim dá para ver se a garra fechou embaixo ou só depois de subir.
 
 | no robo.json | o que é |
 |---|---|
@@ -345,7 +350,7 @@ inverte a ordem dos IR do sensor de linha e carrega as cores da lona de `cores_l
 | `sim/servidor.py` | operações pedidas pelo hardware virtual |
 | `sim/firmware.py`, `sim/buzzer_mariola.py`, `sim/painel_brick.py` | cópias da Line |
 | `sim/gui.py` | janela, painel, editor do cenário |
-| `fake_hw/` | serial, I2C (VL53, TCS34725, mux), GPIO, tela/teclado, relógio (cópia da Line sem a câmera; o `CorReflexaoV2` de `dispositivos.py` passa a porta, para ter dois sensores de linha) |
+| `fake_hw/` | serial, I2C (VL53, TCS34725, mux), GPIO, tela/teclado, relógio (cópia da Line sem a câmera; o `CorReflexaoV2` de `dispositivos.py` passa a porta, para ter dois sensores de linha) e um Flask falso (`fake_flask.py`: o `app.run()` só avisa; um servidor web de verdade esperando conexão tiraria a partida do relógio sincronizado) |
 | `libs_mariola/` | cópia das libs do Mariola (a mesma da Line) |
 | `exemplo_aluno/` | `robo.py` (mecanum, garra, cor), `main.py` (pega o cubo e entrega), `anda_mecanum.py` (só locomoção) |
 | `exemplo_bombertinho/` | o mesmo para o robô real: `robo.py` (duas garras, dois sensores de linha), `main.py` e `cores_lona.json` |

@@ -65,6 +65,10 @@ volta ao modo antigo. Detalhes desta pasta:
   `espera_externa()`) deixava o relógio andar entre o `release()` e a thread da fila voltar a rodar:
   aqui ela deu 320,6 s a 8x e 321,9 s a 2x. Uma thread interrompida (`KeyboardInterrupt` do fim da
   rodada) enquanto espera na fila sai dela e, se já tinha recebido a trava, passa adiante.
+  Desde 03/11 o `threading.Lock`/`RLock` trocado é um `_FabricaTrava` (objeto com `__call__`), não um
+  `lambda`: biblioteca que guarda `threading.Lock` num atributo de classe (o werkzeug do Flask) e
+  chama `self.atributo()` passava o `self` para o lambda (`TypeError`). Detalhes no
+  `simuladorChallenge/CLAUDE.md`.
 
 ## `input()` do programa (29/10/2026)
 
@@ -121,10 +125,13 @@ A ligação veio do `defs.py` da equipe:
   as bordas ficam na frente; elas estão 13 e 37 mm para dentro, o desconto que o código faz;
 * para-choque P1/P8.
 
-Contagens (481/962 por volta) e calibração (16 no Mariola, 32 nas placas) foram deduzidas do código
-(1 cm = 1000/45,7 e `calibracao_manual(32, -32)`). Falta medir.
+Contagens: 940 por volta no Mariola e 1880 na placa desde 03/11/2026. Os 940 foram medidos no robô
+Boberto (Line), que tem o mesmo motor e a mesma roda de 70 mm; a placa é o dobro (x4 contra x2). Antes
+eram 481/962, deduzidos do código da equipe (1 cm = 1000/45,7): metade. Falta confirmar no robô da
+Maze. A calibração (16 no Mariola, 32 nas placas, do `calibracao_manual(32, -32)`) não mudou, então
+o robô ficou com metade da velocidade (~51 rpm livres).
 
-Conferido com os `movimentos.py` da equipe:
+Conferido com os `movimentos.py` da equipe (com os 481 antigos; com 940 o robô anda metade):
 * andar 30 cm → 302 mm;
 * `girar(+90)` → 92,6° horário (giroscópio +93);
 * 4 rodas juntas.
@@ -270,6 +277,17 @@ regravado a partir de uma cópia antiga. O `robo.json` certo tem os 6 sensores e
   gabarito deram os mesmos números; mudaram só os tempos do `maze2026_simplificado` (ver o `LEIAME`
   de lá). Um primeiro teste mostrou o M01 e o M02 piores, mas era a trombada de dois `avalia.py` na
   mesma pasta (ver "Pasta de trabalho por rodada").
+
+## Espessura das paredes (02/11/2026)
+
+Antes era fixa em 20 mm (`MEIA_PAREDE = 10` no `sim/mapa.py`). Agora é `Mapa.espessura_parede`
+(campo `espessura_parede` do `.json`, de 1 a 50 mm, uma só para o mapa todo), com
+`Mapa.meia_parede` usado pela física (raio do `pymunk.Segment`, que o VL53 e o para-choque
+enxergam), pelo desenho e por `ponto_vitima()` (a vítima fica na face da parede). Mapa sem o campo
+= 20 mm, então nenhum mapa antigo nem número de teste mudou (referência: 415, 320,6 s). No editor:
+"Parede −/+" (1 mm, Shift 0,5 mm). O exemplo, semente 1, no `exemplo1` com parede de 6 mm: 415
+(322,3 s); com 15 mm: 415 (321,9 s). Mudar a espessura não mexe na grade: os ladrilhos continuam
+com 300 mm de eixo a eixo.
 
 ## Pasta de trabalho por rodada e o "erro no programa" falso (01/11/2026)
 

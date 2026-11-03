@@ -43,6 +43,9 @@ def instalar(pasta_programa, pasta_libs):
     for nome, mod in fake_luma.modulos().items():
         sys.modules[nome] = mod
     fake_luma.instala_fontes()
+    # Flask: o servidor web do robô não roda aqui (fake_flask.py explica por quê)
+    from . import fake_flask
+    sys.modules.update(fake_flask.modulos())
     # sem câmera: a regra da RCB Challenge proíbe câmera e LiDAR
 
     # caminho de import: pasta do programa primeiro, libs do Mariola como reserva

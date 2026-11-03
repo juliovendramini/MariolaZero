@@ -65,6 +65,14 @@ sensor de linha (`PONTOS_MANCHA` em `sim/fisica.py`; antes era uma cruz de 5 pon
   andar. Agora o estado da trava fica no `cond` do relógio, e o `release()` passa a trava direto para
   a primeira da fila e a tira da lista de espera; uma thread interrompida na fila sai dela e passa a
   trava adiante. Testes daqui, da Line e da Maze iguais a 2x e 8x.
+* **Flask e a fábrica das travas** (03/11, achado pelo Luiz, da equipe Challenger, rodando o
+  `main.py` deles direto, sem o adaptador): o `threading.Lock` trocado era um `lambda`, e o werkzeug
+  guarda `Map.lock_class = threading.Lock` na classe e chama `self.lock_class()`: o lambda virava
+  método e recebia o `self` (`TypeError` no `Flask(__name__)`). Agora é um `_FabricaTrava` (objeto
+  com `__call__`, que não vira método), nos três `cliente.py`. E o Flask é falso no `fake_hw`
+  (`fake_flask.py`, só aqui no Challenge): o servidor de verdade fica parado num `select` do socket,
+  que o relógio não vê como espera, e a partida inteira iria pelo tempo real. Antes o Flask falso
+  estava só no adaptador da equipe.
 
 Em 30/10 os dois deram a mesma pose final em `--velocidade 2` e `8` (relógio sincronizado). Trocando o
 cubo do A3 (e do A3') no cenário: amarelo → procura para um lado, volta e entrega na P4 (+100);
@@ -156,6 +164,16 @@ branco → acende os LEDs e não pega (+50). Rode depois de mexer em `sim/` ou `
   versão das travas; com a primeira eram 165 e mudavam com a velocidade). Gerado por `professor/challenger2026/simulador/gera_robo.py` sobre o
   `robo_bombertinho_antes.json` de lá. O `exemplo_bombertinho` foi ajustado junto (`cores_lona.json` =
   aprende_cor).
+* **Código novo da equipe (02/11/2026**, `CBR-challenger-2026.zip`, commit `9b1c3f2`): está em
+  `professor/challenger2026/codigo/` (o de 30/10 ficou em `codigo_20261030/`). Como está: 200 pontos
+  (`cenario_challenger.json`, semente 1). As garras não pegavam depois da primeira entrega: **defeito
+  do código deles**, não do simulador (o `estado_servo_garra` do `movimentos.py` não é atualizado
+  com `suave=False`, e o `fecha_garra()` seguinte não manda nada; detalhes no topo da `ANALISE.md`).
+  Com as duas linhas da correção: 280 (4 entregues). Para investigar coisas assim, registrar o
+  `robo.servos` a cada passo da `GarraParalela` mostra o que o programa mandou de verdade.
+* Vista de lado das garras no painel (02/11/2026, pedido do Julio): `GarraParalela.info()['lado']`
+  traz a geometria e `Interface._desenha_garra_lado` desenha (cabeça verde/laranja/cinza pela
+  altura). Garra sem `'lado'` (a simples) continua com a linha de texto.
 * `tcs_i2c[].ganho` e `refletancia` (no robo.json) existem para isso: calibrar os TCS do mux para as
   leituras de um robô real. Sem eles, vale o `REFLETANCIA` de `sim/fisica.py`.
 

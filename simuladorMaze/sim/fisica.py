@@ -264,7 +264,7 @@ class Mundo:
         atr = float(self.cfg['rodas'].get('atrito_parede', 0.25))
         self.formas_parede = []
         for (x1, y1, x2, y2) in self.mapa.segmentos_parede():
-            s = pymunk.Segment(sp.static_body, (x1, y1), (x2, y2), M.MEIA_PAREDE)
+            s = pymunk.Segment(sp.static_body, (x1, y1), (x2, y2), self.mapa.meia_parede)
             s.friction = atr
             s.elasticity = 0.0
             s.filter = pymunk.ShapeFilter(categories=CAT_PAREDE)

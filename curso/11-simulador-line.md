@@ -164,7 +164,7 @@ surpresa** (`--surpresa medio`). Tudo isso está no [módulo 18](18-desafios.md)
 | **Início** | marca o ladrilho de início (clique de novo troca a direção) |
 | **Checkpoint** | marca/desmarca |
 | **Rampa** | sem → N → L → S → O; botão direito muda a inclinação (10°–25°) |
-| **Lombada**, **Obstáculo**, **Detritos** | colocam os perigos |
+| **Lombada**, **Obstáculo**, **Detritos** | colocam os perigos; obstáculos e detritos também vão dentro da área de resgate, onde você clicar |
 | **Camada ±** | ladrilho de ponte (camada 1 sobre a 0) |
 | **Área resgate**, **Entrada/saída**, **Triângulos** | montam a área de resgate |
 

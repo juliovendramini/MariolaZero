@@ -219,10 +219,10 @@ editor do rcj.cloud), com os caminhos, gaps e interseções de cada um. Mais tr�
 | **Checkpoint** | marca/desmarca (o editor avisa se o ladrilho tem item pontuável) |
 | **Rampa** | sem rampa → sobe para N → L → S → O. Botão direito troca a inclinação (10°–25°) |
 | **Lombada** | põe uma lombada (1 cm) atravessada no caminho onde clicou; botão direito tira |
-| **Obstáculo** | põe em cima da linha mais perto do clique; Shift+clique: solto/fixo; roda do mouse gira |
-| **Detritos** | +1/−1 palito solto no ladrilho |
+| **Obstáculo** | põe em cima da linha mais perto do clique (na área de resgate, onde clicou); botão direito tira; Shift+clique: solto/fixo; roda do mouse gira |
+| **Detritos** | +1/−1 palito solto no ladrilho; na área de resgate, põe o palito onde clicou e o botão direito tira o mais perto |
 | **Camada ± ** | ladrilhos de ponte ficam na camada 1 (por cima de um ladrilho da camada 0) |
-| **Área resgate** | clique põe a área (4 x 3 ladrilhos) com o canto de cima à esquerda na célula. Roda do mouse: 4x3 / 3x4. Shift+clique dentro: obstáculo. Botão direito dentro: tira a área |
+| **Área resgate** | clique põe a área (4 x 3 ladrilhos) com o canto de cima à esquerda na célula. Roda do mouse: 4x3 / 3x4. Shift+clique dentro: põe/tira um obstáculo. Botão direito dentro: tira a área |
 | **Entrada/saída** | clique perto de uma parede da área: entrada (fita prata). Botão direito: saída (fita preta) |
 | **Triângulos** | clique perto de um canto: triângulo verde. Botão direito: vermelho |
 
@@ -267,13 +267,18 @@ A área de resgate vai em `zona_resgate` (as células dela não têm ladrilhos n
 ```json
 "zona_resgate": {"x": 2, "y": 1, "larg": 4, "alt": 3,
   "entrada": {"lado": "S", "i": 2}, "saida": {"lado": "L", "i": 0},
-  "verde": "NO", "vermelho": "SE", "obstaculo": null, "cor_parede": [200, 200, 205],
+  "verde": "NO", "vermelho": "SE", "obstaculos": [], "detritos": 0, "cor_parede": [200, 200, 205],
   "vitimas": null, "falsas": 0}
 ```
 
 `lado` + `i`: parede e célula (contando da esquerda ou de cima) do vão. `vitimas: null` sorteia
 2 vivas e 1 morta a cada rodada pela semente; ou uma lista `[{"tipo": "viva", "u": 300, "v": 450}, ...]`
 (mm a partir do canto sudoeste da área). `falsas`: quantas vítimas falsas (regra 3.10.5) pôr no chão.
+`obstaculos`: como os dos ladrilhos (`u`, `v` a partir do canto sudoeste da área; `larg`, `comp`,
+`altura`, `ang`, `fixo`, `massa_kg` opcionais). `detritos`: quantos palitos espalhar pela área
+(sorteados, sempre nos mesmos lugares e fora dos triângulos) ou a lista
+`[{"u": 300, "v": 450, "ang": 30, "comp": 45}, ...]` (centro, ângulo em graus, comprimento em mm), que
+é o que o editor grava. Mapa antigo com `"obstaculo": {"u": ..., "v": ...}` (um só) continua abrindo.
 
 ---
 
@@ -343,6 +348,8 @@ mudar.
   liga-desliga ele não vibra em volta do alvo como o servo de verdade.
 * **O braço cai sem força**, a não ser todo levantado (ali ele se apoia no fim de curso). Trava,
   potência 0, 5 s sem comando e `le_posicao()` desligam o motor. Use `consulta_posicao()` para ler.
+  Braço com elástico: `"repouso": N` no `braco` (leitura do potenciômetro) faz o braço sem força ir
+  para essa posição, descendo ou subindo, e ficar nela, em vez de cair.
 * **Os dedos só seguram com força enquanto empurram.** Fechando na bolinha eles param encostados e,
   depois do tempo de trava, o motor desliga; se o braço estiver se mexendo nessa hora, a bolinha cai.
   Por isso o `tempo_trava_ms` (o valor calibrado na EEPROM) está em 3000 no exemplo.
@@ -488,7 +495,9 @@ Exemplo dessas montagens: o robô de uma equipe em `professor/` (privado).
 * **Área de resgate** (regra 3.9 e 3.10): 120 x 90 cm medidos por fora; as paredes (10 cm de altura,
   25 mm de espessura) ficam para dentro. Vão de 25 cm na entrada e na saída, com a fita (prata na
   entrada, preta na saída, 25 x 250 mm) faceada com a parede, no vão. Triângulos de 30 x 30 cm com
-  paredes de 6 cm, encostados nas faces de dentro das paredes; obstáculo opcional. Vítimas: esferas de 45 mm e 70 g, que rolam com
+  paredes de 6 cm, encostados nas faces de dentro das paredes; obstáculos e detritos (palitos)
+  opcionais, com a mesma física dos da pista (as bolinhas batem nos obstáculos, não nos palitos; o
+  sorteio das vítimas foge dos obstáculos). Vítimas: esferas de 45 mm e 70 g, que rolam com
   resistência ao rolamento e com o centro de massa deslocado (fazem curva), batem nas paredes e são
   empurradas pelo robô. Uma vítima não sobe a parede de 6 cm do triângulo: só entra caindo de cima.
   Os VL53 têm `altura`: o feixe só vê o que é mais alto que ele (um VL53 a 5 cm vê a parede e o
