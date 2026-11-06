@@ -195,7 +195,8 @@ def metricas(r):
     else:
         info = r.get('info', {})
         m.update({'svi': info.get('SVI', 0), 'srd': info.get('SRD', 0), 'sbv': info.get('SBV', 0),
-                  'ssn': info.get('SSN', 0), 'vitimas': info.get('SVI', 0), 'saida': bool(r.get('saida')),
+                  'ssn': info.get('SSN', 0), 'srn': info.get('SRN', 0),
+                  'vitimas': info.get('SVI', 0), 'saida': bool(r.get('saida')),
                   'erros': r.get('erros', 0)})
     return m
 

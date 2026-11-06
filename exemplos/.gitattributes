@@ -1,0 +1,2 @@
+# o envia.sh roda no Linux: quebra de linha LF mesmo num checkout do Windows
+envia.sh text eol=lf

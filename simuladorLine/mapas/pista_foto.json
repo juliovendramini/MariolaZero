@@ -1,0 +1,474 @@
+{
+ "formato": "simuladorLine/1",
+ "regra": "RoboCupJunior Rescue Line 2026",
+ "nome": "pista_foto",
+ "_comentario": "Montado a partir de uma foto de um campo de competição (04/11/2026). Ladrilhos oficiais mais parecidos com os da foto; o início foi escolhido (na foto não dá para saber onde é). O tabuleiro do fundo fica meio ladrilho deslocado na foto; aqui ele está na grade. Ele é inclinado no campo real (sobe para o fundo); aqui com 5°, chute: troque INCLINACAO.",
+ "largura": 8,
+ "altura": 7,
+ "inicio": [
+  3,
+  2,
+  0
+ ],
+ "inicio_dir": "S",
+ "tempo": 480.0,
+ "ladrilhos": [
+  {
+   "x": 4,
+   "y": 0,
+   "z": 0,
+   "tipo": "tile-82",
+   "rot": 0,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 5
+   }
+  },
+  {
+   "x": 5,
+   "y": 0,
+   "z": 0,
+   "tipo": "tile-30",
+   "rot": 90,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 5
+   }
+  },
+  {
+   "x": 6,
+   "y": 0,
+   "z": 0,
+   "tipo": "tile-1",
+   "rot": 0,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 5
+   }
+  },
+  {
+   "x": 7,
+   "y": 0,
+   "z": 0,
+   "tipo": "tile-16_2",
+   "rot": 270,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 5
+   }
+  },
+  {
+   "x": 0,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-16_2",
+   "rot": 180
+  },
+  {
+   "x": 1,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-3",
+   "rot": 270
+  },
+  {
+   "x": 2,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-83",
+   "rot": 270
+  },
+  {
+   "x": 3,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-41",
+   "rot": 180
+  },
+  {
+   "x": 4,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 90,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 5
+   }
+  },
+  {
+   "x": 5,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 90,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 5
+   }
+  },
+  {
+   "x": 6,
+   "y": 1,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 5
+   }
+  },
+  {
+   "x": 7,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 90,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 5
+   }
+  },
+  {
+   "x": 0,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-69",
+   "rot": 90
+  },
+  {
+   "x": 1,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-20",
+   "rot": 90
+  },
+  {
+   "x": 2,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 90
+  },
+  {
+   "x": 3,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-18",
+   "rot": 90,
+   "lombadas": [
+    {
+     "u": 152,
+     "v": 195,
+     "ang": 45,
+     "comp": 185
+    },
+    {
+     "u": 241,
+     "v": 135,
+     "ang": 80,
+     "comp": 160
+    }
+   ]
+  },
+  {
+   "x": 4,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-46",
+   "rot": 270,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 5
+   }
+  },
+  {
+   "x": 5,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-5",
+   "rot": 180,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 5
+   }
+  },
+  {
+   "x": 6,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-20",
+   "rot": 0,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 5
+   }
+  },
+  {
+   "x": 7,
+   "y": 2,
+   "z": 0,
+   "tipo": "chegada",
+   "rot": 90,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 5
+   }
+  },
+  {
+   "x": 0,
+   "y": 3,
+   "z": 0,
+   "tipo": "tile-20",
+   "rot": 90,
+   "lombadas": [
+    {
+     "u": 129,
+     "v": 216,
+     "ang": 35,
+     "comp": 180
+    },
+    {
+     "u": 155,
+     "v": 164,
+     "ang": 39,
+     "comp": 180
+    }
+   ]
+  },
+  {
+   "x": 1,
+   "y": 3,
+   "z": 0,
+   "tipo": "tile-7",
+   "rot": 0
+  },
+  {
+   "x": 2,
+   "y": 3,
+   "z": 0,
+   "tipo": "tile-6",
+   "rot": 180,
+   "obstaculos": [
+    {
+     "larg": 100,
+     "comp": 100,
+     "altura": 150,
+     "ang": 0,
+     "fixo": false,
+     "massa_kg": 1.0,
+     "u": 213,
+     "v": 216
+    }
+   ]
+  },
+  {
+   "x": 3,
+   "y": 3,
+   "z": 0,
+   "tipo": "tile-25",
+   "rot": 90
+  },
+  {
+   "x": 4,
+   "y": 3,
+   "z": 0,
+   "tipo": "tile-6",
+   "rot": 90,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 5
+   }
+  },
+  {
+   "x": 5,
+   "y": 3,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 5
+   }
+  },
+  {
+   "x": 6,
+   "y": 3,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 5
+   }
+  },
+  {
+   "x": 7,
+   "y": 3,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 5
+   }
+  },
+  {
+   "x": 0,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-64",
+   "rot": 0
+  },
+  {
+   "x": 1,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-59",
+   "rot": 90,
+   "checkpoint": true
+  },
+  {
+   "x": 2,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-52",
+   "rot": 270
+  },
+  {
+   "x": 3,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-25",
+   "rot": 0,
+   "obstaculos": [
+    {
+     "larg": 100,
+     "comp": 100,
+     "altura": 150,
+     "ang": 0,
+     "fixo": false,
+     "massa_kg": 1.0,
+     "u": 50,
+     "v": 140
+    }
+   ]
+  },
+  {
+   "x": 0,
+   "y": 5,
+   "z": 0,
+   "tipo": "tile-30",
+   "rot": 0
+  },
+  {
+   "x": 1,
+   "y": 5,
+   "z": 0,
+   "tipo": "tile-35",
+   "rot": 0
+  },
+  {
+   "x": 2,
+   "y": 5,
+   "z": 0,
+   "tipo": "tile-80",
+   "rot": 180,
+   "lombadas": [
+    {
+     "u": 145,
+     "v": 245,
+     "ang": 56,
+     "comp": 200
+    },
+    {
+     "u": 261,
+     "v": 275,
+     "ang": 22,
+     "comp": 150
+    },
+    {
+     "u": 214,
+     "v": 125,
+     "ang": 137,
+     "comp": 190
+    }
+   ]
+  },
+  {
+   "x": 3,
+   "y": 5,
+   "z": 0,
+   "tipo": "tile-46",
+   "rot": 90
+  },
+  {
+   "x": 0,
+   "y": 6,
+   "z": 0,
+   "tipo": "tile-80",
+   "rot": 270,
+   "lombadas": [
+    {
+     "u": 132,
+     "v": 182,
+     "ang": 21,
+     "comp": 125
+    },
+    {
+     "u": 202,
+     "v": 118,
+     "ang": 56,
+     "comp": 120
+    }
+   ]
+  },
+  {
+   "x": 1,
+   "y": 6,
+   "z": 0,
+   "tipo": "tile-5",
+   "rot": 90
+  },
+  {
+   "x": 2,
+   "y": 6,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 3,
+   "y": 6,
+   "z": 0,
+   "tipo": "tile-83",
+   "rot": 270,
+   "checkpoint": true
+  }
+ ],
+ "zona_resgate": {
+  "x": 4,
+  "y": 4,
+  "larg": 4,
+  "alt": 3,
+  "entrada": {
+   "lado": "O",
+   "i": 2
+  },
+  "saida": {
+   "lado": "O",
+   "i": 0
+  },
+  "verde": "NE",
+  "vermelho": "SE",
+  "obstaculos": [],
+  "detritos": 40,
+  "cor_parede": [
+   235,
+   235,
+   230
+  ],
+  "vitimas": null,
+  "falsas": 0
+ }
+}

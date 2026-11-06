@@ -36,6 +36,9 @@ COR_RAIOS = [(255, 120, 80), (255, 180, 80), (90, 200, 255), (120, 160, 255), (1
 
 CICLO_TERRENO = [('', None), ('lombada', 'NS'), ('lombada', 'LO'), ('escada', 'NS'),
                  ('escada', 'LO'), ('detritos', None)]
+# rampa e escada que mudam o nível: (terreno, lado que sobe)
+CICLO_NIVEL = [('rampa', d) for d in 'NLSO'] + [('escada', d) for d in 'NLSO']
+SETA_DIR = {'N': '↑', 'S': '↓', 'L': '→', 'O': '←'}
 CICLO_VITIMA = [
     ('letra', 'H'), ('letra', 'S'), ('letra', 'U'),
     ('cognitivo', 'ferida'), ('cognitivo', 'estavel'), ('cognitivo', 'ilesa'),
@@ -45,6 +48,9 @@ FERRAMENTAS = [
     ('parede', 'Parede', 'Clique perto da borda de um ladrilho para pôr/tirar parede. Arraste para desenhar.'),
     ('piso', 'Piso', 'Clique: branco > preto > prata > azul > vermelho. Botão direito: volta a branco.'),
     ('terreno', 'Terreno', 'Clique: lombada (NS/LO) > escada (NS/LO) > detritos > nada. NS = robô anda norte-sul.'),
+    ('nivel', 'Rampa/escada', 'Muda o nível do piso. Clique: rampa subindo para N > L > S > O > escada (N, L, S, O) '
+     '> nada; as paredes dos lados entram sozinhas. Roda do mouse: graus (1 a 25). Shift+roda: altura '
+     'do degrau da escada (5 a 20 mm). Botão direito apaga.'),
     ('zona', 'Zona perigo', 'Marca os ladrilhos da zona de perigo (arraste). A entrada é um piso vermelho.'),
     ('vitima', 'Vítima', 'Clique junto a uma parede: Φ > Ψ > Ω > cognitivas (ferida/estável/ilesa) > falsas > nada.'),
     ('inicio', 'Início', 'Clique para pôr o início; clique de novo no mesmo ladrilho para girar a direção.'),
@@ -132,9 +138,9 @@ class Interface:
         ]
         self.bot_ed = [
             [Botao(n, (lambda k=k: self._set_ferramenta(k)), ligado=(lambda k=k: self.ferramenta == k))
-             for k, n, _ in FERRAMENTAS[:3]],
+             for k, n, _ in FERRAMENTAS[:4]],
             [Botao(n, (lambda k=k: self._set_ferramenta(k)), ligado=(lambda k=k: self.ferramenta == k))
-             for k, n, _ in FERRAMENTAS[3:]],
+             for k, n, _ in FERRAMENTAS[4:]],
             [Botao('Linha +', lambda: self._redim(1, 0)), Botao('Linha −', lambda: self._redim(-1, 0)),
              Botao('Coluna +', lambda: self._redim(0, 1)), Botao('Coluna −', lambda: self._redim(0, -1))],
             [Botao('Parede −', lambda: self._espessura(-1)), Botao('', self._mostra_espessura),
@@ -360,6 +366,7 @@ class Interface:
         if self.mostrar_flutuantes:
             lin = m.ladrilhos_lineares()
             flut = {(l, c) for l in range(m.linhas) for c in range(m.colunas)} - lin
+        niveis = m.niveis()[0] if m.tem_niveis() else {}
         for l in range(m.linhas):
             for c in range(m.colunas):
                 x0, y0 = self.T(c * T, m.altura_mm - l * T)
@@ -382,7 +389,17 @@ class Interface:
                     sup.blit(s, r)
                 pygame.draw.rect(sup, (200, 200, 195) if piso != 'preto' else (60, 60, 60), r, 1)
                 ter = m.terreno(l, c)
-                if ter == 'lombada':
+                h = niveis.get((l, c), 0.0)
+                if h > 0.5 and not m.inclinacao(l, c):
+                    # piso mais alto: tom azulado e a altura no canto
+                    s = pygame.Surface(r.size, pygame.SRCALPHA)
+                    s.fill((70, 120, 255, min(90, 25 + int(h / 3))))
+                    sup.blit(s, r)
+                    txt = self.f11.render(f'+{h:.0f} mm', True, (40, 60, 140))
+                    sup.blit(txt, (r.x + 3, r.y + 2))
+                if m.inclinacao(l, c):
+                    self._desenha_nivel(sup, m, l, c, r, h)
+                elif ter == 'lombada':
                     for (x1, y1, x2, y2) in m.linhas_lombada(l, c):
                         pygame.draw.line(sup, (150, 100, 50), self.T(x1, y1), self.T(x2, y2), max(2, int(14 * e)))
                 elif ter == 'escada':
@@ -434,6 +451,43 @@ class Interface:
             tom = int(215 - h * 3.5)
             r = pygame.Rect(min(a[0], b[0]), min(a[1], b[1]), abs(b[0] - a[0]) + 1, abs(b[1] - a[1]) + 1)
             pygame.draw.rect(sup, (tom, tom - 5, tom - 15), r)
+
+    def _desenha_nivel(self, sup, m, l, c, r, base):
+        """Rampa (faixas do claro, embaixo, ao escuro, em cima) ou escada (um degrau por faixa),
+        com a seta para o lado que sobe."""
+        T = M.TAM
+        sobe, graus = m.inclinacao(l, c)
+        x0, y0 = c * T, m.altura_mm - (l + 1) * T
+        escada = m.terreno(l, c) == 'escada'
+        n = m.degraus(l, c)[0] if escada else 12
+        faixas = n + 1 if escada else n
+        for k in range(faixas):
+            if escada:     # espelhos em (k - 1/2) T/n: o primeiro e o último piso têm meio degrau
+                s0, s1 = max(0.0, (k - 0.5) * T / n), min(T, (k + 0.5) * T / n)
+            else:
+                s0, s1 = k * T / n, (k + 1) * T / n
+            # retângulo da faixa [s0, s1] medida a partir da borda de baixo
+            if sobe in ('N', 'S'):
+                a0, a1 = (y0 + s0, y0 + s1) if sobe == 'N' else (y0 + T - s1, y0 + T - s0)
+                p, q = self.T(x0 + 6, a1), self.T(x0 + T - 6, a0)
+            else:
+                a0, a1 = (x0 + s0, x0 + s1) if sobe == 'L' else (x0 + T - s1, x0 + T - s0)
+                p, q = self.T(a0, y0 + T - 6), self.T(a1, y0 + 6)
+            tom = int(232 - 70 * (k + 0.5) / faixas)
+            cor = (tom, tom - 12, tom - 40) if escada else (tom - 20, tom - 8, tom)
+            fr = pygame.Rect(min(p[0], q[0]), min(p[1], q[1]), abs(q[0] - p[0]) + 1, abs(q[1] - p[1]) + 1)
+            pygame.draw.rect(sup, cor, fr)
+            if escada and k > 0:
+                pygame.draw.rect(sup, (110, 90, 60), fr, 1)
+        cx, cy = r.center
+        seta = self.f22b.render(SETA_DIR[sobe], True, (70, 60, 50))
+        sup.blit(seta, (cx - seta.get_width() / 2, cy - seta.get_height() / 2 - 8))
+        nome = 'escada' if escada else 'rampa'
+        t1 = self.f11.render(f'{nome} {graus:g}°', True, (40, 40, 40))
+        sup.blit(t1, (cx - t1.get_width() / 2, cy + 10))
+        topo = base + m.desnivel(l, c)
+        t2 = self.f11.render(f'{base:.0f}→{topo:.0f} mm', True, (60, 60, 60))
+        sup.blit(t2, (cx - t2.get_width() / 2, cy + 23))
 
     def _desenha_vitimas(self):
         w = self.sim.mundo
@@ -723,7 +777,9 @@ class Interface:
                     y = self._txt(linha, x, y, self.f12, (255, 170, 170))
         y += 8
         txt = ('Ladrilho roxo (tecla F) = flutuante: vítimas valem mais. Lombadas e escadas: a direção '
-               'NS/LO é o sentido em que o robô passa por elas. Pela regra, o robô começa num ladrilho comum '
+               'NS/LO é o sentido em que o robô passa por elas. Rampa/escada mudam o nível do piso: a seta '
+               'aponta o lado que sobe, os ladrilhos mais altos ficam azulados com a altura no canto, e '
+               'entre pisos de alturas diferentes tem de haver parede. Pela regra, o robô começa num ladrilho comum '
                'e a zona de perigo é toda murada, com a entrada em piso vermelho. Botão direito apaga. '
                'Ctrl+S salva.')
         for linha in _quebra(txt, 64):
@@ -807,7 +863,9 @@ class Interface:
             atual = (m.terreno(*lc), m.lad(*lc).get('direcao') if m.terreno(*lc) in ('lombada', 'escada') else None)
             i = CICLO_TERRENO.index(atual) if atual in CICLO_TERRENO else 0
             ter, d = CICLO_TERRENO[0] if botao == 3 else CICLO_TERRENO[(i + 1) % len(CICLO_TERRENO)]
-            m.set_lad(*lc, terreno=ter or None, direcao=d)
+            m.set_lad(*lc, terreno=ter or None, direcao=d, sobe=None, graus=None, degrau_mm=None)
+        elif f == 'nivel' and not arrastando:
+            self._clique_nivel(m, lc, botao)
         elif f == 'zona':
             if not arrastando:
                 self.arrasto = (not m.zona(*lc)) if botao == 1 else False
@@ -820,6 +878,49 @@ class Interface:
                 m.inicio_dir = ordem[(ordem.index(m.inicio_dir) + 1) % 4]
             else:
                 m.inicio = lc
+        self.sujo = True
+
+    def _clique_nivel(self, m, lc, botao):
+        """Rampa/escada que mudam o nível: o clique troca o tipo e o lado que sobe."""
+        inc = m.inclinacao(*lc)
+        if botao == 3:
+            m.set_lad(*lc, terreno=None, sobe=None, graus=None, degrau_mm=None, direcao=None)
+            return
+        atual = (m.terreno(*lc), inc[0]) if inc else None
+        i = CICLO_NIVEL.index(atual) + 1 if atual in CICLO_NIVEL else 0
+        if i >= len(CICLO_NIVEL):
+            m.set_lad(*lc, terreno=None, sobe=None, graus=None, degrau_mm=None, direcao=None)
+            return
+        ter, sobe = CICLO_NIVEL[i]
+        graus = inc[1] if inc else getattr(self, 'graus_nivel', M.GRAUS_PADRAO)
+        m.set_lad(*lc, terreno=ter, sobe=sobe, graus=graus, direcao=None,
+                  degrau_mm=m.lad(*lc).get('degrau_mm') if ter == 'escada' else None)
+        for d in m.laterais(*lc):           # rampa e escada ficam entre paredes
+            m.set_parede(lc[0], lc[1], d, True)
+        for d in (sobe, M.OPOSTA[sobe]):    # e abertas nas pontas (menos na borda do mapa)
+            if m.dentro(lc[0] + M.DELTA[d][0], lc[1] + M.DELTA[d][1]):
+                m.set_parede(lc[0], lc[1], d, False)
+
+    def _roda_nivel(self, pos, passo):
+        """Roda do mouse em cima de uma rampa/escada: graus; com Shift, a altura do degrau."""
+        m = self.sim.mundo.mapa
+        lc = m.ladrilho_em(*self.W(*pos))
+        inc = m.inclinacao(*lc) if lc else None
+        if not inc:
+            return
+        if pygame.key.get_mods() & pygame.KMOD_SHIFT:
+            if m.terreno(*lc) != 'escada':
+                return
+            d = float(m.lad(*lc).get('degrau_mm', M.DEGRAU_MAX)) + passo
+            m.set_lad(*lc, degrau_mm=min(max(d, 5.0), M.DEGRAU_MAX))
+            n, h = m.degraus(*lc)
+            self._aviso(f'escada em {lc}: {n} degraus de {h:.1f} mm')
+        else:
+            gmax = M.GRAUS_MAX_ZONA if m.terreno(*lc) == 'escada' and m.zona(*lc) else M.GRAUS_MAX
+            g = min(max(inc[1] + passo, 1.0), gmax)
+            m.set_lad(*lc, graus=g)
+            self.graus_nivel = g
+            self._aviso(f'{m.terreno(*lc)} em {lc}: {g:g}°, sobe {m.desnivel(*lc):.0f} mm')
         self.sujo = True
 
     def _clique_vitima(self, m, lc, x, y, botao):
@@ -882,6 +983,8 @@ class Interface:
             if self._area().collidepoint(ev.pos):
                 if self.modo == 'editar' and ev.button in (1, 3):
                     self._clique_editor(ev.pos, ev.button)
+                elif self.modo == 'editar' and ev.button in (4, 5) and self.ferramenta == 'nivel':
+                    self._roda_nivel(ev.pos, 1 if ev.button == 4 else -1)
                 elif self.modo == 'simular' and ev.button == 1 and not s.programa_rodando():
                     x, y = self.W(*ev.pos)
                     rx, ry, _ = s.mundo.pose()

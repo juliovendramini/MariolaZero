@@ -101,7 +101,10 @@ parede de 6 mm o corredor tem 294 mm; com 20 mm, 280 mm.
   (ex.: `giroscopio.py` sem o modo `ROS_IMU`). **Copie as libs atuais para a pasta do seu
   programa** e é elas que vão rodar.
 * A Maze não tem câmera frontal (`visao`) nem garra.
-* Não há rampas/pontes de verdade (escada e lombada são efeitos).
+* Rampa e escada que mudam o nível do piso existem (ferramenta "Rampa/escada" do editor, até 25°,
+  um ladrilho cada; exemplo em `mapas/rampa_escada.json`), mas não há ponte: nenhum ladrilho fica
+  por cima de outro, então o mapa do robô continua sendo uma matriz de duas dimensões. A escada
+  antiga (que sobe e desce no mesmo ladrilho) e a lombada continuam sendo efeitos.
 
 ## Exercícios
 

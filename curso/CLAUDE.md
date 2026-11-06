@@ -64,7 +64,7 @@ novo e corrija os números.
   de 18/10/2026, depois da correção do cruzamento com verde no exemplo da Line:
   L04, L05, L06, L08, L09, L11 = 6/6; L07 média ~287; L10 5/6; L12 4/6; L13 3/6 (em aberto, de
   propósito); Maze M01–M06 = 3/3. Desde 31/10 (VL53 em leque nos dois simuladores): M05 2/3,
-  L07 média 290,2 e L13 2/6.
+  L07 média 290,2 e L13 2/6. Desde 04/11 (peso nas rodas de baixo no piso inclinado): L07 média 292,2.
   Se o exemplo ou a física mudar, rode `python avalia.py --desafio LXX` e atualize.
 
 ## Coisas que o curso afirma e precisam continuar verdadeiras

@@ -107,6 +107,8 @@ class Mapa:
         if antigo:   # troca só o desenho, mantém os itens
             for k in ('checkpoint', 'rampa', 'lombadas', 'obstaculos', 'detritos'):
                 t[k] = antigo[k]
+            if antigo.get('inclinacao'):
+                t['inclinacao'] = antigo['inclinacao']
         if tipo == 'gangorra':
             t['gangorra'] = antigo.get('gangorra', {'graus': 15}) if antigo else {'graus': 15}
         self.ladrilhos[(x, y, z)] = t
@@ -239,7 +241,8 @@ class Mapa:
         passos = []
         erro = None
         t = self.ladrilhos.get(self.inicio) if self.inicio else None
-        bases = {}
+        self._bases_incl = self._bases_inclinadas()
+        bases = dict(self._bases_incl)
         if t is None:
             erro = 'sem ladrilho de início'
         else:
@@ -299,12 +302,57 @@ class Mapa:
                 indices[(c[0], c[1], 0)] = indices.get(ks, [])
         self._cache = {'passos': passos, 'erro': erro, 'bases': bases, 'indices': indices}
 
-    def _sobe_por_mm(self, t):
+    @staticmethod
+    def _plano(t):
+        """Rampa ou inclinação do ladrilho ({'sobe', 'graus'}) ou None. A rampa leva para a camada de
+        cima; a inclinação (pista inclinada) não muda de camada e não é item."""
         r = t.get('rampa')
+        if r:
+            return r
+        r = t.get('inclinacao')
+        return r if r and r.get('sobe') else None
+
+    def _sobe_por_mm(self, t):
+        r = self._plano(t)
         return math.tan(math.radians(float(r.get('graus', 20)))) if r else 0.0
 
+    def _bases_inclinadas(self):
+        """Altura (mm) da borda de baixo de cada ladrilho com inclinação. Ladrilhos vizinhos com a
+        mesma inclinação (camada, sentido e graus) formam um tabuleiro plano: a borda mais baixa dele
+        fica no chão da camada e a altura de cada ladrilho sai do plano, não do caminho (o robô pode
+        atravessar de lado, voltar e passar de novo)."""
+        inc = {k: t for k, t in self.ladrilhos.items() if not t.get('rampa') and self._plano(t)}
+        bases, vistos = {}, set()
+        for k0 in inc:
+            if k0 in vistos:
+                continue
+            r0 = inc[k0]['inclinacao']
+            chave = (r0['sobe'], float(r0.get('graus', 5)))
+            grupo, fila = [], [k0]
+            vistos.add(k0)
+            while fila:
+                k = fila.pop()
+                grupo.append(k)
+                for dx, dy in PASSO.values():
+                    v = (k[0] + dx, k[1] + dy, k[2])
+                    if v in inc and v not in vistos:
+                        r = inc[v]['inclinacao']
+                        if (r['sobe'], float(r.get('graus', 5))) == chave:
+                            vistos.add(v)
+                            fila.append(v)
+            dx, dy = PASSO[chave[0]]
+            s = {k: k[0] * dx + k[1] * dy for k in grupo}     # posição (em ladrilhos) no sentido da subida
+            s0 = min(s.values())
+            sobe = TAM * math.tan(math.radians(chave[1]))
+            for k in grupo:
+                bases[k] = k[2] * ALTURA_CAMADA + (s[k] - s0) * sobe
+        return bases
+
     def _base_entrando(self, t, entrada, h):
-        r = t.get('rampa')
+        k = self.chave(t)
+        if k in getattr(self, '_bases_incl', {}):
+            return self._bases_incl[k]
+        r = self._plano(t)
         if not r:
             return h
         sobe = TAM * self._sobe_por_mm(t)
@@ -315,7 +363,7 @@ class Mapa:
         return h - sobe / 2
 
     def _altura_borda(self, t, base, d):
-        r = t.get('rampa')
+        r = self._plano(t)
         if not r:
             return base
         sobe = TAM * self._sobe_por_mm(t)
@@ -355,7 +403,7 @@ class Mapa:
         """Altura do piso (mm) no ponto X, Y do mundo, dentro do ladrilho t."""
         b = self.base(t)
         u, v = self.local(t, X, Y)
-        r = t.get('rampa')
+        r = self._plano(t)
         if r:
             s = {'N': v, 'S': TAM - v, 'L': u, 'O': TAM - u}[r['sobe']]
             return b + max(0.0, min(TAM, s)) * self._sobe_por_mm(t)
@@ -369,7 +417,7 @@ class Mapa:
 
     def gradiente(self, t, ang_gangorra=None):
         """(dh/dX, dh/dY) do piso no ladrilho (constante por ladrilho)."""
-        r = t.get('rampa')
+        r = self._plano(t)
         if r:
             k = self._sobe_por_mm(t)
             dx, dy = {'N': (0, 1), 'S': (0, -1), 'L': (1, 0), 'O': (-1, 0)}[r['sobe']]
@@ -426,15 +474,36 @@ class Mapa:
             return 'NS' if e in ('N', 'S') else 'LO'
         return 'NS'
 
+    @staticmethod
+    def lombada_solta(lb):
+        """A lombada no formato solto {'u', 'v', 'ang', 'comp'}: centro em mm a partir do canto sudoeste
+        do ladrilho, ângulo em graus (anti-horário a partir do leste) e comprimento em mm. O formato
+        antigo {'pos', 'eixo'} é a lombada atravessada no ladrilho inteiro."""
+        if 'u' in lb:
+            return lb
+        p = float(lb.get('pos', 0.5)) * TAM
+        if lb.get('eixo', 'NS') == 'NS':        # robô anda N-S: lombada atravessada (horizontal)
+            return {'u': TAM / 2, 'v': p, 'ang': 0, 'comp': TAM}
+        return {'u': p, 'v': TAM / 2, 'ang': 90, 'comp': TAM}
+
+    def segmento_lombada(self, lb):
+        """(u1, v1, u2, v2) da lombada no referencial do ladrilho."""
+        s = self.lombada_solta(lb)
+        g = float(s.get('ang', 0)) % 360
+        if g % 90 == 0:                          # exato (sem o 6e-17 do cos de 90°)
+            c, sn = {0: (1, 0), 90: (0, 1), 180: (-1, 0), 270: (0, -1)}[int(g)]
+        else:
+            c, sn = math.cos(math.radians(g)), math.sin(math.radians(g))
+        h = float(s.get('comp', TAM)) / 2
+        u, v = float(s['u']), float(s['v'])
+        return u - h * c, v - h * sn, u + h * c, v + h * sn
+
     def linhas_lombada(self, t):
         """Segmentos (no mundo) de cada lombada do ladrilho."""
         out = []
         for lb in t.get('lombadas', []):
-            p = float(lb.get('pos', 0.5)) * TAM
-            if lb.get('eixo', 'NS') == 'NS':    # robô anda N-S: lombada atravessada (horizontal)
-                a, b = self.mundo(t, 0, p), self.mundo(t, TAM, p)
-            else:
-                a, b = self.mundo(t, p, 0), self.mundo(t, p, TAM)
+            u1, v1, u2, v2 = self.segmento_lombada(lb)
+            a, b = self.mundo(t, u1, v1), self.mundo(t, u2, v2)
             out.append((a[0], a[1], b[0], b[1]))
         return out
 
@@ -740,6 +809,8 @@ class Mapa:
             r = t.get('rampa')
             if r and float(r.get('graus', 20)) > 25:
                 av.append(f'Rampa em {k[:2]} passa de 25°.')
+            if r and t.get('inclinacao'):
+                av.append(f'Ladrilho {k[:2]} tem rampa e inclinação (vale a rampa).')
             if self.eh_gangorra(t) and self.graus_gangorra(t) >= 20:
                 av.append(f'Gangorra em {k[:2]} precisa inclinar menos de 20°.')
         if self.zona:
@@ -760,7 +831,7 @@ class Mapa:
             if t.get('_zona'):
                 continue
             d = {kk: t[kk] for kk in ('x', 'y', 'z', 'tipo', 'rot')}
-            for kk in ('checkpoint', 'rampa', 'lombadas', 'obstaculos', 'detritos', 'gangorra'):
+            for kk in ('checkpoint', 'rampa', 'inclinacao', 'lombadas', 'obstaculos', 'detritos', 'gangorra'):
                 if t.get(kk):
                     d[kk] = t[kk]
             lads.append(d)
@@ -786,7 +857,7 @@ class Mapa:
             if not m.cat.existe(t['tipo']):
                 raise ValueError(f"ladrilho desconhecido: {t['tipo']}")
             n = novo_ladrilho(int(t['x']), int(t['y']), int(t.get('z', 0)), t['tipo'], int(t.get('rot', 0)))
-            for kk in ('checkpoint', 'rampa', 'lombadas', 'obstaculos', 'detritos', 'gangorra'):
+            for kk in ('checkpoint', 'rampa', 'inclinacao', 'lombadas', 'obstaculos', 'detritos', 'gangorra'):
                 if kk in t:
                     n[kk] = t[kk]
             if m.cat.info(n['tipo']).get('gangorra') and not n.get('gangorra'):

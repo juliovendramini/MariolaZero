@@ -6,6 +6,14 @@
             "type": "shell",
             "command": "powershell",
             "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/envia.ps1"],
+            "linux": {
+                "command": "bash",
+                "args": ["${workspaceFolder}/envia.sh"]
+            },
+            "osx": {
+                "command": "bash",
+                "args": ["${workspaceFolder}/envia.sh"]
+            },
             "group": {
                 "kind": "build",
                 "isDefault": true

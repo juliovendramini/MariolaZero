@@ -302,6 +302,13 @@ class Mundo:
         for (l, c), lad in self.mapa.ladrilhos.items():
             if lad.get('terreno') == 'detritos':
                 self.detritos[(l, c)] = self.mapa.detritos_iniciais(l, c)
+        # rampa/escada que mudam o nível: só nesses mapas a física e os sensores usam a altura do
+        # piso (nos outros a conta é a de antes, bit a bit)
+        self.com_niveis = self.mapa.tem_niveis()
+        self.niveis = self.mapa.niveis()[0]
+        self.plano = (0.0, 0.0, 0.0)
+        if self.com_niveis:
+            self._atualiza_plano()
 
     def posicionar(self, x, y, ang):
         self.corpo.position = (x, y)
@@ -367,12 +374,45 @@ class Mundo:
         return 1.0
 
     def altura(self, x, y):
+        if self.com_niveis:
+            return self.mapa.altura_piso(x, y, self.niveis)
         lc = self._lad_em(x, y)
         if lc is None:
             return 0.0
         if self.mapa.terreno(*lc) == 'escada':
             return self.mapa.perfil_escada(lc[0], lc[1], x, y)
         return 0.0
+
+    def _altura_roda(self, p, f):
+        """Altura do piso que a roda sente: perto de um degrau ela já encosta na quina (a roda
+        sobe por um arco, não de uma vez). f = sentido em que ela rola."""
+        r = self.diametro / 2
+        perto = (p, p + f * r, p - f * r)
+        if not any((lc := self._lad_em(q.x, q.y)) and self.mapa.terreno(*lc) == 'escada' for q in perto):
+            return self.altura(p.x, p.y)
+        melhor = -1e9
+        for k in range(-4, 5):
+            dx = r * k / 4
+            h = self.altura(p.x + f.x * dx, p.y + f.y * dx) + math.sqrt(r * r - dx * dx) - r
+            melhor = max(melhor, h)
+        return melhor
+
+    def _atualiza_plano(self):
+        """Plano em que o robô se apoia, pelas alturas do piso embaixo das rodas: (altura no meio
+        do robô, inclinação para a frente, inclinação para a esquerda), em mm por mm."""
+        b = self.corpo
+        f = Vec2d(math.cos(b.angle), math.sin(b.angle))
+        mots = self.motores
+        hs = [self._altura_roda(b.local_to_world((m.x, m.y)), f) for m in mots]
+        n = len(mots)
+        mx = sum(m.x for m in mots) / n
+        my = sum(m.y for m in mots) / n
+        hm = sum(hs) / n
+        sxx = sum((m.x - mx) ** 2 for m in mots)
+        syy = sum((m.y - my) ** 2 for m in mots)
+        a = sum((m.x - mx) * (h - hm) for m, h in zip(mots, hs)) / sxx if sxx > 1 else 0.0
+        c = sum((m.y - my) * (h - hm) for m, h in zip(mots, hs)) / syy if syy > 1 else 0.0
+        self.plano = (hm - a * mx - c * my, a, c)
 
     def _solavanco(self, i, giro, pitch):
         m = self.motores[i]
@@ -422,6 +462,39 @@ class Mundo:
         N = self.massa * G / n
         invm = 1.0 / self.massa
         invI = 1.0 / b.moment
+        # rampa/escada (como no simuladorLine): gravidade morro abaixo, peso passando para as rodas
+        # de baixo, a roda escorregando de lado e a velocidade da roda medida ao longo da rampa.
+        # No plano g2 = 0 e nada disso entra.
+        Ns = None
+        deriva = 0.0
+        proj = 1.0
+        g2 = 0.0
+        if self.com_niveis:
+            _, pa, pb = self.plano
+            gx = pa * f.x + pb * lat.x          # gradiente do plano do robô no mundo (sentido da subida)
+            gy = pa * f.y + pb * lat.y
+            g2 = gx * gx + gy * gy
+        if g2 > 0:
+            cos_incl = 1.0 / math.sqrt(1.0 + g2)
+            F = -self.massa * G / (1.0 + g2)
+            b.apply_impulse_at_world_point((F * gx * dt, F * gy * dt), b.position)
+            N = self.massa * G * cos_incl / n
+            gn = math.sqrt(g2)
+            sobe = Vec2d(gx / gn, gy / gn)
+            ds = [(b.local_to_world((m.x, m.y)) - b.position).dot(sobe) for m in self.motores]
+            dm = sum(ds) / n
+            ds = [d - dm for d in ds]
+            s2 = sum(d * d for d in ds)
+            hcg = float(self.cfg['geometria'].get('altura_cg_mm', 45.0))
+            if s2 > 1.0 and hcg > 0:
+                # momento do peso em volta do meio das rodas: sum(N_i * d_i) = -m g sen(θ) h_cg
+                a = -self.massa * G * (gn / math.sqrt(1.0 + g2)) * hcg / s2
+                Ns = [max(0.0, N + a * d) for d in ds]
+            rig = float(self.cfg['terreno'].get('rigidez_lateral', 3.0))
+            if rig > 0:
+                f_lat = F * (gx * lat.x + gy * lat.y)
+                deriva = max(-0.5, min(0.5, f_lat / (self.massa * G * cos_incl) / rig))
+            proj = 1.0 / math.sqrt(1.0 + pa * pa)
         self.ordem = (self.ordem + 1) % n
         for k in range(n):
             i = (k + self.ordem) % n
@@ -432,12 +505,16 @@ class Mundo:
                 self.no_ar[i] -= dt
                 continue
             tf = self._fator_tracao(p.x, p.y)
+            Ni = Ns[i] if Ns else N
             # --- lateral: pneu não escorrega de lado (até o limite de atrito)
             v = b.velocity_at_world_point(p)
             rx = r.cross(lat)
             meff = 1.0 / (invm + rx * rx * invI)
-            J = -v.dot(lat) * meff
-            jmax = self.mu_lat * tf * N * dt
+            if deriva:
+                J = -(v.dot(lat) - deriva * abs(v.dot(f))) * meff     # deixa escorregar morro abaixo
+            else:
+                J = -v.dot(lat) * meff
+            jmax = self.mu_lat * tf * Ni * dt
             J = max(-jmax, min(jmax, J))
             b.apply_impulse_at_world_point(lat * J, p)
             # --- longitudinal
@@ -446,21 +523,26 @@ class Mundo:
             rx = r.cross(f)
             meff = 1.0 / (invm + rx * rx * invI)
             if mot.livre():
-                # roda solta: acompanha o chão, só resistência ao rolamento
-                J = -vl * meff * min(1.0, 3.0 * dt)
+                if g2 > 0:
+                    # na rampa a redução do motor parado segura a roda (até atrito_reducao_N)
+                    jr = float(mot.cfg.get('atrito_reducao_N', 3.0)) * 1000.0 * dt
+                    J = max(-jr, min(jr, -vl * meff))
+                else:
+                    # roda solta: acompanha o chão, só resistência ao rolamento
+                    J = -vl * meff * min(1.0, 3.0 * dt)
                 b.apply_impulse_at_world_point(f * J, p)
-                mot.set_vel_superficie(vl)
+                mot.set_vel_superficie(vl / proj)
                 continue
-            w = mot.vel_superficie()
+            w = mot.vel_superficie() * proj      # na rampa, o robô anda na horizontal só cos(θ) disso
             J = (w - vl) * meff
-            jf = self.mu * tf * N * dt
+            jf = self.mu * tf * Ni * dt
             jm = mot.forca_max * dt
             if abs(J) <= min(jf, jm):
                 b.apply_impulse_at_world_point(f * J, p)
             elif jm < jf:
                 Ja = math.copysign(jm, J)
                 b.apply_impulse_at_world_point(f * Ja, p)
-                mot.set_vel_superficie(vl + Ja / meff)     # motor afoga: encoder segue o chão
+                mot.set_vel_superficie((vl + Ja / meff) / proj)     # motor afoga: encoder segue o chão
             else:
                 b.apply_impulse_at_world_point(f * math.copysign(jf, J), p)   # patina
 
@@ -468,6 +550,8 @@ class Mundo:
         dt = dt or self.DT
         for m in self.motores:
             m.atualiza_controle(dt)
+        if self.com_niveis:
+            self._atualiza_plano()
         self._rodas(dt)
         self.space.step(dt)
         for m in self.motores:
@@ -504,20 +588,35 @@ class Mundo:
         objetos = {}        # forma -> [distância mais perto, peso dos raios que batem nela]
         total = 0.0
         pontos = []         # para a janela: (ângulo, distância ou None)
+        if self.com_niveis:
+            # altura do sensor e inclinação do robô: o feixe sobe/desce com ele
+            h0, pa, pb = self.plano
+            z0 = h0 + pa * sc['x'] + pb * sc['y'] + float(sc.get('altura_mm', pr.get('altura_mm', 50)))
         for i in range(n):
             k = -1.0 + 2.0 * i / (n - 1)
             a = a0 + k * meia
             peso = math.exp(-1.2 * k * k)
             total += peso
             u = Vec2d(math.cos(a), math.sin(a))
-            q = self.space.segment_query_first(p0, p0 + u * (alcance + 200), 0, filtro)
-            if q is not None and k != 0 and abs(u.dot(q.normal)) < math.cos(math.radians(72)):
-                q = None    # retorno de superfície muito rasante (parede lateral do corredor) é fraco
-            d = (q.point - p0).length if q is not None else None
-            pontos.append((a, d))
-            if q is None:
-                continue
-            o = objetos.setdefault(q.shape, [d, 0.0])
+            if self.com_niveis:
+                rel = math.radians(sc['angulo']) + k * meia
+                q = self._raio_3d(p0, u, alcance + 200, z0, pa * math.cos(rel) + pb * math.sin(rel), k, meia)
+                d, chave = (q[0], q[2]) if q else (None, None)
+                pontos.append((a, d))
+                if q is None:
+                    continue
+                d = q[1]          # o sensor mede ao longo do feixe inclinado
+                peso *= q[3]
+            else:
+                q = self.space.segment_query_first(p0, p0 + u * (alcance + 200), 0, filtro)
+                if q is not None and k != 0 and abs(u.dot(q.normal)) < math.cos(math.radians(72)):
+                    q = None    # retorno de superfície muito rasante (parede lateral do corredor) é fraco
+                d = (q.point - p0).length if q is not None else None
+                pontos.append((a, d))
+                if q is None:
+                    continue
+                chave = q.shape
+            o = objetos.setdefault(chave, [d, 0.0])
             o[0] = min(o[0], d)
             o[1] += peso
         melhor = None
@@ -533,6 +632,86 @@ class Mundo:
         d += self.rng_vl53.gauss(0, float(pr['ruido_mm']) + melhor * float(pr['ruido_percentual']) / 100.0)
         return max(0, int(round(d)))
 
+    def _raio_3d(self, p0, u, comp, z0, sb, k, meia):
+        """Um raio do VL53 num mapa com rampa/escada. O feixe sai a z0 mm de altura e sobe sb mm
+        por mm andado na horizontal. Bate na primeira parede que ele pega na altura (a parede vai
+        do piso mais baixo dos dois lados até ALTURA_PAREDE acima do mais alto) ou no piso, se
+        o piso subir até ele antes (o pé da rampa visto de baixo). Se o meio do feixe passa por
+        cima (ou por baixo) da parede, a parte do cone que abre para baixo (meia = metade do cone)
+        ainda pode pegar nela, com o sinal proporcional. Devolve (distância na horizontal,
+        distância ao longo do feixe, o que bateu, fração do sinal) ou None."""
+        rasante = math.cos(math.radians(72))
+        piso = self._raio_piso(p0, u, comp, z0, sb)
+        filtro = pymunk.ShapeFilter(mask=CAT_PAREDE)
+        hits = sorted(self.space.segment_query(p0, p0 + u * comp, 0, filtro), key=lambda q: q.alpha)
+        e = self.mapa.meia_parede + 2
+        tg = math.tan(meia)
+        for q in hits:
+            if q.shape is None:
+                continue
+            dh = q.alpha * comp
+            if piso is not None and dh > piso[0]:
+                break
+            z = z0 + sb * dh
+            nx, ny = q.normal.x, q.normal.y
+            frente = self.altura(q.point.x + nx * 2, q.point.y + ny * 2)
+            atras = (q.point.x - nx * (2 * e), q.point.y - ny * (2 * e))
+            outro = self.altura(*atras) if self._lad_em(*atras) else frente
+            pe, topo = min(frente, outro) - 1, max(frente, outro) + M.ALTURA_PAREDE
+            s = dh * tg                      # meia abertura do cone na vertical, ali
+            if z > topo:
+                frac = (topo - (z - s)) / (2 * s) if s > 0 else 0.0
+            elif z < pe:
+                frac = ((z + s) - pe) / (2 * s) if s > 0 else 0.0
+            else:
+                frac = 1.0
+            if frac <= 0:
+                continue        # o feixe passa inteiro por cima/por baixo desta parede
+            if k != 0 and abs(u.dot(q.normal)) < rasante:
+                return None
+            return dh, dh * math.sqrt(1 + sb * sb), q.shape, frac
+        if piso is None:
+            return None
+        d, gx, gy = piso
+        # ângulo entre o feixe e a normal do piso
+        cosi = abs(-gx * u.x - gy * u.y + sb) / math.sqrt((1 + gx * gx + gy * gy) * (1 + sb * sb))
+        if k != 0 and cosi < rasante:
+            return None
+        return d, d * math.sqrt(1 + sb * sb), 'piso', 1.0
+
+    def _raio_piso(self, p0, u, comp, z0, sb):
+        """Onde o feixe encontra o piso (na escada, o plano da quina dos degraus): (distância na
+        horizontal, gradiente do piso ali) ou None. Anda ladrilho por ladrilho: em cada um o
+        piso é um plano."""
+        T = M.TAM
+        ts = [0.0, comp]
+        for p, du in ((p0.x, u.x), (p0.y, u.y)):
+            if abs(du) > 1e-9:
+                k0, k1 = math.floor(p / T), math.floor((p + du * comp) / T)
+                for kk in range(min(k0, k1) + 1, max(k0, k1) + 1):
+                    t = (kk * T - p) / du
+                    if 0.0 < t < comp:
+                        ts.append(t)
+        ts.sort()
+        for t0, t1 in zip(ts, ts[1:]):
+            if t1 - t0 < 1e-6:
+                continue
+            tm = (t0 + t1) / 2
+            pm = p0 + u * tm
+            lc = self._lad_em(pm.x, pm.y)
+            if lc is None:
+                continue
+            gx, gy = self.mapa.gradiente(*lc)
+            gu = gx * u.x + gy * u.y
+            hm = self.mapa.altura_piso(pm.x, pm.y, self.niveis, plano=True)
+            e0 = z0 + sb * t0 - (hm + gu * (t0 - tm))
+            e1 = z0 + sb * t1 - (hm + gu * (t1 - tm))
+            if e0 <= 0:
+                return t0, gx, gy
+            if e1 <= 0:
+                return t0 + (t1 - t0) * e0 / (e0 - e1), gx, gy
+        return None
+
     def vl53_por_canal(self, canal):
         for i, sc in enumerate(self.cfg['vl53']):
             if canal_mux(sc['mux']) == canal:
@@ -546,10 +725,15 @@ class Mundo:
             p = b.local_to_world((lx, ly))
             return self.altura(p.x, p.y)
 
-        hf, hr = h(self.eixo_frente, 0), h(self.eixo_tras, 0)
-        hl, hd = h(0, self.lado_esq), h(0, self.lado_dir)
-        pitch = math.degrees(math.atan2(hf - hr, self.eixo_frente - self.eixo_tras))
-        roll = math.degrees(math.atan2(hd - hl, self.lado_esq - self.lado_dir))
+        if self.com_niveis:
+            _, pa, pb = self.plano
+            pitch = math.degrees(math.atan(pa))
+            roll = math.degrees(math.atan(-pb))
+        else:
+            hf, hr = h(self.eixo_frente, 0), h(self.eixo_tras, 0)
+            hl, hd = h(0, self.lado_esq), h(0, self.lado_dir)
+            pitch = math.degrees(math.atan2(hf - hr, self.eixo_frente - self.eixo_tras))
+            roll = math.degrees(math.atan2(hd - hl, self.lado_esq - self.lado_dir))
         for (t0, dur, ap, ar) in self.eventos_incl:
             s = math.sin(math.pi * min(1.0, (self.t - t0) / dur))
             pitch += ap * s

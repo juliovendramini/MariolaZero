@@ -91,7 +91,7 @@ simuladores (Line, Maze e Challenge): mudou um, copie para os outros e rode os t
 * `avalia.py` é o mesmo da Line (detecta a Maze por não ter `sim/resgate.py`); o da Line ganhou o
   `.ino` do Paçoca depois. Corrigiu algo comum? Leve para lá também.
 * Nomes que as metas em `desafios/desafios.json` usam: `total`, `lop`, `tempo`, `erro_programa`,
-  `svi`, `srd`, `sbv`, `ssn`, `vitimas` (= `svi`), `saida`, `erros`.
+  `svi`, `srd`, `sbv`, `ssn`, `srn` (rampas, desde 06/11), `vitimas` (= `svi`), `saida`, `erros`.
 * `ferramentas/labirinto_surpresa.py` gera os labirintos de M04–M06 (fácil/médio/difícil, semente).
 
 ## Robô (`robo.json`)
@@ -109,27 +109,31 @@ simuladores (Line, Maze e Challenge): mudou um, copie para os outros e rode os t
 * `cores_piso` na escala do firmware (branco 127 / IR 100; prata TCS ~200, IR ~80): estimados,
   trocar pelos lidos no robô.
 
-### `robo_maze2026.json` (29/10/2026): o robô do código da equipe
+### `robo_maze2026.json` (05/11/2026): o robô do código da equipe
 
 O código real da equipe fica fora deste repositório, em `Documents\Arduino\maze2026` (GitHub
-IzadoraVB/maze2026). Ele roda sem mudança com
-`python simulador.py --robo robo_maze2026.json --programa ../../maze2026/main.py`.
-A ligação veio do `defs.py` da equipe:
-* motores: Mariola canal 1 invertido; placas no `SERIAL2`: id 5 invertida na dianteira esquerda,
-  id 72 na direita, como os nomes do código (o Julio confirmou). O `velocidade_4x4`/`potencia_4x4`
-  da equipe manda a velocidade da esquerda para a 72 e a da direita para a 5. É um **bug do código
-  deles**, e o simulador reproduz: reto não muda nada, mas nas curvas as rodas da frente giram contra
-  as de trás. Não "conserte" no `robo.json`;
-* giroscópio no `SERIAL4`;
-* 4 VL53 laterais (borda esq `I2C1`, meio esq `I2C3`, meio dir `I2C6`, borda dir `I2C7`). Pelo Julio,
-  as bordas ficam na frente; elas estão 13 e 37 mm para dentro, o desconto que o código faz;
+IzadoraVB/maze2026, privado). Desde 04/11 a versão em uso é a **branch `adaptacao-claude`** (o
+`maze2026_simplificado` do professor, ajustado no robô real); a `main` parou em 03/11, com marcadores
+de conflito. O `main.py` da branch cai sem câmera (o `except` do import faz `tem_branco = True` e
+depois chama `tem_branco()`; com OpenCV, procura os `.png` em `/home/banana/maze2026`): para rodar,
+`professor/maze2026/simulador/main_sem_camera.py` troca só a detecção de vítimas. A ligação veio do
+`robo.py`/`sensores.py`/`constantes.py` da branch, que a equipe acertou no robô real em 04-05/11:
+* motores: Mariola canal 1 invertido; placas no `SERIAL2`: id **72** na dianteira esquerda, id **5**
+  invertida na direita (até 05/11 era o contrário, como os nomes do `defs.py` antigo; o Julio tinha
+  confirmado em 29/10, mas a equipe trocou no robô);
+* giroscópio no `SERIAL4`, **diminuindo para a direita** (`z_horario_positivo: false`; "o giroscópio
+  diminui ao girar à direita", medido pela equipe);
+* 5 VL53: borda esq `I2C1` (13 mm para dentro), meio esq `I2C3`, borda dir `I2C6`, meio dir `I2C7`
+  (37 mm para dentro: o código desconta do meio agora) e frente `I2C8` (posição estimada). Até 05/11
+  eram 4, com o I2C6 no meio e o I2C7 (−37) na borda direita;
 * para-choque P1/P8.
 
-Contagens: 940 por volta no Mariola e 1880 na placa desde 03/11/2026. Os 940 foram medidos no robô
-Boberto (Line), que tem o mesmo motor e a mesma roda de 70 mm; a placa é o dobro (x4 contra x2). Antes
-eram 481/962, deduzidos do código da equipe (1 cm = 1000/45,7): metade. Falta confirmar no robô da
-Maze. A calibração (16 no Mariola, 32 nas placas, do `calibracao_manual(32, -32)`) não mudou, então
-o robô ficou com metade da velocidade (~51 rpm livres).
+Contagens: 440 por volta no Mariola e 880 na placa desde 05/11/2026 (`CONTAGENS_POR_MM = 2` da
+equipe, ajustado no robô; ainda falta a volta da roda à mão). De 03/11 a 05/11 foram 940/1880 (medida
+do Boberto, que não valeu para este robô); antes, 481/962 (1 cm = 1000/45,7 do código antigo). A
+calibração (16 no Mariola, 32 nas placas, do `calibracao_manual(32, -32)`) não mudou: ~109 rpm livres.
+O `maze2026_simplificado` do professor ainda usa `CONTAGENS_POR_VOLTA = 940`: com este json ele anda
+o dobro do que pede.
 
 Conferido com os `movimentos.py` da equipe (com os 481 antigos; com 940 o robô anda metade):
 * andar 30 cm → 302 mm;
@@ -288,6 +292,42 @@ enxergam), pelo desenho e por `ponto_vitima()` (a vítima fica na face da parede
 "Parede −/+" (1 mm, Shift 0,5 mm). O exemplo, semente 1, no `exemplo1` com parede de 6 mm: 415
 (322,3 s); com 15 mm: 415 (321,9 s). Mudar a espessura não mexe na grade: os ladrilhos continuam
 com 300 mm de eixo a eixo.
+
+## Rampa e escada que mudam o nível (06/11/2026)
+
+Pedido do Julio: rampa e escada de um ladrilho, até 25°, com o ângulo escolhido no mapa, e **sem
+passagem por baixo das áreas altas** (o mapa do programa da equipe continua uma matriz 2D).
+
+* Mapa (`sim/mapa.py`): ladrilho com `terreno` `rampa`, ou `escada` com `sobe`, mais `graus` (padrão
+  15) e, na escada, `degrau_mm` (máximo 20, regra 3.4.6). A escada sem `sobe` é a antiga (efeito,
+  sobe e desce no ladrilho) e não mudou. `inclinacao()`, `desnivel()`, `degraus()` (espelho k em
+  (k − 1/2)·300/n, então a quina fica no ângulo), `laterais()`, `subida()`, `gradiente()`,
+  `altura_piso(x, y, niveis, plano=)`. `niveis()` dá a altura de cada ladrilho (busca a partir do
+  início em 0, atravessando as bordas sem parede; num inclinado, a da borda de baixo) e os conflitos;
+  fica em cache por uma chave com ladrilhos e paredes. `pode_passar()` não passa pelos lados da
+  rampa/escada; `validar()` avisa graus fora da regra, lado sem parede e alturas que não fecham.
+* Física (`sim/fisica.py`): tudo atrás de `Mundo.com_niveis` (o mapa tem rampa/escada). Sem isso a
+  conta é a de antes: referência 415, 320,6 s, conferida depois da mudança. Com isso:
+  `_atualiza_plano()` a cada passo (mínimos quadrados das alturas embaixo das 4 rodas;
+  `_altura_roda()` faz a roda encostar na quina do degrau), pitch/roll do giroscópio pelo plano, e
+  em `_rodas()` a mesma conta do simuladorLine de 04/11 (gravidade, peso nas rodas de baixo com
+  `geometria.altura_cg_mm` 45, deriva lateral com `terreno.rigidez_lateral` 3, velocidade da roda ×
+  cos), mais a redução segurando a roda solta (`motor_padrao.atrito_reducao_N`, 3 N; sem isso o
+  robô parado descia a rampa). VL53: `_raio_3d()`/`_raio_piso()` (altura do sensor `altura_mm`,
+  padrão 50; parede de min(pisos) a max(pisos) + 150 mm; o feixe que passa por cima ainda pega a
+  parede com a parte de baixo do cone, com o peso proporcional; piso da escada = plano das quinas).
+* Juiz: `rampas` (10 cada, `SRN` × 5 no bônus de saída, regra 2026 5.6.9/12), a escada nova conta como
+  escada (10, `SSN`). O `SRN` só aparece no `info` dos mapas com rampa (a linha do placar dos outros
+  não mudou); o `avalia.py` aceita `srn` nas metas.
+* Editor (`sim/gui.py`): ferramenta "Rampa/escada" (`_clique_nivel`, `_roda_nivel`): clique troca o
+  tipo e o lado que sobe, põe as paredes dos lados e abre as pontas; roda = graus, Shift+roda =
+  degrau. Desenho: `_desenha_nivel` (faixas e seta), área alta azulada com "+N mm".
+* `mapas/rampa_escada.json` (4 × 6): térreo, área alta a 109 mm, rampa de 20° em (1,1) e escada de 20°
+  em (1,4) (6 degraus de 18,2 mm). Exemplo, semente 1: sobe a rampa, desce a escada e volta: 160
+  (SVI 2, rampa 10, escada 10, 0 LoP, 164,8 s).
+* Testes sem programa (scripts do scratchpad, potência 40): na rampa a velocidade cai para ~cos 20° e
+  o pitch vai a 20°; parado no meio da rampa escorrega 1,7 mm em 5 s; girar 90° no meio dela desce
+  ~100 mm; descendo a escada o robô desvia ~3° (solavancos dos degraus).
 
 ## Pasta de trabalho por rodada e o "erro no programa" falso (01/11/2026)
 

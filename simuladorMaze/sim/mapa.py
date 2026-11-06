@@ -29,7 +29,17 @@ DIREITA_DE = {v: k for k, v in ESQUERDA_DE.items()}
 ANGULO_DIR = {'L': 0.0, 'N': math.pi / 2, 'O': math.pi, 'S': -math.pi / 2}
 
 PISOS = ('branco', 'preto', 'prata', 'azul', 'vermelho')
-TERRENOS = ('', 'lombada', 'escada', 'detritos')
+TERRENOS = ('', 'lombada', 'escada', 'detritos', 'rampa')
+
+# Rampa e escada que mudam o nível do piso (regra 2026, 3.1.5 e 3.4.6-8): ocupam um ladrilho, com
+# 'sobe' (N/S/L/O, o lado mais alto) e 'graus'. A escada com 'sobe' tem degraus de no máximo
+# 'degrau_mm' (20 mm); a escada sem 'sobe' é a antiga, que sobe e desce no mesmo ladrilho.
+# Não há ladrilho por cima de outro: cada ladrilho tem uma altura só (Mapa.niveis()).
+GRAUS_PADRAO = 15.0
+GRAUS_MAX = 25.0          # rampa e escada fora da zona de perigo
+GRAUS_MAX_ZONA = 30.0     # escada dentro da zona de perigo (3.5.6)
+DEGRAU_MAX = 20.0
+ALTURA_PAREDE = 150.0     # a parede passa pelo menos 15 cm do piso mais alto dos dois lados
 
 # cores dos anéis dos alvos cognitivos e seus valores
 VALOR_ANEL = {'preto': -2, 'vermelho': -1, 'amarelo': 0, 'verde': 1, 'azul': 2}
@@ -81,6 +91,8 @@ class Mapa:
         self.semente = 1
         self.espessura_parede = ESPESSURA_PADRAO
         self.caminho = None
+        self._niveis_chave = None
+        self._niveis = ({}, [])
         self.cerca_perimetro()
 
     # ------------------------------------------------------------------ básicos
@@ -223,6 +235,127 @@ class Mapa:
         degrau = int(s / (comp / n_degraus)) + (1 if s > 0 else 0)
         return min(degrau, n_degraus) * altura / n_degraus
 
+    # ------------------------------------------------------- níveis (rampa e escada)
+    def inclinacao(self, l, c):
+        """(sobe, graus) de um ladrilho que muda o nível (rampa, ou escada com 'sobe'); senão None."""
+        lad = self.lad(l, c)
+        t = lad.get('terreno')
+        if t == 'rampa' or (t == 'escada' and lad.get('sobe')):
+            return lad.get('sobe', 'N'), float(lad.get('graus', GRAUS_PADRAO))
+        return None
+
+    def tem_niveis(self):
+        return any(self.inclinacao(l, c) for (l, c) in self.ladrilhos)
+
+    def desnivel(self, l, c):
+        """Quanto o piso sobe de uma borda à outra do ladrilho inclinado (mm)."""
+        inc = self.inclinacao(l, c)
+        return TAM * math.tan(math.radians(inc[1])) if inc else 0.0
+
+    def degraus(self, l, c):
+        """(número de degraus, altura de cada um) da escada que muda o nível."""
+        H = self.desnivel(l, c)
+        d = min(max(float(self.lad(l, c).get('degrau_mm', DEGRAU_MAX)), 1.0), DEGRAU_MAX)
+        n = max(1, math.ceil(H / d - 1e-9))
+        return n, H / n
+
+    def laterais(self, l, c):
+        """Lados do ladrilho inclinado por onde não se passa (ficam entre paredes)."""
+        inc = self.inclinacao(l, c)
+        return (ESQUERDA_DE[inc[0]], DIREITA_DE[inc[0]]) if inc else ()
+
+    def subida(self, l, c, x, y):
+        """Distância (mm) do ponto até a borda de baixo do ladrilho inclinado, de 0 a TAM."""
+        sobe = self.inclinacao(l, c)[0]
+        x0, y0 = c * TAM, self.altura_mm - (l + 1) * TAM
+        s = {'N': y - y0, 'S': y0 + TAM - y, 'L': x - x0, 'O': x0 + TAM - x}[sobe]
+        return min(max(s, 0.0), TAM)
+
+    def gradiente(self, l, c):
+        """Inclinação média do piso do ladrilho (dh/dx, dh/dy), x para leste e y para norte."""
+        inc = self.inclinacao(l, c)
+        if not inc:
+            return 0.0, 0.0
+        t = math.tan(math.radians(inc[1]))
+        return {'N': (0.0, t), 'S': (0.0, -t), 'L': (t, 0.0), 'O': (-t, 0.0)}[inc[0]]
+
+    def _bordas(self, l, c, base):
+        """Altura do piso em cada borda do ladrilho; None nos lados da rampa/escada."""
+        inc = self.inclinacao(l, c)
+        if not inc:
+            return {d: base for d in DIRECOES}
+        b = {d: None for d in self.laterais(l, c)}
+        b[inc[0]] = base + self.desnivel(l, c)
+        b[OPOSTA[inc[0]]] = base
+        return b
+
+    def niveis(self):
+        """({(l, c): altura do piso em mm}, avisos). Num ladrilho inclinado vale a altura da borda
+        de baixo. Sai do início (altura 0) e passa pelas bordas sem parede: o vizinho continua na
+        altura da borda. Ladrilho que não se alcança começa outro pedaço, também na altura 0."""
+        chave = (self.linhas, self.colunas, tuple(self.inicio), repr(sorted(self.ladrilhos.items())),
+                 tuple(map(tuple, self.paredes_h)), tuple(map(tuple, self.paredes_v)))
+        if self._niveis_chave == chave:
+            return self._niveis
+        base = {}
+        avisos = []
+        conflitos = []
+        todos = [tuple(self.inicio)] + [(l, c) for l in range(self.linhas) for c in range(self.colunas)]
+        for ini in todos:
+            if ini in base or not self.dentro(*ini):
+                continue
+            base[ini] = 0.0
+            fila = [ini]
+            while fila:
+                l, c = fila.pop(0)
+                bordas = self._bordas(l, c, base[(l, c)])
+                for d in DIRECOES:
+                    h = bordas[d]
+                    nl, nc = l + DELTA[d][0], c + DELTA[d][1]
+                    if h is None or self.parede(l, c, d) or not self.dentro(nl, nc):
+                        continue
+                    inc = self.inclinacao(nl, nc)
+                    od = OPOSTA[d]
+                    if inc is None or od == OPOSTA[inc[0]]:
+                        b = h                                   # plano, ou entra pela borda de baixo
+                    elif od == inc[0]:
+                        b = h - self.desnivel(nl, nc)           # entra pela borda de cima
+                    else:
+                        continue                                # lado da rampa (aviso no validar)
+                    if (nl, nc) not in base:
+                        base[(nl, nc)] = b
+                        fila.append((nl, nc))
+                    elif abs(base[(nl, nc)] - b) > 1.0 and (nl, nc) not in conflitos:
+                        conflitos.append((nl, nc))
+        if conflitos:
+            avisos.append('as alturas não fecham em ' + ', '.join(f'({l},{c})' for l, c in conflitos[:6])
+                          + (' ...' if len(conflitos) > 6 else '') + ': falta parede entre pisos de alturas '
+                          'diferentes, ou há rampas/escadas com desníveis diferentes no mesmo caminho')
+        self._niveis_chave = chave
+        self._niveis = (base, avisos)
+        return self._niveis
+
+    def altura_piso(self, x, y, niveis=None, plano=False):
+        """Altura (mm) do piso no ponto. plano=True: na escada, o plano que encosta na quina dos
+        degraus (o ângulo da escada) em vez dos degraus."""
+        lc = self.ladrilho_em(x, y)
+        if lc is None:
+            return 0.0
+        if niveis is None:
+            niveis = self.niveis()[0]
+        h = niveis.get(lc, 0.0)
+        inc = self.inclinacao(*lc)
+        if inc:
+            s = self.subida(lc[0], lc[1], x, y)
+            if plano or self.terreno(*lc) == 'rampa':
+                return h + s * math.tan(math.radians(inc[1]))
+            # degraus: espelho k em (k - 1/2) x TAM/n, então a quina dos degraus fica no ângulo
+            n, hd = self.degraus(*lc)
+            return h + hd * min(n, max(0, math.floor(s / (TAM / n) + 0.5)))
+        if self.terreno(*lc) == 'escada':
+            h += self.perfil_escada(lc[0], lc[1], x, y)
+        return h
+
     def linhas_lombada(self, l, c):
         """Segmentos de lombada dentro do ladrilho."""
         lad = self.lad(l, c)
@@ -252,6 +385,8 @@ class Mapa:
             return False
         if preto_bloqueia and self.piso(nl, nc) == 'preto':
             return False
+        if d in self.laterais(l, c) or OPOSTA[d] in self.laterais(nl, nc):
+            return False            # pelo lado da rampa/escada não se passa
         return True
 
     def ladrilhos_lineares(self):
@@ -289,10 +424,23 @@ class Mapa:
                 continue
             if not self.parede(l, c, d):
                 avisos.append(f'vítima em ({l},{c}) {d} sem parede')
-            if self.piso(l, c) in ('preto', 'prata', 'azul', 'vermelho') or self.terreno(l, c) in ('lombada', 'escada'):
+            if self.piso(l, c) in ('preto', 'prata', 'azul', 'vermelho') or \
+                    self.terreno(l, c) in ('lombada', 'escada', 'rampa'):
                 avisos.append(f'vítima em ({l},{c}) voltada para ladrilho especial (proibido pela regra 3.6.3)')
-        if self.piso(*self.inicio) != 'branco':
+        if self.piso(*self.inicio) != 'branco' or self.inclinacao(*self.inicio):
             avisos.append('o ladrilho de início deve ser comum')
+        for (l, c) in sorted(self.ladrilhos):
+            inc = self.inclinacao(l, c)
+            if not inc:
+                continue
+            nome = 'rampa' if self.terreno(l, c) == 'rampa' else 'escada'
+            gmax = GRAUS_MAX_ZONA if nome == 'escada' and self.zona(l, c) else GRAUS_MAX
+            if not 0 < inc[1] <= gmax:
+                avisos.append(f'{nome} em ({l},{c}) com {inc[1]:g}° (a regra deixa até {gmax:g}°)')
+            for d in self.laterais(l, c):
+                if not self.parede(l, c, d):
+                    avisos.append(f'{nome} em ({l},{c}) sem parede do lado {d}')
+        avisos += self.niveis()[1]
         alcancados = {tuple(self.inicio)}
         pilha = [tuple(self.inicio)]
         while pilha:

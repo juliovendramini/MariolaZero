@@ -199,7 +199,7 @@ exemplo não vale).
 | L03 | `seguidor_p.py` com velocidade e ganhos maiores | cumpre: 29 s (o original leva 40 s) |
 | L04 | `exemplo_aluno` | cumpre: 6 de 6 sem LoP |
 | L05, L06 | `exemplo_aluno` | cumpre: 6 de 6 sem LoP |
-| L07 | `exemplo_aluno` | cumpre: média 290,2 |
+| L07 | `exemplo_aluno` | cumpre: média 292,2 |
 | L08 | `exemplo_aluno` (esteira) | cumpre: 6 de 6 |
 | L09 | `exemplo_aluno` | cumpre: 6 de 6 com pelo menos 1 viva |
 | L10 | `exemplo_aluno` | cumpre no limite: 5 de 6 (na semente 4 só resgata 1 viva) |

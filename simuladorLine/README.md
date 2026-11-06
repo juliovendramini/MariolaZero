@@ -218,7 +218,8 @@ editor do rcj.cloud), com os caminhos, gaps e interseções de cada um. Mais tr�
 | **Início** | marca o ladrilho de início; clique de novo para trocar a direção de saída |
 | **Checkpoint** | marca/desmarca (o editor avisa se o ladrilho tem item pontuável) |
 | **Rampa** | sem rampa → sobe para N → L → S → O. Botão direito troca a inclinação (10°–25°) |
-| **Lombada** | põe uma lombada (1 cm) atravessada no caminho onde clicou; botão direito tira |
+| **Inclinação** | pista inclinada: sem → sobe para N → L → S → O. Botão direito troca os graus (3°–20°). Shift+clique copia a última inclinação escolhida (para inclinar um tabuleiro inteiro). Não é item e não muda de camada |
+| **Lombada** | põe uma lombada (1 cm) atravessada no caminho onde clicou; Shift+clique põe uma solta de 15 cm; a roda do mouse gira a mais perto (15° por vez) e Shift+roda muda o comprimento; botão direito tira |
 | **Obstáculo** | põe em cima da linha mais perto do clique (na área de resgate, onde clicou); botão direito tira; Shift+clique: solto/fixo; roda do mouse gira |
 | **Detritos** | +1/−1 palito solto no ladrilho; na área de resgate, põe o palito onde clicou e o botão direito tira o mais perto |
 | **Camada ± ** | ladrilhos de ponte ficam na camada 1 (por cima de um ladrilho da camada 0) |
@@ -234,6 +235,13 @@ menos de 8 ladrilhos, checkpoint em ladrilho com item, rampa acima de 25°, etc.
 nova (o simulador calcula a altura de cada ladrilho seguindo o caminho). Camada só é necessária para
 **ponte**: o ladrilho de cima vai na camada 1, na mesma célula de um ladrilho da camada 0. A ponte
 tem pilares de 25 x 25 mm nos cantos, que o robô de baixo pode acertar.
+
+**Pista inclinada** (`"inclinacao": {"sobe": "N", "graus": 5}` no ladrilho): diferente da rampa, a
+altura não segue o caminho. Ladrilhos vizinhos com a mesma inclinação (camada, sentido e graus) são um
+tabuleiro plano: a borda mais baixa dele fica no chão e cada ladrilho fica na altura do plano. Assim o
+robô pode atravessar de lado, voltar e passar de novo no mesmo lugar. Entrando de lado num tabuleiro
+inclinado que começa no chão, há um degrau na emenda (no meio da fileira de baixo, 150 mm x tan(graus)),
+como no campo de verdade.
 
 **Área de resgate:** a linha tem que chegar na entrada (vinda do ladrilho do lado de fora) e
 recomeçar no ladrilho do lado de fora da saída. O caminho conta a área como um passo só. O editor
@@ -252,6 +260,7 @@ Formato próprio (`mapas/*.json`, fácil de editar na mão):
    {"x": 0, "y": 5, "z": 0, "tipo": "tile-0", "rot": 0},
    {"x": 1, "y": 5, "z": 0, "tipo": "tile-0", "rot": 0, "lombadas": [{"pos": 0.35, "eixo": "LO"}]},
    {"x": 7, "y": 4, "z": 0, "tipo": "tile-0", "rot": 90, "rampa": {"sobe": "N", "graus": 25}},
+   {"x": 5, "y": 1, "z": 0, "tipo": "tile-0", "rot": 0, "inclinacao": {"sobe": "N", "graus": 5}},
    {"x": 3, "y": 5, "z": 0, "tipo": "tile-0", "rot": 0,
     "obstaculos": [{"u": 150, "v": 150, "larg": 60, "comp": 60, "altura": 150, "fixo": false, "massa_kg": 1.5}]},
    {"x": 6, "y": 5, "z": 0, "tipo": "tile-0", "rot": 0, "checkpoint": true, "detritos": 3}
@@ -261,6 +270,12 @@ Formato próprio (`mapas/*.json`, fácil de editar na mão):
 Grade: `x` = coluna, `y` = linha (0 em cima), `z` = camada. `rot` em graus no sentido horário.
 Direções: N (cima), L (direita), S (baixo), O (esquerda). Obstáculo: `u`, `v` em mm a partir do
 canto sudoeste do ladrilho.
+
+Lombada: `{"pos": 0.35, "eixo": "LO"}` é a atravessada no ladrilho inteiro (`eixo` = direção em que
+o robô anda, `pos` = fração do ladrilho). A solta, em qualquer lugar e ângulo (cruzadas, em diagonal),
+é `{"u": 150, "v": 120, "ang": 45, "comp": 180}`: centro em mm a partir do canto sudoeste do ladrilho,
+ângulo em graus (anti-horário a partir do leste) e comprimento em mm. Ela pode passar um pouco para o
+ladrilho vizinho. Um ladrilho pode ter as duas.
 
 A área de resgate vai em `zona_resgate` (as células dela não têm ladrilhos no arquivo):
 
@@ -454,6 +469,18 @@ Exemplo dessas montagens: o robô de uma equipe em `professor/` (privado).
 * **Rampas** (até 25°): a gravidade puxa o robô na subida e na descida. O giroscópio mostra a
   inclinação. O robô se apoia nos contatos mais altos, então no pé e na crista da rampa ele fica
   inclinado e o sensor muda de altura.
+* **Piso inclinado** (rampa, pista inclinada, gangorra), desde 04/11/2026:
+  * **Peso nas rodas de baixo:** a roda de baixo tem mais peso e aderência; a de cima patina antes
+    (subindo uma rampa forte, as rodas da frente; atravessando de lado, as de cima). A conta usa
+    `geometria.altura_cg_mm` (altura do centro de massa, padrão 45). Num eixo só subindo reto (Paçoca),
+    quem segura a diferença é a roda boba.
+  * **Escorregão lateral:** andando com o piso inclinado de lado, a roda escorrega morro abaixo num
+    ângulo de deriva = (força lateral da gravidade / peso) / `terreno.rigidez_lateral` (padrão 3; 0
+    desliga). O robô anda "de caranguejo" e vira para baixo. Parado, não escorrega (o atrito segura),
+    a não ser que a inclinação passe do atrito. Robô do 4x4 andando reto 1,4 m de lado na pista
+    inclinada (só motores, sem seguir linha): desce 50 mm a 0° (diferença natural dos motores), 187 mm a
+    10° e 296 mm a 20°, virando 4° a 6° para baixo.
+  * No piso plano nada disso entra: as contas são as de antes.
 * **Gangorra**: gira no meio do ladrilho quando o centro do robô passa do eixo. Começa inclinada para
   o lado de quem chega. Num LoP, a gangorra à frente é virada a favor do robô, como diz a regra.
 * **Ponte**: o robô de baixo passa por baixo do ladrilho da camada 1 e pode bater nos pilares.

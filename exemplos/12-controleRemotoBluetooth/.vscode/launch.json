@@ -10,6 +10,13 @@
             "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/envia.ps1"],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Enviar para o robô (Linux/macOS: envia.sh)",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "bash envia.sh",
+            "cwd": "${workspaceFolder}"
         }
     ]
 }

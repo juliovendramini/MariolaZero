@@ -37,6 +37,7 @@ class Juiz:
         self.azul_parado = 0.0
         self.lombadas = set()
         self.escadas = set()
+        self.rampas = set()
         self.identificadas = {}     # idx -> t
         self.kits_vitima = {}       # idx -> quantidade válida entregue
         self.kits_vistos = 0
@@ -134,19 +135,22 @@ class Juiz:
             self.atual = novo
             self.falta_progresso(f'saiu do azul {self.azul_pendente} sem parar 5 s')
             return
-        # travessias de lombada / escada
-        for lc, tipo in ((ant, 'lombada'), (ant, 'escada')):
-            if m.terreno(*lc) == tipo:
-                ent = self.entrada.get(lc)
-                if ent is not None and ent != novo:
-                    if tipo == 'lombada' and lc not in self.lombadas:
-                        self.lombadas.add(lc)
-                        self.log(f'lombada {lc}', 5)
-                    if tipo == 'escada' and lc not in self.escadas:
-                        dl = abs(ent[0] - novo[0]) + abs(ent[1] - novo[1])
-                        if dl == 2:
-                            self.escadas.add(lc)
-                            self.log(f'escada {lc}', 10)
+        # travessias de lombada / escada / rampa (a escada e a rampa que mudam o nível valem 10 por
+        # ladrilho, subindo ou descendo: o robô entra por uma ponta e sai pela outra)
+        tipo = m.terreno(*ant)
+        ent = self.entrada.get(ant)
+        if tipo in ('lombada', 'escada', 'rampa') and ent is not None and ent != novo:
+            lc = ant
+            if tipo == 'lombada' and lc not in self.lombadas:
+                self.lombadas.add(lc)
+                self.log(f'lombada {lc}', 5)
+            dl = abs(ent[0] - novo[0]) + abs(ent[1] - novo[1])
+            if tipo == 'escada' and lc not in self.escadas and dl == 2:
+                self.escadas.add(lc)
+                self.log(f'escada {lc}' + (' (sobe/desce de nível)' if m.inclinacao(*lc) else ''), 10)
+            if tipo == 'rampa' and lc not in self.rampas and dl == 2:
+                self.rampas.add(lc)
+                self.log(f'rampa {lc}', 10)
         self.entrada[novo] = ant
         self.atual = novo
         if novo != tuple(m.inicio):
@@ -305,13 +309,18 @@ class Juiz:
         p['azuis'] = sum(max(0, 30 - 10 * (n - 1)) for n in self.visitas_azul.values())
         p['lombadas'] = 5 * len(self.lombadas)
         p['escadas'] = 10 * len(self.escadas)
+        if self.rampas:
+            p['rampas'] = 10 * len(self.rampas)
         p['erros'] = -5 * self.erros
         svi = len(self.identificadas)
         srd = sum(self._validos(i) for i in self.kits_vitima)
         sbv = len(self.azul_ok)
         ssn = len(self.escadas)
+        srn = len(self.rampas)
         p['confiabilidade'] = max(0, svi * 10 + srd * 10 + sbv * 10 - self.lop * 15)
-        p['saída'] = (svi * 10 + sbv * 10 + ssn * 5) if self.saida else 0
+        p['saída'] = (svi * 10 + sbv * 10 + ssn * 5 + srn * 5) if self.saida else 0
         total = max(0, sum(p.values()))
         info = {'SVI': svi, 'SRD': srd, 'SBV': sbv, 'SSN': ssn, 'LoP': self.lop}
+        if any(m.terreno(*lc) == 'rampa' for lc in m.ladrilhos):
+            info['SRN'] = srn       # só nos mapas com rampa (a linha do placar dos outros não muda)
         return total, p, info

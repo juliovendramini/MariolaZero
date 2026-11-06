@@ -1,5 +1,5 @@
 {
-  "_comentario": "Robô da equipe Maze 2026 (repositório maze2026, código de 28/10/2026), montado a partir do robo.json com a ligação do defs.py da equipe. Unidades: mm, graus, kg. Robô: x para frente, y para a esquerda, ângulos anti-horários (0 = frente, 90 = esquerda). O que não está no código da equipe ficou igual ao robo.json e continua estimado.",
+  "_comentario": "Robô da equipe Maze 2026 (repositório maze2026, branch adaptacao-claude, commit fa547c3 de 05/11/2026), montado a partir do robo.json. A ligação é a que a equipe acertou no robô real (robo.py e sensores.py); até 05/11 era a do defs.py de 29/10. Unidades: mm, graus, kg. Robô: x para frente, y para a esquerda, ângulos anti-horários (0 = frente, 90 = esquerda). O que não está no código da equipe ficou igual ao robo.json e continua estimado.",
   "nome": "Maze 2026 (código da equipe)",
 
   "geometria": {
@@ -17,19 +17,19 @@
     "atrito_parede": 0.25
   },
 
-  "_motores": "Do defs.py/movimentos.py da equipe: motores.direcao_motor(1, INVERTIDO) -> canal 1 com sentido -1; a placa id 5 (motor_esq_frente, invertida) fica na dianteira esquerda e a id 72 (motor_dir_frente) na dianteira direita (confirmado pelo Julio em 29/10/2026). As placas no SERIAL2 a 250000 bps. ATENÇÃO, bug do código da equipe: velocidade_4x4/potencia_4x4 mandam a velocidade da esquerda para a id 72 (direita) e vice-versa; reto não muda nada, mas nas curvas as rodas da frente giram contra as de trás.",
+  "_motores": "Do robo.py da equipe (05/11/2026): motores.direcao_motor(1, INVERTIDO) -> canal 1 com sentido -1; a placa id 72 (motor_esq_frente) fica na dianteira esquerda e a id 5 (motor_dir_frente, invertida) na dianteira direita. As placas no SERIAL2 a 250000 bps. Até 05/11 era o contrário (id 5 à esquerda, como os nomes do defs.py antigo, e o Julio tinha confirmado em 29/10): a equipe trocou no robô real.",
   "motores": [
     {"nome": "traseira_esquerda", "x": -55, "y":  75, "controlador": "mariola", "canal": 1, "sentido": -1},
     {"nome": "traseira_direita",  "x": -55, "y": -75, "controlador": "mariola", "canal": 2, "sentido":  1},
-    {"nome": "dianteira_esquerda","x":  55, "y":  75, "controlador": "placa", "porta": "SERIAL2", "id": 5,  "sentido": -1},
-    {"nome": "dianteira_direita", "x":  55, "y": -75, "controlador": "placa", "porta": "SERIAL2", "id": 72, "sentido":  1}
+    {"nome": "dianteira_esquerda","x":  55, "y":  75, "controlador": "placa", "porta": "SERIAL2", "id": 72, "sentido":  1},
+    {"nome": "dianteira_direita", "x":  55, "y": -75, "controlador": "placa", "porta": "SERIAL2", "id": 5,  "sentido": -1}
   ],
 
   "motor_padrao": {
     "_comentario": "Motor de aspirador Xiaomi. Contagens por volta da roda = pulsos_encoder_motor x reducao x multiplicador (Mariola x2: um canal nas duas bordas; placa x4: quadratura). rpm_livre = rotação da roda com PWM 100%; no PID o comando 100 = 80% disso.",
-    "_deduzido_do_codigo": "Contagens (03/11/2026): ~940 por volta da roda no Mariola, medido pela equipe Boberto 2026 (mesmo motor e mesma roda de 70 mm); placa = o dobro (x4 contra x2), 1880. Até 03/11 eram 481/962, tirados do movimentos.py da equipe (1 cm = 1000/45,7 contagens): metade do medido. A CONFIRMAR no robô da Maze: girar uma roda de trás 1 volta à mão e ler o angulo_motor(). As placas recebem calibracao_manual(32, -32); supondo que a equipe igualou a velocidade da frente com a de trás, o Mariola teria calibração 16. Com 940/1880, essa calibração dá ~51 rpm livres (antes ~100). Os campos de baixo têm prioridade sobre pulsos x redução e rpm_livre.",
-    "contagens_por_volta_mariola": 940,
-    "contagens_por_volta_placa": 1880,
+    "_deduzido_do_codigo": "Contagens (05/11/2026): constantes.py da equipe, CONTAGENS_POR_MM = 2, ajustado no robô real: 2 x pi x 70 = 440 por volta da roda no Mariola; placa = o dobro (x4 contra x2), 880. De 03/11 a 05/11 eram 940/1880 (medida do robô Boberto, que não valeu para este); antes, 481/962 (1 cm = 1000/45,7 do movimentos.py antigo). A CONFIRMAR: girar uma roda de trás 1 volta à mão e ler o angulo_motor(). As placas recebem calibracao_manual(32, -32); supondo que a equipe igualou a velocidade da frente com a de trás, o Mariola teria calibração 16. Com 440/880, essa calibração dá ~109 rpm livres. Os campos de baixo têm prioridade sobre pulsos x redução e rpm_livre.",
+    "contagens_por_volta_mariola": 440,
+    "contagens_por_volta_placa": 880,
     "calibracao_mariola": 16,
     "calibracao_placa": 32,
     "pulsos_encoder_motor": 17,
@@ -49,12 +49,13 @@
   },
   "latencia_serial_ms": 1.0,
 
-  "_vl53": "4 VL53L0X nas laterais (threads/sensores_I2C.py da equipe). 'meio' no meio da lateral, 'borda' perto da frente (confirmado pelo Julio em 29/10/2026; x e y A MEDIR). O código desconta 13 mm da borda esquerda e 37 mm da direita: aqui as bordas ficam esse tanto para dentro, para lerem a mais o mesmo que no robô.",
+  "_vl53": "5 VL53L0X (sensores.py da equipe, 05/11/2026). 'meio' no meio da lateral, 'borda' perto da frente (confirmado pelo Julio em 29/10/2026; x e y A MEDIR); a frente no meio do para-choque (estimado). O código desconta 13 mm da borda esquerda (I2C1) e 37 mm do meio direito (I2C7): aqui esses dois ficam esse tanto para dentro, para lerem a mais o mesmo que no robô. Até 05/11: 4 laterais, com o I2C6 no meio direito e o I2C7 (com os 37 mm) na borda direita.",
   "vl53": [
     {"nome": "borda_esq", "mux": "I2C1", "x": 70, "y":  72, "angulo":  90},
     {"nome": "meio_esq",  "mux": "I2C3", "x":  0, "y":  85, "angulo":  90},
-    {"nome": "meio_dir",  "mux": "I2C6", "x":  0, "y": -85, "angulo": -90},
-    {"nome": "borda_dir", "mux": "I2C7", "x": 70, "y": -48, "angulo": -90}
+    {"nome": "borda_dir", "mux": "I2C6", "x": 70, "y": -85, "angulo": -90},
+    {"nome": "meio_dir",  "mux": "I2C7", "x":  0, "y": -48, "angulo": -90},
+    {"nome": "frente",    "mux": "I2C8", "x": 90, "y":   0, "angulo":   0}
   ],
   "vl53_params": {
     "alcance_mm": 1200,
@@ -78,7 +79,8 @@
     "_comentario": "escala: unidades por grau (1 = graus inteiros, 10 = décimos). z_continuo=false faz Z voltar entre -180 e 180.",
     "escala": 1,
     "z_continuo": true,
-    "z_horario_positivo": true,
+    "_sentido": "robo.py da equipe (05/11/2026): 'o giroscópio diminui ao girar à direita', medido no robô. Até 05/11 era true.",
+    "z_horario_positivo": false,
     "eixo_inclinacao_frente": "x",
     "deriva_graus_min": 0.6,
     "ruido_graus": 0.15,

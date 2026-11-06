@@ -33,7 +33,7 @@ O programa roda em processo separado (`rodar.py`; para `.ino`, `rodar_pacoca.py`
 
 ```bash
 python simulador.py --sem-janela --velocidade 8 --mapa mapas/completo.json
-#   exemplo em Python, robô 4x4 → TOTAL 295, rodada de 73,2 s (igual a 2x)
+#   exemplo em Python, robô 4x4 → TOTAL 295, rodada de 71,3 s (igual a 2x; 73,2 s antes do peso nas rodas de 04/11)
 python simulador.py --programa exemplo_pacoca/exemplo_pacoca.ino --sem-janela --velocidade 4 --semente 1
 #   Paçoca, mapa de treino → TOTAL 160, 0 LoP
 #   com --mapa mapas/completo.json --tempo 300 → 230 (3 LoP), chega na fita vermelha
@@ -45,7 +45,7 @@ python avalia.py --desafio L04 --programa exemplo_aluno/main.py
   arquivo) sai um pouco diferente das seguintes.
 * O Paçoca precisa de g++ (Windows: pacote portátil, MSYS2 ucrt64 ou w64devkit; `PACOCA_GXX` força um).
 * Referência do exemplo nos desafios (31/10, com o VL53 em leque): L04-L06, L08, L09, L11 6/6;
-  L07 média 290,2; L10 5/6; L12 4/6; **L13 2/6 (em aberto)**. Antes do leque o L13 era 3/6 (a pista
+  L07 média 292,2 (290,2 antes de 04/11); L10 5/6; L12 4/6; **L13 2/6 (em aberto)**. Antes do leque o L13 era 3/6 (a pista
   1 terminava). Na pista 1 o VL53 da frente agora vê o obstáculo a 67 mm (antes, 58), o contorno "às
   cegas" do exemplo (170 + 420 mm) começa antes e não reencontra a linha. A pista 3, que também
   piorou, não foi investigada.
@@ -282,6 +282,48 @@ posições de todas em `mapa.zona['vitimas']` (u, v a partir do `retangulo_zona(
 * Não pontuam (o juiz conta itens só nos ladrilhos). Referências sem mudança: 295 (`completo`) e
   220 (`curso_area`). Também deu 220 no `curso_area` com 2 obstáculos e 10 palitos na área.
 
+## Lombadas soltas e mapa da foto (04/11/2026)
+
+* `lombadas` aceita, além de `{'pos', 'eixo'}` (atravessada no ladrilho inteiro), `{'u', 'v', 'ang',
+  'comp'}`: centro em mm do canto sudoeste do ladrilho, graus anti-horário a partir do leste, comprimento
+  em mm. `Mapa.lombada_solta()` converte a antiga e `segmento_lombada()` dá o segmento no ladrilho
+  (ângulos múltiplos de 90° exatos, para a antiga dar o mesmo segmento de antes). Física (relevo,
+  solavanco), juiz e desenho já usavam `linhas_lombada()`, que agora vale para as duas. A janela desenha
+  as lombadas depois de todos os ladrilhos (uma solta pode passar para o vizinho). Editor: Shift+clique
+  põe uma solta de 15 cm; roda do mouse gira a mais perto (15°; a atravessada vira solta); Shift+roda
+  muda o comprimento (40 a 400 mm); botão direito tira a mais perto (distância até o segmento).
+* `mapas/pista_foto.json`: pista do mundial montada a partir de uma foto do Julio (ladrilhos oficiais
+  mais parecidos; início escolhido no zigue-zague (3, 2), a foto não mostra; o tabuleiro do fundo é
+  inclinado no campo real e aqui está reto, e na foto fica meio ladrilho deslocado; cilindros = 2
+  obstáculos de 10 x 10 x 15 cm; discos amarelos = checkpoints; 9 varetas brancas medidas na foto
+  retificada como lombadas soltas, cruzadas e em diagonal, duas atravessadas no gap). O caminho do
+  juiz fecha (43 passos). O exemplo faz 70 pontos com 18 LoPs nele (não foi feito para esta pista).
+  Referências depois da mudança: 295 (73,2 s) e Paçoca 160, iguais.
+
+## Pista inclinada e física em piso inclinado (04/11/2026)
+
+* Ladrilho com `inclinacao: {'sobe', 'graus'}`: piso inclinado que não muda de camada nem é item (a
+  `rampa` continua igual e vale se as duas estiverem no ladrilho; `validar()` avisa). `Mapa._plano()`
+  devolve a rampa ou a inclinação e é o que `elevacao()`, `gradiente()`, `_altura_borda()` e
+  `_sobe_por_mm()` usam. `_bases_inclinadas()` junta os vizinhos com a mesma (camada, sentido, graus)
+  num tabuleiro plano: a borda mais baixa fica no chão da camada e a base de cada ladrilho sai do plano,
+  não do caminho (`_calcula` começa com essas bases e `_base_entrando` as devolve). Entrando de lado
+  num tabuleiro que começa no chão há um degrau na emenda (150 mm x tan), de propósito.
+* `fisica._rodas`, só com gradiente (no plano a conta é a mesma de antes, bit a bit):
+  peso nas rodas de baixo (`geometria.altura_cg_mm`, padrão 45; distâncias medidas a partir do meio
+  das rodas, senão o Paçoca, de um eixo só, ficava sem peso nas rodas subindo a rampa e caía de 230
+  para 125) e escorregão lateral (deriva = força lateral da gravidade / peso / `terreno.rigidez_lateral`,
+  padrão 3, 0 desliga; a roda anda de lado deriva x |velocidade para a frente|). Vale para rampa e
+  gangorra também.
+* Editor: ferramenta Inclinação (clique troca o sentido, botão direito os graus 3-20, Shift+clique
+  copia a última). A janela pinta o ladrilho de roxo com uma seta e "incl. N°".
+* Números: completo 295 em 71,3 s (antes 73,2; igual a 2x e 8x), Paçoca 160 e 230 no completo (3 LoP,
+  igual), L06 6/6, L07 média 292,2 (antes 290,2), L11 6/6, L12 4/6, L13 2/6. 4x4 andando reto 1,4 m de
+  lado (só motores, num mapa de 10 x 3 todo inclinado): desce 50 mm a 0°, 187 mm a 10°, 296 mm a 20°,
+  virando 4° a 6° para baixo. `pista_foto.json`: tabuleiro do fundo com 5° (chute, sem medida).
+* Gabarito (`professor/`) e curso não foram refeitos: os números que dependem de rampa podem mudar um
+  pouco (o L07 mudou 2 pontos na média).
+
 ## Braço com elástico (02/11/2026)
 
 `resgate.braco.repouso` (leitura do potenciômetro) é opcional. Sem ele, o braço sem força cai, como
@@ -294,6 +336,12 @@ antes. Com ele, o braço sem força vai até essa posição, descendo ou subindo
   barramento de servo não ideal) ficou para o futuro, a pedido do Julio. Já está nas limitações do
   README e do curso (11.9, 17.1).
 * L13 do exemplo em 2/6 (3/6 antes do VL53 em leque): em aberto.
+* Atrito das rodas (`_rodas()`): o lateral (`atrito_lateral`) e o longitudinal (`atrito`) são
+  limitados cada um no seu eixo, não num círculo de atrito. Um 4x4 só gira no lugar se
+  `atrito x bitola > atrito_lateral x entre eixos`. No limite ele quase não gira: o Boberto com as
+  medidas do CAD (bitola 102, entre eixos 125, 0,9/0,75) levava 5,3 s num giro de 90°. O JSON dele
+  ficou com `atrito_lateral` 0,65 (05/11/2026). Trocar o modelo mudaria os números de referência:
+  não foi feito.
 * A geometria nova do Pro1616 foi levada para o `robo.json` da Maze em 19/10 (só as posições; o
   modelo de leitura de lá continua o simples).
 * Mudou API, robôs, mapas ou placar? Atualize o `README.md` e confira `curso/11-simulador-line.md`,

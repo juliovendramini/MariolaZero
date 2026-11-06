@@ -226,6 +226,24 @@ iluminação. Para usar um pino como LED de vítima, troque para `"led_vitima": 
   em `PinosDigitais`. Empurrar a parede com os dois apertados alinha o robô.
 * **Terreno**: lombadas (1 cm; 2 cm na zona de perigo), escadas (degraus de 1 cm, menos atrito,
   inclinação no giroscópio, mais íngreme na zona) e detritos soltos que se mexem quando a roda passa.
+* **Rampa e escada que mudam o nível** (regra 3.1.5 e 3.4.6-8): um ladrilho cada, com o ângulo que
+  vocês escolherem (até 25°; a escada, até 30° na zona de perigo). A escada tem degraus de no máximo
+  2 cm, com a quina no ângulo escolhido (20° = 6 degraus de 18,2 mm). Não há ladrilho por cima de
+  outro: cada ladrilho tem uma altura só, então o mapa do programa continua uma matriz de duas
+  dimensões. Só nos mapas que têm rampa/escada entram:
+  * o plano em que o robô se apoia, pelas alturas do piso embaixo das 4 rodas (no degrau a roda
+    encosta na quina antes de subir). O giroscópio mostra a inclinação (X/Y) na hora;
+  * gravidade morro abaixo, peso passando para as rodas de baixo, roda escorregando de lado e a roda
+    andando ao longo da rampa (na horizontal, o robô anda cos(ângulo) do que o encoder conta).
+    Parado na rampa, a redução do motor segura a roda (`motor_padrao.atrito_reducao_N`, padrão 3 N
+    por roda). Girar no lugar no meio da rampa faz o robô descer (uns 10 cm num giro de 90° a 20°);
+  * o VL53 em 3D: ele fica `altura_mm` acima do piso (no `vl53[]` ou no `vl53_params`, padrão 50 mm)
+    e o feixe inclina com o robô. Do pé da rampa ele enxerga a rampa (a 50 mm de altura, a 20° ela
+    aparece ~137 mm depois do começo dela). A parede vai do piso mais baixo dos dois lados até 15 cm
+    acima do mais alto, e o feixe pode passar por cima dela (de cima da rampa olhando para baixo).
+    Se o meio do feixe passa por cima, a parte do cone que abre para baixo ainda pega a parede, com
+    menos sinal.
+  O sensor de cor e as câmeras não mudam com a altura.
 
 ## Firmware emulado (a partir do código das placas)
 
@@ -276,10 +294,13 @@ O comportamento das placas foi tirado de `placaBrickVendra.ino`, `placaControleM
 Pontua automaticamente: identificação de vítima (piscar 500/500 ms por 5 s parado a até 15 cm;
 5/15 letra, 10/30 cognitiva, linear/flutuante calculado pelo seguimento de parede), kits (10 para 1, 30 para 2,
 só depois da identificação), checkpoint (10), azul (30 / −10 por revisita, LoP se não parar 5 s),
-lombada (5), escada (10), identificação errada (−5), LoP por ladrilho preto, bônus de confiabilidade
-e bônus de saída (piscar 1 s/1 s por 10 s no início). A rodada termina em 8 min ou na saída.
+lombada (5), escada (10), rampa (10), identificação errada (−5), LoP por ladrilho preto, bônus de
+confiabilidade e bônus de saída (piscar 1 s/1 s por 10 s no início; com 5 por escada e 5 por rampa
+passadas). A rodada termina em 8 min ou na saída.
 
-Simplificações: o kit vale pela posição em que caiu; "parado" é velocidade < 6 mm/s.
+Simplificações: o kit vale pela posição em que caiu; "parado" é velocidade < 6 mm/s; a escada e a
+rampa valem quando o meio do robô entra no ladrilho por uma ponta e sai pela outra (subindo ou
+descendo, uma vez cada; a regra pede o robô inteiro no ladrilho plano do outro lado).
 
 ## Mapas
 
@@ -291,11 +312,19 @@ Formato `mapas/*.json` (fácil de editar na mão também):
   parede fica na borda do ladrilho, então o corredor tem 300 − espessura. Mapa sem o campo: 20 mm.
 * `ladrilhos`: `piso` (`preto`, `prata`, `azul`, `vermelho`), `terreno` (`lombada`, `escada`,
   `detritos`) com `direcao` (`NS`/`LO`), `zona: true`.
+* Rampa/escada que mudam o nível: `"terreno": "rampa"` ou `"escada"` com `"sobe"` (`N`, `S`, `L`,
+  `O`: o lado mais alto) e `"graus"`; na escada, `"degrau_mm"` (padrão e máximo 20). Os dois lados
+  ficam entre paredes. A altura de cada ladrilho sai sozinha: o início fica em 0 e o piso continua
+  na altura da borda por onde não há parede. Entre pisos de alturas diferentes tem de haver parede;
+  se faltar, ou se dois caminhos derem alturas diferentes, o editor avisa ("as alturas não fecham").
 * `vitimas`: ladrilho, `parede` (N/S/L/O), `posicao` ao longo da parede (0–1), `tipo` `letra`
   (`H`=Φ, `S`=Ψ, `U`=Ω, outra letra = falsa) ou `cognitivo` com 5 `aneis` (soma 2/1/0, outra soma = falsa).
 
 O **editor** (botão "Editar mapa") faz tudo isso com o mouse, avisa vítimas em posição proibida e
-ladrilhos que não dá para alcançar, e tem "Sortear pisos" (como o dado do juiz). "Parede −/+" muda
+ladrilhos que não dá para alcançar, e tem "Sortear pisos" (como o dado do juiz). Ferramenta
+"Rampa/escada": o clique troca rampa subindo para N > L > S > O > escada (N, L, S, O) > nada e põe
+as paredes dos lados; a roda do mouse muda os graus (1 a 25) e Shift+roda a altura do degrau. A
+área mais alta fica azulada, com a altura no canto. "Parede −/+" muda
 a espessura das paredes de 1 em 1 mm (Shift: 0,5 mm); o botão do meio mostra o valor. "Novo" mantém
 a espessura do mapa aberto.
 
@@ -322,19 +351,23 @@ simulador e ajuste `rpm_livre`, `forca_max_N`, `atrito_lateral` e `deriva_graus_
 
 ### Robô da equipe Maze 2026 — `robo_maze2026.json`
 
-Ligado como no código da equipe (repositório `maze2026`, `defs.py`), que roda sem nenhuma mudança:
+Ligado como no código da equipe (repositório `maze2026`, branch `adaptacao-claude` de 05/11/2026:
+`robo.py`, `sensores.py` e `constantes.py`, com o que a equipe acertou no robô real):
 
 ```bash
 python simulador.py --robo robo_maze2026.json --programa ../../maze2026/main.py
 ```
 
+Sem a câmera USB, o `main.py` de 05/11 cai na primeira procura de vítima. Para rodar mesmo assim, use
+um programa que troque o `codigo_le_vitima.identificar_simbolos` por um falso.
+
 | o quê | no robô da equipe |
 |---|---|
-| motores | Mariola canal 1 (traseira esquerda, invertido) e 2; placas no `SERIAL2` a 250000: id 5 na dianteira esquerda (invertida), id 72 na dianteira direita |
-| giroscópio / cor | `SERIAL4` / `SERIAL6` (Pro1616) |
-| VL53 | 4 nas laterais: borda esquerda `I2C1`, meio esquerdo `I2C3`, meio direito `I2C6`, borda direita `I2C7`. As bordas ficam perto da frente e 13 mm (esq.) e 37 mm (dir.) para dentro, o mesmo que o código desconta |
+| motores | Mariola canal 1 (traseira esquerda, invertido) e 2; placas no `SERIAL2` a 250000: id 72 na dianteira esquerda, id 5 na dianteira direita (invertida) |
+| giroscópio / cor | `SERIAL4` (o Z **diminui** girando para a direita: `z_horario_positivo: false`) / `SERIAL6` (Pro1616) |
+| VL53 | 5: borda esquerda `I2C1`, meio esquerdo `I2C3`, borda direita `I2C6`, meio direito `I2C7` e frente `I2C8`. As bordas ficam perto da frente. A borda esquerda e o meio direito ficam 13 mm e 37 mm para dentro, o mesmo que o código desconta |
 | para-choque | P1 esquerdo, P8 direito |
-| encoder e calibração | 940 contagens por volta da roda no Mariola (1880 na placa), medido em 03/11/2026 no robô Boberto, que tem o mesmo motor e a mesma roda (o código da equipe usa 1 cm = 1000/45,7, ou seja, 481: metade); calibração 32 nas placas (do código) e 16 no Mariola (estimada) |
+| encoder e calibração | 440 contagens por volta da roda no Mariola (880 na placa): o `CONTAGENS_POR_MM = 2` da equipe, ajustado no robô real (de 03/11 a 05/11 eram 940, medidos no robô Boberto); calibração 32 nas placas (do código) e 16 no Mariola (estimada) |
 
 O resto (medidas, posições x/y, cores do piso) é o mesmo do `robo.json` e continua estimado.
 A câmera da equipe (OpenCV em `/dev/video_usb3`) não existe no simulador: a thread dela só avisa
@@ -351,8 +384,10 @@ gira pelo giroscópio, encosta no para-choque para alinhar, detecta preto/azul/p
 
 ## Limitações conhecidas
 
-* Mundo 2D: sem rampas, pontes ou segundo andar; escadas e lombadas são efeitos (solavanco,
-  inclinação, perda de tração), não geometria 3D. Obstáculos ainda não existem.
+* Mundo 2,5D: rampa e escada mudam a altura do piso, mas não há ponte nem ladrilho por cima de
+  outro. A escada antiga (sobe e desce no mesmo ladrilho) e as lombadas são efeitos (solavanco,
+  inclinação, perda de tração), não geometria 3D. O robô não tomba nem cai de um desnível sem
+  parede (o editor avisa). Obstáculos ainda não existem.
 * O BNO085 não é emulado.
 * O VL53 mede na hora em que o resultado é lido; no robô a medida é da hora em que foi pedida (a
   primeira leitura depois de um giro é "velha" no robô, e não no simulador).
@@ -373,7 +408,8 @@ sim/                mapa, física, juiz, servidor, interface
 fake_hw/            serial, smbus2, gpiod, firmware das placas, relógio virtual
 libs_mariola/       cópia das libs do Mariola (reserva, se a pasta do programa não tiver)
 robo_real/          deteccaoVitimas.py, dispensadorKits.py e simdebug.py para o robô real
-mapas/              exemplo1.json (com zona de perigo, escada, lombadas) e treino.json
+mapas/              exemplo1.json (com zona de perigo, escada, lombadas), treino.json e
+                    rampa_escada.json (área alta com uma rampa e uma escada de 20°)
 exemplo_aluno/      programa de exemplo
 avalia.py           roda o programa em várias sementes e confere a meta dos desafios
 desafios/           desafios.json (a trilha M01-M06) e os mapas dos desafios

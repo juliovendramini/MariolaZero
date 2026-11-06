@@ -45,8 +45,13 @@ FERRAMENTAS = [
     ('checkpoint', 'Checkpoint', 'Clique para marcar/desmarcar checkpoint (não pode ter item pontuável).'),
     ('rampa', 'Rampa', 'Clique: sem rampa > sobe para N > L > S > O. Botão direito troca a inclinação '
                        '(10° a 25°). Depois da rampa o caminho segue na altura nova.'),
-    ('lombada', 'Lombada', 'Clique: põe uma lombada (1 cm, atravessada no caminho) onde clicou. '
-                           'Botão direito tira a mais perto.'),
+    ('inclinacao', 'Inclinação', 'Pista inclinada (não muda de camada, não é item). Clique: sem > sobe '
+                                 'para N > L > S > O. Botão direito troca os graus (3° a 20°). Shift+clique '
+                                 'copia a última inclinação escolhida. Vizinhos com a mesma inclinação '
+                                 'formam um tabuleiro plano, com a borda mais baixa no chão.'),
+    ('lombada', 'Lombada', 'Clique: põe uma lombada (1 cm, atravessada no ladrilho inteiro) onde clicou. '
+                           'Shift+clique: lombada solta de 15 cm. Roda do mouse gira a mais perto (15°); '
+                           'Shift+roda muda o comprimento. Botão direito tira a mais perto.'),
     ('obstaculo', 'Obstáculo', 'Clique: põe um obstáculo em cima da linha mais perto (na área de resgate, '
                                'onde clicou). Botão direito tira. Shift+clique troca entre solto e fixo; '
                                'roda do mouse gira.'),
@@ -116,6 +121,7 @@ class Interface:
         self.tipo_paleta = 'tile-0'
         self.rot_paleta = 0
         self.camada_ed = 0
+        self.ultima_incl = None      # pincel da ferramenta Inclinação (Shift+clique)
         self.rol_paleta = 0
         self.rects_paleta = []
         self.rect_area_paleta = pygame.Rect(0, 0, 0, 0)
@@ -456,6 +462,11 @@ class Interface:
             if not t.get('_zona'):
                 pygame.draw.rect(sup, (170, 170, 165), r, 1)
             self._desenha_itens(sup, m, t, r, e)
+        # lombadas depois de todos os ladrilhos (uma lombada solta pode passar para o vizinho)
+        for t in ordem:
+            for (x1, y1, x2, y2) in m.linhas_lombada(t):
+                pygame.draw.line(sup, (150, 100, 50), self.T(x1, y1), self.T(x2, y2), max(2, int(22 * e)))
+                pygame.draw.line(sup, (200, 150, 90), self.T(x1, y1), self.T(x2, y2), max(1, int(6 * e)))
         if m.zona:
             self._desenha_zona(sup, m, ed)
         # início
@@ -523,10 +534,8 @@ class Interface:
                                     float(ob['comp']), math.radians(float(ob['ang'])), ob.get('fixo'))
 
     def _desenha_itens(self, sup, m, t, r, e):
-        """Lombadas, rampa, checkpoint, detritos e obstáculos (no editor) de um ladrilho."""
-        for (x1, y1, x2, y2) in m.linhas_lombada(t):
-            pygame.draw.line(sup, (150, 100, 50), self.T(x1, y1), self.T(x2, y2), max(2, int(22 * e)))
-            pygame.draw.line(sup, (200, 150, 90), self.T(x1, y1), self.T(x2, y2), max(1, int(6 * e)))
+        """Rampa, checkpoint, detritos e obstáculos (no editor) de um ladrilho (as lombadas são
+        desenhadas depois, em _desenha_camada)."""
         rp = t.get('rampa')
         if rp:
             cx, cy = r.center
@@ -542,6 +551,23 @@ class Interface:
                 a2 = ang + math.pi + s_ * 0.5
                 pygame.draw.line(sup, (60, 120, 230), p2, (p2[0] + math.cos(a2) * 12, p2[1] - math.sin(a2) * 12), 4)
             tt = self.f12.render(f"rampa {rp.get('graus', 20):g}°", True, (40, 90, 200))
+            sup.blit(tt, (r.x + 4, r.bottom - 16))
+        inc = t.get('inclinacao') if not rp else None
+        if inc and inc.get('sobe'):
+            cx, cy = r.center
+            ang = math.radians(LT.ANGULO[inc['sobe']])
+            d = r.w * 0.3
+            p1 = (cx - math.cos(ang) * d, cy + math.sin(ang) * d)
+            p2 = (cx + math.cos(ang) * d, cy - math.sin(ang) * d)
+            ov = pygame.Surface(r.size, pygame.SRCALPHA)
+            ov.fill((160, 80, 220, 28))
+            sup.blit(ov, r)
+            cor = (150, 80, 210)
+            pygame.draw.line(sup, cor, p1, p2, 2)
+            for s_ in (-1, 1):
+                a2 = ang + math.pi + s_ * 0.5
+                pygame.draw.line(sup, cor, p2, (p2[0] + math.cos(a2) * 9, p2[1] - math.sin(a2) * 9), 2)
+            tt = self.f12.render(f"incl. {inc.get('graus', 5):g}°", True, cor)
             sup.blit(tt, (r.x + 4, r.bottom - 16))
         if m.eh_gangorra(t):
             ang = self.sim.mundo.angs.get(m.chave(t), m.graus_gangorra(t))
@@ -1201,15 +1227,31 @@ class Interface:
                 atual = r['sobe'] if r else None
                 prox = ordem[(ordem.index(atual) + 1) % len(ordem)]
                 t['rampa'] = {'sobe': prox, 'graus': r.get('graus', 20) if r else 20} if prox else None
+        elif f == 'inclinacao':
+            r = t.get('inclinacao')
+            if mods & pygame.KMOD_SHIFT:
+                t['inclinacao'] = dict(self.ultima_incl) if self.ultima_incl else None
+            elif botao == 3:
+                if r:
+                    graus = [3, 5, 8, 10, 15, 20]
+                    g = r.get('graus', 5)
+                    r['graus'] = graus[(graus.index(g) + 1) % len(graus)] if g in graus else 5
+            else:
+                ordem = [None, 'N', 'L', 'S', 'O']
+                atual = r['sobe'] if r else None
+                prox = ordem[(ordem.index(atual) + 1) % len(ordem)]
+                t['inclinacao'] = {'sobe': prox, 'graus': r.get('graus', 5) if r else 5} if prox else None
+            if t.get('inclinacao'):
+                self.ultima_incl = dict(t['inclinacao'])
         elif f == 'lombada':
             u, v = m.local(t, X, Y)
             lbs = t.setdefault('lombadas', [])
             if botao == 3:
                 if lbs:
-                    def dist(lb):
-                        p = lb['pos'] * TAM
-                        return abs((v if lb.get('eixo', 'NS') == 'NS' else u) - p)
-                    lbs.remove(min(lbs, key=dist))
+                    lbs.remove(min(lbs, key=lambda lb: self._dist_lombada(m, lb, u, v)))
+            elif mods & pygame.KMOD_SHIFT:
+                ang = 0 if m.eixo_padrao(t) == 'NS' else 90
+                lbs.append({'u': round(u), 'v': round(v), 'ang': ang, 'comp': 150})
             else:
                 eixo = m.eixo_padrao(t)
                 pos = (v if eixo == 'NS' else u) / TAM
@@ -1356,7 +1398,31 @@ class Interface:
                 m.mudou()
                 self.sujo = True
                 return
+        if self.ferramenta == 'lombada':
+            c, t, X, Y = self._lad_editor(pos)
+            if t and t.get('lombadas'):
+                u, v = m.local(t, X, Y)
+                lbs = t['lombadas']
+                i = min(range(len(lbs)), key=lambda k: self._dist_lombada(m, lbs[k], u, v))
+                lb = dict(m.lombada_solta(lbs[i]))     # girar ou encurtar a atravessada a deixa solta
+                if pygame.key.get_mods() & pygame.KMOD_SHIFT:
+                    lb['comp'] = int(min(400, max(40, float(lb['comp']) + 20 * d)))
+                else:
+                    lb['ang'] = (float(lb['ang']) + 15 * d) % 180
+                lb['u'], lb['v'] = round(float(lb['u'])), round(float(lb['v']))
+                lbs[i] = lb
+                m.mudou()
+                self.sujo = True
+            return
         self.rot_paleta = (self.rot_paleta + (90 if d < 0 else 270)) % 360
+
+    @staticmethod
+    def _dist_lombada(m, lb, u, v):
+        """Distância (mm) do ponto (u, v) do ladrilho até a lombada."""
+        u1, v1, u2, v2 = m.segmento_lombada(lb)
+        du, dv = u2 - u1, v2 - v1
+        k = max(0.0, min(1.0, ((u - u1) * du + (v - v1) * dv) / max(1e-9, du * du + dv * dv)))
+        return math.hypot(u - (u1 + k * du), v - (v1 + k * dv))
 
     # ------------------------------------------------------------------ eventos
     def _evento(self, ev):

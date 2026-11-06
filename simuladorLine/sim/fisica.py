@@ -982,6 +982,38 @@ class Mundo:
         n_apoio = max(1, n - sum(1 for x in self.suspenso if x))
         carga_rodas = 1.0 - float(self.cfg.get('carga_apoios', 0.0))     # parte do peso na roda boba
         N = self.massa * G * cos_incl * carga_rodas / n_apoio
+        # piso inclinado (rampa, pista inclinada, gangorra): o peso passa para as rodas de baixo e,
+        # com o robô andando, a roda escorrega de lado morro abaixo (ângulo de deriva do pneu). No
+        # plano nada disso entra (Ns None, deriva 0): a conta é a de antes.
+        Ns = None
+        deriva = 0.0
+        if g2 > 0:
+            ter = self.cfg.get('terreno', {})
+            gn = math.sqrt(g2)
+            sx, sy = gx / gn, gy / gn                                   # sentido da subida
+            ds = {}
+            for ic in range(n):
+                if self.suspenso[ic] or self.no_ar[ic] > 0:
+                    continue
+                _, cx, cy = self.contatos[ic]
+                rr = b.local_to_world((cx, cy)) - b.position
+                ds[ic] = rr.x * sx + rr.y * sy
+            # posição de cada roda em relação ao meio delas (num eixo só, subindo reto, não há o que
+            # passar de uma roda para a outra: quem segura a diferença é a roda boba)
+            dm = sum(ds.values()) / len(ds) if ds else 0.0
+            ds = {ic: d - dm for ic, d in ds.items()}
+            s2 = sum(d * d for d in ds.values())
+            hcg = float(self.cfg['geometria'].get('altura_cg_mm', 45.0))
+            if s2 > 1.0 and hcg > 0:
+                # momento do peso em volta do meio das rodas: sum(N_i * d_i) = -m g sen(θ) h_cg
+                a = -self.massa * G * (gn / math.sqrt(1.0 + g2)) * hcg * carga_rodas / s2
+                Ns = {ic: max(0.0, N + a * d) for ic, d in ds.items()}
+            rig = float(ter.get('rigidez_lateral', 3.0))
+            if rig > 0:
+                # deriva = (força lateral da gravidade / peso nas rodas) / rigidez lateral (por rad)
+                f_lat = F * (gx * lat.x + gy * lat.y)
+                deriva = f_lat / (self.massa * G * cos_incl * carga_rodas) / rig
+                deriva = max(-0.5, min(0.5, deriva))
         # inclinação na direção do movimento (a roda anda na rampa, o plano vê a projeção)
         incl_f = gx * f.x + gy * f.y
         proj = 1.0 / math.sqrt(1.0 + incl_f * incl_f)
@@ -1003,12 +1035,16 @@ class Mundo:
                 continue          # roda/trecho da esteira no ar (robô apoiado em outro ponto)
             if self._lad_ponto(p.x, p.y) is None:
                 continue          # esse ponto está fora do piso
+            Ni = Ns.get(ic, N) if Ns else N
             # lateral
             v = b.velocity_at_world_point(p)
             rx = r.cross(lat)
             meff = 1.0 / (invm + rx * rx * invI)
-            J = -v.dot(lat) * meff
-            jmax = self.mu_lat * N * dt
+            if deriva:
+                J = -(v.dot(lat) - deriva * abs(v.dot(f))) * meff     # deixa escorregar morro abaixo
+            else:
+                J = -v.dot(lat) * meff
+            jmax = self.mu_lat * Ni * dt
             J = max(-jmax, min(jmax, J))
             b.apply_impulse_at_world_point(lat * J, p)
             # longitudinal
@@ -1032,7 +1068,7 @@ class Mundo:
                 else:
                     Jm -= math.copysign(jat, Jm - parar)
                 J = Jm * mot.sentido * proj
-                jf = self.mu * N * dt
+                jf = self.mu * Ni * dt
                 if abs(J) > jf:
                     J = math.copysign(jf, J)                      # patina
                 b.apply_impulse_at_world_point(f * J, p)
@@ -1047,7 +1083,7 @@ class Mundo:
                 continue
             w = mot.vel_superficie() * proj
             J = (w - vl) * meff
-            jf = self.mu * N * dt
+            jf = self.mu * Ni * dt
             jm = mot.forca_max * dt / len(mot.contatos)
             if abs(J) <= min(jf, jm):
                 b.apply_impulse_at_world_point(f * J, p)

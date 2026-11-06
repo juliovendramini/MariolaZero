@@ -1,3 +1,6 @@
 __pycache__/
 *.pyc
 debs/
+# marcas do envia.sh (data do último envio para cada robô)
+.ultimo_envio_*
+.envio_em_andamento

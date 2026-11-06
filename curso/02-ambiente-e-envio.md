@@ -37,7 +37,7 @@ meuSeguidor/
 ├── sensorCorReflexao.py    ← a V2! (exemplos/11-sensorCorReflexaoV2/)
 ├── giroscopio.py
 ├── simdebug.py             ← de simuladorLine/robo_real/ (no robô não faz nada)
-├── envia.bat  ou envia.ps1 ← manda a pasta para o robô
+├── envia.bat  ou envia.ps1 ← manda a pasta para o robô (no Linux: envia.sh)
 └── executa.sh              ← (opcional) roda pelo terminal
 ```
 
@@ -194,6 +194,34 @@ powershell -ExecutionPolicy Bypass -File envia.ps1
 * Na **primeira vez**, crie a pasta no robô: `ssh banana@IP "mkdir -p ~/meuSeguidor"`.
 * Ele manda só os arquivos da pasta (não as subpastas).
 * No fim ele encerra **qualquer** `python3` rodando no robô.
+
+### No Linux (ou macOS): `envia.sh`
+Todo exemplo tem um `envia.sh`. Copie para a pasta do projeto e **troque o IP** na linha `IP=...`
+(ou passe o IP na hora). No terminal:
+```bash
+bash envia.sh                  # manda só o que mudou desde o último envio
+bash envia.sh --tudo           # manda a pasta inteira
+bash envia.sh 192.168.2.151    # outro robô, sem mexer no arquivo
+```
+* Manda a pasta com as subpastas (menos `__pycache__`) para `~/<nome-da-pasta>` e cria a pasta
+  no robô se ela ainda não existir.
+* Guarda a data do envio num arquivo `.ultimo_envio_<IP>` na pasta: da próxima vez, só vai o que
+  foi salvo depois. Passadas 3 horas, ou para um IP novo, ele manda tudo de novo.
+* No fim encerra o `main.py` que estiver rodando no robô (como o `envia.bat`).
+* Precisa só do `ssh` e do `tar`, que já vêm no Linux. Sem a chave SSH, pede a senha uma vez.
+* Para rodar com `./envia.sh` em vez de `bash envia.sh`: `chmod +x envia.sh` uma vez.
+
+### Pelo VS Code (F5 ou Ctrl+Shift+B)
+Abra **a pasta do projeto** no VS Code (Arquivo → Abrir Pasta), não a pasta de cima. A pasta
+`.vscode/` dos exemplos já tem os dois atalhos; copie-a junto para o seu projeto.
+
+* **Ctrl+Shift+B** roda o envio certo para o sistema: `envia.bat` no Windows, `envia.sh` no Linux
+  e no macOS (o `.vscode/tasks.json`). Não precisa escolher nada.
+* **F5** roda a configuração escolhida no painel **Executar e Depurar** (Ctrl+Shift+D). O
+  `.vscode/launch.json` tem duas: **Executar envia.bat** (Windows) e **Enviar para o robô
+  (Linux/macOS: envia.sh)**. No Linux, escolha a segunda na lista do topo do painel **uma vez**; o
+  VS Code lembra e o F5 passa a usar ela. Ela roda o `bash envia.sh` no terminal do VS Code e não
+  precisa de extensão.
 
 ## 2.5 Rodando o programa
 

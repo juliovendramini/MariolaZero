@@ -1,0 +1,31 @@
+{
+  "formato": "maze-sim-1",
+  "nome": "rampa_escada",
+  "linhas": 4,
+  "colunas": 6,
+  "inicio": {"linha": 3, "coluna": 0, "direcao": "L"},
+  "semente": 1,
+  "espessura_parede": 20.0,
+  "paredes_h": [
+    "111111",
+    "101101",
+    "000000",
+    "000000",
+    "111111"
+  ],
+  "paredes_v": [
+    "1000001",
+    "1110111",
+    "1000001",
+    "1000001"
+  ],
+  "ladrilhos": [
+    {"linha": 0, "coluna": 2, "piso": "prata"},
+    {"linha": 1, "coluna": 1, "terreno": "rampa", "sobe": "N", "graus": 20},
+    {"linha": 1, "coluna": 4, "terreno": "escada", "sobe": "N", "graus": 20}
+  ],
+  "vitimas": [
+    {"linha": 0, "coluna": 3, "parede": "N", "posicao": 0.5, "tipo": "letra", "letra": "H"},
+    {"linha": 3, "coluna": 3, "parede": "S", "posicao": 0.5, "tipo": "letra", "letra": "S"}
+  ]
+}

@@ -9,12 +9,12 @@ from placaControleMotor import PlacaControleMotor
 from placaControleServo import PlacaControleServo
 import portas
 
-# print("Buscando Motores:")
-# motores = PlacaControleMotor.buscar_motores(Portas.SERIAL1)
-# print("Motores encontrados:")
-# for motor in motores:
-#     print(f"ID: {motor['id']}")
-# exit()
+print("Buscando Motores:")
+motores = PlacaControleMotor.buscar_motores(Portas.SERIAL2)
+print("Motores encontrados:")
+for motor in motores:
+    print(f"ID: {motor['id']}")
+exit()
 
 # print("\nBuscando Servos:")
 # servos = PlacaControleServo.buscar_servos(Portas.SERIAL1)
