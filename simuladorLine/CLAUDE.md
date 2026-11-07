@@ -26,7 +26,8 @@ O programa roda em processo separado (`rodar.py`; para `.ino`, `rodar_pacoca.py`
 | `sim/app.py`, `sim/gui.py`, `sim/painel_brick.py` | janela, painéis, tela OLED e teclado (tecla O) |
 | `sim/camera_linha.py`, `fake_hw/camera.py` | câmera de linha: geometria e imagem (compartilhado), `cv2.VideoCapture` falso (tecla C mostra) |
 | `avalia.py` | várias sementes sem janela, desafios L01-L13 (`desafios/desafios.json`), relatório em `resultados/` |
-| `ferramentas/` | `pista_surpresa.py`, `gera_desafios.py`, `gera_mapas.py`, `importa_ladrilhos.py`, `monta_portatil.py` |
+| `ferramentas/` | `pista_surpresa.py`, `gera_desafios.py`, `gera_mapas.py`, `importa_ladrilhos.py`, `monta_portatil.py`, `foto_mapa.py` + `MAPA_DA_FOTO.md` (mapa a partir de foto) |
+| `fotos_mapa/` | trabalho do `foto_mapa.py`, uma pasta por foto (`foto.jpg`, `projeto.json`, `descricao.json`; os `.png` o git ignora; fica fora do zip portátil) |
 | `robo_4x4.json`, `robo_4x4_camera.json`, `robo_esteira.json`, `robo_pacoca_amarelo.json`, `robo_pacoca_ev3.json` | os robôs |
 
 ## Testes de referência (rode depois de qualquer mudança em `sim/`, `fake_hw/` ou `pacoca/`)
@@ -299,6 +300,13 @@ posições de todas em `mapa.zona['vitimas']` (u, v a partir do `retangulo_zona(
   retificada como lombadas soltas, cruzadas e em diagonal, duas atravessadas no gap). O caminho do
   juiz fecha (43 passos). O exemplo faz 70 pontos com 18 LoPs nele (não foi feito para esta pista).
   Referências depois da mudança: 295 (73,2 s) e Paçoca 160, iguais.
+* **Mapa a partir de foto (06/11/2026):** o método virou ferramenta: `ferramentas/foto_mapa.py`
+  (novo, recorta, calibra, vista, ponto, casa, ladrilho, catalogo, candidatos, inclinacao, monta,
+  confere, compara) e o roteiro `ferramentas/MAPA_DA_FOTO.md` (fotos, coordenadas, passo a passo,
+  lições). Skill do Claude Code: `.claude/skills/mapa-da-foto/` (na raiz do repositório). Exemplo:
+  `fotos_mapa/mundial2026/` (as duas calibrações e a `descricao.json`); o `monta` dela reproduz o
+  `pista_foto.json` idêntico. O `inclinacao` estima 3,4-3,9° para o tabuleiro do fundo (o mapa
+  continua com 5°).
 
 ## Pista inclinada e física em piso inclinado (04/11/2026)
 

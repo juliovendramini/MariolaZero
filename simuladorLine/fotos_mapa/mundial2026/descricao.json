@@ -1,0 +1,257 @@
+{
+ "nome": "pista_foto",
+ "_comentario": "Montado a partir de uma foto de um campo de competição (04/11/2026). Ladrilhos oficiais mais parecidos com os da foto; o início foi escolhido (na foto não dá para saber onde é). O tabuleiro do fundo fica meio ladrilho deslocado na foto; aqui ele está na grade. Ele é inclinado no campo real (sobe para o fundo); aqui com 5°, chute: troque INCLINACAO.",
+ "largura": 8,
+ "altura": 7,
+ "inicio": [
+  3,
+  2
+ ],
+ "inicio_dir": "S",
+ "tempo": 480.0,
+ "ladrilhos": {
+  "4,0": "tile-82 0",
+  "5,0": {
+   "tipo": "tile-30",
+   "rot": 90,
+   "_obs": "cruzamento, verde no sudeste"
+  },
+  "6,0": {
+   "tipo": "tile-1",
+   "rot": 0,
+   "_obs": "onda quadrada (na foto são 2 dentes para baixo)"
+  },
+  "7,0": {
+   "tipo": "tile-16_2",
+   "rot": 270,
+   "_obs": "2 verdes: volta"
+  },
+  "0,1": {
+   "tipo": "tile-16_2",
+   "rot": 180,
+   "_obs": "T com 2 verdes: beco, volta"
+  },
+  "1,1": "tile-3 270",
+  "2,1": {
+   "tipo": "tile-83",
+   "rot": 270,
+   "_obs": "arco + diagonal que vai para a borda de cima"
+  },
+  "3,1": {
+   "tipo": "tile-41",
+   "rot": 180,
+   "_obs": "T sem verde (a ponta da direita acaba na borda)"
+  },
+  "4,1": "tile-0 90",
+  "5,1": "tile-0 90",
+  "6,1": "branco 0",
+  "7,1": "tile-0 90",
+  "0,2": "tile-69 90",
+  "1,2": {
+   "tipo": "tile-20",
+   "rot": 90,
+   "_obs": "gap"
+  },
+  "2,2": {
+   "tipo": "tile-0",
+   "rot": 90,
+   "_obs": "escondido atrás dos cilindros na foto"
+  },
+  "3,2": {
+   "tipo": "tile-18",
+   "rot": 90,
+   "lombadas": [
+    {
+     "u": 152,
+     "v": 195,
+     "ang": 45,
+     "comp": 185
+    },
+    {
+     "u": 241,
+     "v": 135,
+     "ang": 80,
+     "comp": 160
+    }
+   ],
+   "_obs": "início (a foto não mostra onde é); varetas: uma cruza o zigue-zague, outra ao lado"
+  },
+  "4,2": "tile-46 270",
+  "5,2": "tile-5 180",
+  "6,2": {
+   "tipo": "tile-20",
+   "rot": 0,
+   "_obs": "gap"
+  },
+  "7,2": {
+   "tipo": "chegada",
+   "rot": 90,
+   "_obs": "fita vermelha"
+  },
+  "0,3": {
+   "tipo": "tile-20",
+   "rot": 90,
+   "lombadas": [
+    {
+     "u": 129,
+     "v": 216,
+     "ang": 35,
+     "comp": 180
+    },
+    {
+     "u": 155,
+     "v": 164,
+     "ang": 39,
+     "comp": 180
+    }
+   ],
+   "_obs": "gap com duas varetas atravessadas (a ponta fica sob a prancheta)"
+  },
+  "1,3": {
+   "tipo": "tile-7",
+   "rot": 0,
+   "_obs": "meio coberto pela prancheta"
+  },
+  "2,3": {
+   "tipo": "tile-6",
+   "rot": 180,
+   "obstaculos": [
+    {
+     "larg": 100,
+     "comp": 100,
+     "massa_kg": 1.0,
+     "u": 213,
+     "v": 216
+    }
+   ]
+  },
+  "3,3": "tile-25 90",
+  "4,3": {
+   "tipo": "tile-6",
+   "rot": 90,
+   "_obs": "escondido pela parede da área"
+  },
+  "5,3": "branco 0",
+  "6,3": "branco 0",
+  "7,3": "branco 0",
+  "0,4": "tile-64 0",
+  "1,4": {
+   "tipo": "tile-59",
+   "rot": 90,
+   "checkpoint": true,
+   "_obs": "disco amarelo"
+  },
+  "2,4": "tile-52 270",
+  "3,4": {
+   "tipo": "tile-25",
+   "rot": 0,
+   "obstaculos": [
+    {
+     "larg": 100,
+     "comp": 100,
+     "massa_kg": 1.0,
+     "u": 50,
+     "v": 140
+    }
+   ]
+  },
+  "0,5": {
+   "tipo": "tile-30",
+   "rot": 0,
+   "_obs": "cruzamento, verde no nordeste"
+  },
+  "1,5": "tile-35 0",
+  "2,5": {
+   "tipo": "tile-80",
+   "rot": 180,
+   "lombadas": [
+    {
+     "u": 145,
+     "v": 245,
+     "ang": 56,
+     "comp": 200
+    },
+    {
+     "u": 261,
+     "v": 275,
+     "ang": 22,
+     "comp": 150
+    },
+    {
+     "u": 214,
+     "v": 125,
+     "ang": 137,
+     "comp": 190
+    }
+   ],
+   "_obs": "três varetas cruzadas na curva"
+  },
+  "3,5": "tile-46 90",
+  "0,6": {
+   "tipo": "tile-80",
+   "rot": 270,
+   "lombadas": [
+    {
+     "u": 132,
+     "v": 182,
+     "ang": 21,
+     "comp": 125
+    },
+    {
+     "u": 202,
+     "v": 118,
+     "ang": 56,
+     "comp": 120
+    }
+   ],
+   "_obs": "duas varetas em diagonal na curva"
+  },
+  "1,6": "tile-5 90",
+  "2,6": "branco 0",
+  "3,6": {
+   "tipo": "tile-83",
+   "rot": 270,
+   "checkpoint": true,
+   "_obs": "disco amarelo; o arco não leva a lugar nenhum"
+  }
+ },
+ "inclinacao": [
+  {
+   "de": [
+    4,
+    0
+   ],
+   "ate": [
+    7,
+    3
+   ],
+   "sobe": "N",
+   "graus": 5
+  }
+ ],
+ "zona_resgate": {
+  "x": 4,
+  "y": 4,
+  "larg": 4,
+  "alt": 3,
+  "entrada": {
+   "lado": "O",
+   "i": 2
+  },
+  "saida": {
+   "lado": "O",
+   "i": 0
+  },
+  "verde": "NE",
+  "vermelho": "SE",
+  "obstaculos": [],
+  "detritos": 40,
+  "cor_parede": [
+   235,
+   235,
+   230
+  ],
+  "vitimas": null,
+  "falsas": 0
+ }
+}

@@ -1,0 +1,24 @@
+{
+ "nome": "labirinto_foto",
+ "_comentario": "de onde veio a foto e o que foi suposto (início, o que a foto não mostra, graus da rampa/escada)",
+ "linhas": 3,
+ "colunas": 4,
+ "espessura_parede": 20,
+ "inicio": {"linha": 2, "coluna": 0, "direcao": "N"},
+ "_desenho": "2 linhas de texto por linha de ladrilhos + 1. '--' = parede no norte/sul, '|' = parede no oeste/leste. Primeiro caractere do ladrilho: P preto, A azul, C prata (checkpoint), V vermelho, espaço = branco",
+ "desenho": [
+  "+--+--+--+--+",
+  "|     |C    |",
+  "+  +  +  +--+",
+  "|  |  |     |",
+  "+  +--+  +  +",
+  "|        |A |",
+  "+--+--+--+--+"
+ ],
+ "ladrilhos": [
+  {"linha": 1, "coluna": 0, "terreno": "rampa", "sobe": "N", "graus": 20, "_obs": "o lado mais alto é o 'sobe'"}
+ ],
+ "vitimas": [
+  {"linha": 0, "coluna": 1, "parede": "N", "posicao": 0.5, "tipo": "letra", "letra": "H"}
+ ]
+}

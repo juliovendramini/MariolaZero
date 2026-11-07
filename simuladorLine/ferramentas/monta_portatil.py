@@ -64,7 +64,8 @@ PY_FORA = ['Lib/test', 'Lib/idlelib', 'Lib/turtledemo', 'Lib/ensurepip', 'Lib/li
            'Lib/pydoc_data', 'include', 'libs', 'Scripts', 'tcl/tk8.6/demos', 'tcl/tix8.4.3/demos']
 
 # zip: o que não vai do simulador (além do .gitignore, quando o git existe)
-ZIP_PASTAS_FORA = {'.git', '__pycache__', '.sim_build', 'resultados', 'dist', 'portatil', '.vscode', '.idea'}
+ZIP_PASTAS_FORA = {'.git', '__pycache__', '.sim_build', 'resultados', 'dist', 'portatil', '.vscode', '.idea',
+                   'fotos_mapa'}                   # fotos de pistas (MAPA_DA_FOTO.md): os mapas já estão em mapas/
 ZIP_ARQS_FORA = re.compile(r'(\.pyc|eeprom_pacoca\.bin)$')
 
 

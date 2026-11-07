@@ -1,0 +1,19 @@
+{
+ "_ajuda": "Modelo do descricao.json (foto_mapa.py monta). Chaves dos ladrilhos: \"x,y\" (ou \"x,y,z\"); valor \"tipo rot\" ou {\"tipo\", \"rot\", e os itens: checkpoint, lombadas [{u, v, ang, comp}], obstaculos [{u, v, larg, comp, altura, ...}], rampa {sobe, graus}}. u, v em mm do canto sudoeste do ladrilho. Campos que começam com _ são comentários. Passo a passo em ferramentas/MAPA_DA_FOTO.md.",
+ "nome": "pista_nova",
+ "_comentario": "De onde veio, o que foi suposto (o que a foto não mostra) e o que falta medir.",
+ "largura": 6,
+ "altura": 5,
+ "inicio": [0, 0],
+ "inicio_dir": "S",
+ "tempo": 480,
+ "ladrilhos": {
+  "0,0": "tile-0 0",
+  "0,1": {"tipo": "tile-0", "rot": 0, "checkpoint": true, "_obs": "disco amarelo na foto"},
+  "0,2": {"tipo": "tile-0", "rot": 0, "lombadas": [{"u": 150, "v": 150, "ang": 0, "comp": 300}]},
+  "0,3": {"tipo": "tile-0", "rot": 0, "obstaculos": [{"u": 150, "v": 150, "larg": 100, "comp": 100, "altura": 150}]},
+  "0,4": "chegada 0"
+ },
+ "inclinacao": [],
+ "zona_resgate": null
+}

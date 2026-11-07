@@ -93,6 +93,17 @@ simuladores (Line, Maze e Challenge): mudou um, copie para os outros e rode os t
 * Nomes que as metas em `desafios/desafios.json` usam: `total`, `lop`, `tempo`, `erro_programa`,
   `svi`, `srd`, `sbv`, `ssn`, `srn` (rampas, desde 06/11), `vitimas` (= `svi`), `saida`, `erros`.
 * `ferramentas/labirinto_surpresa.py` gera os labirintos de M04–M06 (fácil/médio/difícil, semente).
+* **Mapa a partir de foto (06/11/2026):** `ferramentas/foto_mapa.py` (novo, recorta, calibra, fugas,
+  camera, vista, paredes, pisos, ponto, monta, confere, compara), roteiro `ferramentas/MAPA_DA_FOTO.md`,
+  skill `.claude/skills/mapa-da-foto-maze/`, pastas de trabalho em `fotos_mapa/` (os `.png`/`.txt` o git
+  ignora). Irmã da do `simuladorLine`, com o que muda na Maze: a câmera de cada calibração (foco e
+  posição) dá onde fica o alto das paredes, a `descricao.json` aceita um `desenho` das paredes em texto,
+  o `ponto --parede` dá a vítima (lado e posição) e o `compara` desenha as paredes do mapa em 3D na foto.
+  O `fugas` calibra sem conhecer nenhum canto da grade (retas de duas direções; `--auto` acha as retas
+  sozinho, mas na foto1 entortou o chão). Teste com resposta conhecida: `ferramentas/foto_mapa_sintetica.py`
+  (`fotos_mapa/sintetico/`, o `exemplo1`: câmera exata, mapa refeito idêntico). A foto1 do Julio (um
+  canto, dois níveis, escada comprida) não fechou o mapa: ver as lições do roteiro. Usa OpenCV, que o
+  `requirements.txt` do simulador não tem (não precisa para simular).
 
 ## Robô (`robo.json`)
 
@@ -132,8 +143,8 @@ Contagens: 440 por volta no Mariola e 880 na placa desde 05/11/2026 (`CONTAGENS_
 equipe, ajustado no robô; ainda falta a volta da roda à mão). De 03/11 a 05/11 foram 940/1880 (medida
 do Boberto, que não valeu para este robô); antes, 481/962 (1 cm = 1000/45,7 do código antigo). A
 calibração (16 no Mariola, 32 nas placas, do `calibracao_manual(32, -32)`) não mudou: ~109 rpm livres.
-O `maze2026_simplificado` do professor ainda usa `CONTAGENS_POR_VOLTA = 940`: com este json ele anda
-o dobro do que pede.
+O `maze2026_simplificado` do professor usa `CONTAGENS_POR_VOLTA = 440` desde 05/11 (antes, 940: com
+este json ele andava o dobro do que pedia).
 
 Conferido com os `movimentos.py` da equipe (com os 481 antigos; com 940 o robô anda metade):
 * andar 30 cm → 302 mm;
@@ -251,7 +262,9 @@ regravado a partir de uma cópia antiga. O `robo.json` certo tem os 6 sensores e
 * `threading.Event.wait(timeout)` e `Queue.get(timeout=...)` usam o relógio real e não contam como espera
   no relógio sincronizado (documentado no README).
 * Mudou API, robô, mapas ou placar? Atualize o `README.md` e confira `curso/12-simulador-maze.md`,
-  `curso/16-projeto-rescue-maze.md`, `curso/codigos/09_maze/` e `professor/gabarito/`.
+  `curso/16-projeto-rescue-maze.md`, `curso/codigos/09_maze/`, `professor/gabarito/` e a skill do bot da
+  Maze (`.claude/skills/especialista-maze/referencias/`: `mapa.md`, `regras.md`, `problemas.md`; depois
+  `bash professor/especialista/envia.sh`).
 * `professor/gabarito/codigos/m16/ex4_zona_main.py` e `ex4_zona_navegacao.py` são cópias do
   `exemplo_aluno/main.py` e do `navegacao.py` com uma mudança (entrar na zona de perigo); o
   `ex1_mao_esquerda.py` é o `curso/codigos/09_maze/mao_direita.py` espelhado. Mudou o exemplo ou o

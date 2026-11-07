@@ -751,7 +751,9 @@ desafios/           desafios.json (a trilha L01-L13) e os mapas dos desafios
 resultados/         (criada pelo avalia.py) relatórios, logs e pistas surpresa
 ferramentas/        importa_ladrilhos.py (refaz os ladrilhos a partir do rcj-rescue-cms), gera_mapas.py,
                     gera_desafios.py, pista_surpresa.py (gerador de pistas sorteadas),
-                    monta_portatil.py (pacote portátil para Windows)
+                    monta_portatil.py (pacote portátil para Windows),
+                    foto_mapa.py + MAPA_DA_FOTO.md (mapa a partir de foto de uma pista de verdade)
+fotos_mapa/         o trabalho de cada foto do foto_mapa.py (fica fora do zip do laboratório)
 Simulador.bat       abre o simulador no Windows (com o Python de portatil/, se existir)
 Avaliar.bat         roda o avalia.py no Windows (idem)
 portatil/           (criada pelo monta_portatil.py, fora do git) python/ e gcc/ para Windows
