@@ -54,6 +54,58 @@ CUBO = A.QUADRADO                  # 50 mm
 PLATAFORMA = (50.0, 160.0)         # em x e y quando está no local de descarte
 ALTURA_OBJETO = 50.0
 
+# Pilhas em cima da plataforma (a regra deixa até cinco cubos "de qualquer forma")
+GRADE_APOIO = (-24.0, -16.0, -8.0, 0.0, 8.0, 16.0, 24.0)   # pontos da base do cubo (7 x 7)
+APOIO_TOL = 1.0         # mm: o que está até esta distância abaixo do topo mais alto também apoia
+ENCOSTA = 0.5           # mm: o raio da borda das formas (encostado, sem empurrar)
+
+
+def _penetra(a, b, folga):
+    """(normal de a para b, quantos mm a entra na b) se entra mais de 'folga' mm; senão None. Vale
+    para formas fora da física 2D (os cubos lá no alto)."""
+    if not a.bb.intersects(b.bb):
+        return None
+    try:
+        cs = a.shapes_collide(b)
+    except AssertionError:       # o pymunk 6 reclama quando não há contato nenhum
+        return None
+    if cs.points:
+        p = -min(q.distance for q in cs.points)
+        if p > folga:
+            return cs.normal, p
+    return None
+
+
+def _casco(pts):
+    """Casco convexo (anti-horário) dos pontos."""
+    pts = sorted(set((round(p.x, 3), round(p.y, 3)) for p in pts))
+    if len(pts) < 3:
+        return pts
+
+    def cruz(o, a, b):
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+    baixo, cima = [], []
+    for p in pts:
+        while len(baixo) >= 2 and cruz(baixo[-2], baixo[-1], p) <= 0:
+            baixo.pop()
+        baixo.append(p)
+    for p in reversed(pts):
+        while len(cima) >= 2 and cruz(cima[-2], cima[-1], p) <= 0:
+            cima.pop()
+        cima.append(p)
+    return baixo[:-1] + cima[:-1]
+
+
+def _dentro(p, casco):
+    if len(casco) < 3:
+        return False
+    n = len(casco)
+    for i in range(n):
+        a, b = casco[i], casco[(i + 1) % n]
+        if (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]) < 0:
+            return False
+    return True
+
 
 def pino_num(p):
     if isinstance(p, int):
@@ -233,10 +285,11 @@ class Objeto:
         self.k_giro = 0.9 / math.sqrt(im)                     # atrito de giro (distância média / (I/m))
         self.corpo = None
         self.forma = None
-        # 'livre' (no chão, na física 2D), 'preso' (na garra) ou 'plataforma' (em cima de uma)
+        # 'livre' (no chão, na física 2D), 'preso' (na garra) ou 'plataforma' (em cima de uma,
+        # direto ou em cima de outros cubos que estão nela)
         self.estado = 'livre'
         self.z = 0.0               # altura da base (mm)
-        self.sobre = None          # plataforma embaixo dele
+        self.sobre = None          # plataforma embaixo dele (também quando está numa pilha)
         self.off = (0.0, 0.0, 0.0)   # posição e ângulo no referencial da plataforma
 
     def cria(self, space):
@@ -809,6 +862,7 @@ class Mundo:
                 g.segue()
             r.integra(dt)
         self._segue_plataformas()
+        self._derruba_pilhas()
         self.t += dt
 
     # ---------------------------------------------------------------- garra
@@ -817,26 +871,135 @@ class Mundo:
         self.eventos_garra.append(('preso', robo, o, None))
 
     def solta(self, robo, o, pos, altura):
-        """A garra abriu com o cubo: em cima da plataforma (garra alta e o centro do cubo sobre ela)
-        ou no chão."""
-        plat = None
-        if altura >= ALTURA_OBJETO - 5.0:
-            for p in self.objetos:
-                if p.tipo == 'plataforma' and p.forma.point_query(pos).distance <= 0:
-                    plat = p
-                    break
+        """A garra abriu com o cubo, com a base dele a 'altura' mm: ele cai no que estiver embaixo.
+        Fica em cima da plataforma, ou dos cubos que já estão nela, se o centro dele ficar sobre o
+        apoio; senão escorrega e cai no chão, do lado de fora da plataforma ('caiu'). Sem nada
+        embaixo, vai para o chão."""
         b = o.corpo
         b.position = pos
-        if plat is not None:
+        self.space.reindex_shapes_for_body(b)
+        z, plat, em_pe, centro = self._apoio(o, altura)
+        if plat is not None and em_pe:
             lp = plat.corpo.world_to_local(pos)
             o.off = (lp.x, lp.y, b.angle - plat.corpo.angle)
-            o.muda_estado('plataforma', ALTURA_OBJETO)
+            o.muda_estado('plataforma', z)
             o.sobre = plat
             self.eventos_garra.append(('plataforma', robo, o, plat))
         else:
             o.muda_estado('livre')
-            self.eventos_garra.append(('chao', robo, o, None))
+            if plat is not None:
+                self._para_fora(o, plat, o.corpo.position - centro)
+                self.eventos_garra.append(('caiu', robo, o, plat))
+            else:
+                self.eventos_garra.append(('chao', robo, o, None))
         self.space.reindex_shapes_for_body(b)
+
+    def _apoio(self, o, altura):
+        """O que fica embaixo do cubo o (onde ele está) caindo com a base a 'altura' mm:
+        (z onde ele para, plataforma embaixo ou None, se fica em pé, centro dos pontos de apoio).
+
+        Apoios: as plataformas e os cubos em cima delas, com o topo até 5 mm acima da base do cubo
+        (mais alto que isso o cubo não estaria ali). Vale o mais alto que fica embaixo de algum
+        ponto da base. O cubo fica em pé se o centro dele cai sobre um apoio ou dentro do casco dos
+        pontos de apoio (um cubo em cima de dois, na emenda)."""
+        pontos = [o.corpo.local_to_world((x, y)) for x in GRADE_APOIO for y in GRADE_APOIO]
+        cands = []
+        for c in self.objetos:
+            if c is o:
+                continue
+            if c.tipo == 'plataforma':
+                topo, plat = c.altura, c
+            elif c.estado == 'plataforma' and c.sobre is not None:
+                topo, plat = c.z + c.altura, c.sobre
+            else:
+                continue
+            if topo > altura + 5.0:
+                continue
+            em_cima = [p for p in pontos if c.forma.point_query(p).distance <= 0]
+            if em_cima:
+                cands.append((topo, plat, c, em_cima))
+        if not cands:
+            return 0.0, None, True, None
+        z = max(t for t, _, _, _ in cands)
+        apoio = [(plat, c, pts) for t, plat, c, pts in cands if t >= z - APOIO_TOL]
+        contato = [p for _, _, pts in apoio for p in pts]
+        centro = sum(contato, Vec2d(0, 0)) / len(contato)
+        p0 = o.corpo.position
+        em_pe = (any(c.forma.point_query(p0).distance <= 0 for _, c, _ in apoio)
+                 or _dentro((p0.x, p0.y), _casco(contato)))
+        return z, apoio[0][0], em_pe, centro
+
+    def _para_fora(self, o, plat, direcao):
+        """O cubo o (já 'livre') cai da plataforma para o chão, para o lado 'direcao'."""
+        b = o.corpo
+        if direcao is None or direcao.length < 1e-6:
+            direcao = b.position - plat.corpo.position
+        if direcao.length < 1e-6:
+            direcao = Vec2d(1, 0).rotated(plat.corpo.angle)
+        u = direcao.normalized()
+        for _ in range(60):
+            if _penetra(plat.forma, o.forma, -1.0) is None:
+                break
+            b.position += u * 5.0
+            self.space.reindex_shapes_for_body(b)
+
+    def _derruba_pilhas(self):
+        """Cubos em cima das plataformas estão fora da física 2D: aqui o robô, a cabeça da garra e o
+        cubo preso que entram num deles (na altura dele) o empurram por cima do apoio. Se o centro
+        do cubo sai do apoio, ele cai ('derrubado'), e o que estava em cima dele e ficou sem apoio
+        cai junto."""
+        altos = [o for o in self.objetos if o.tipo == 'cubo' and o.estado == 'plataforma']
+        if not altos:
+            return
+        for r in self.robos:
+            pecas = [(r.forma, 0.0, r.altura)]
+            for g in r.garras:
+                pecas.extend(g.pecas())
+            for o in altos:
+                for forma, z0, z1 in pecas:
+                    if o.estado != 'plataforma':
+                        break
+                    if z1 <= o.z + 1.0 or z0 >= o.z + o.altura - 1.0:
+                        continue
+                    pen = _penetra(forma, o.forma, ENCOSTA + 0.1)
+                    if pen is not None:
+                        n, p = pen
+                        self._empurra(o, r, n * (p - ENCOSTA))
+
+    def _empurra(self, o, robo, desloc):
+        plat = o.sobre
+        b = o.corpo
+        b.position += desloc
+        lp = plat.corpo.world_to_local(b.position)
+        o.off = (lp.x, lp.y, o.off[2])
+        self.space.reindex_shapes_for_body(b)
+        z, p, em_pe, _ = self._apoio(o, o.z)
+        if p is None or not em_pe or z < o.z - APOIO_TOL:
+            self._derruba(o, robo, desloc)
+        else:
+            self._confere_pilha(plat, robo)
+
+    def _derruba(self, o, robo, direcao):
+        plat = o.sobre
+        o.muda_estado('livre')
+        self._para_fora(o, plat, direcao)
+        self.eventos_garra.append(('derrubado', robo, o, plat))
+        self._confere_pilha(plat, robo)
+
+    def _confere_pilha(self, plat, robo):
+        """Cubo de cima que ficou sem apoio (o de baixo saiu ou foi empurrado) cai também."""
+        mudou = True
+        while mudou:
+            mudou = False
+            for q in self.cubos_na_plataforma(plat):
+                if q.z <= ALTURA_OBJETO + APOIO_TOL:
+                    continue
+                z, p, em_pe, centro = self._apoio(q, q.z)
+                if p is None or not em_pe or z < q.z - APOIO_TOL:
+                    q.muda_estado('livre')
+                    self._para_fora(q, plat, None if centro is None else q.corpo.position - centro)
+                    self.eventos_garra.append(('derrubado', robo, q, plat))
+                    mudou = True
 
     def _segue_plataformas(self):
         for o in self.objetos:

@@ -5,9 +5,11 @@ O que é julgado:
 * robô fora da área permitida: passou da linha vermelha ou da linha azul do outro lado
   (-5, o robô volta para o início dele);
 * reinício pedido pela equipe (-15);
-* cubo de cor solto em cima da plataforma da mesma cor: +100 (entregue); na plataforma errada,
-  -10 (cubo perdido, o árbitro tira na hora); se o cubo novo cair em cima de um que já estava lá,
-  o de antes é derrubado (-45) e volta para o lugar dele;
+* cubo de cor solto em cima da plataforma da mesma cor, direto ou em cima de outros cubos (seção 6:
+  até cinco "de qualquer forma"): +100 (entregue); na plataforma errada, -10 (cubo perdido, o
+  árbitro tira na hora); cubo que não fica em pé e cai (seção 7) é julgado no chão (-10);
+* cubo já entregue derrubado (o robô, a garra ou o cubo preso bateram nele, ou o de baixo caiu):
+  -45, e ele volta para o lugar dele;
 * cubo branco (ou de cor sem plataforma na pista) identificado: +50, uma vez por cubo. Cada aviso
   (um LED do Mariola acendendo ou o buzzer começando a tocar) vale para o cubo branco mais perto, à
   frente do robô, a até 20 cm da frente dele e ainda no lugar;
@@ -28,7 +30,7 @@ LIMITE_PLATAFORMA = 10.0    # seção 7: "deslocada mais de 10 mm"
 ESPERA_JULGAR = 0.5         # s parado e sem o robô encostando antes de o árbitro decidir
 DIST_DEVOLVER = 220.0       # mm: o árbitro só devolve o objeto com o robô longe do lugar dele
 DIST_IDENTIFICA = 200.0     # mm da frente do robô até o cubo branco para valer o aviso
-DIST_DERRUBA = 40.0         # mm entre centros: o cubo novo caiu em cima do que já estava lá
+ALTURA_PLATAFORMA = 50.0
 
 
 class Juiz:
@@ -168,24 +170,27 @@ class Juiz:
                 if st['penalizado']:
                     st['devolver'] = True
                 elif o.cor == plat.cor:
-                    for q in w.cubos_na_plataforma(plat):
-                        if q is not o and q.corpo.position.get_distance(o.corpo.position) < DIST_DERRUBA:
-                            self.contagem['derrubados'] += 1
-                            self.log(f'cubo derrubado da plataforma {plat.cor}: {self._nome(q)}', -45)
-                            q.muda_estado('livre')
-                            self._st(q)['devolver'] = True
-                            self._st(q)['penalizado'] = True
                     self.contagem['entregues'] += 1
-                    self.log(f'cubo entregue: {o.cor} ({o.pos}) na plataforma {plat.cor}', 100)
+                    andar = '' if o.z <= ALTURA_PLATAFORMA + 1 else f' (em cima de outro cubo, base a {o.z:.0f} mm)'
+                    self.log(f'cubo entregue: {o.cor} ({o.pos}) na plataforma {plat.cor}{andar}', 100)
                 else:
                     self.contagem['perdidos'] += 1
                     self.log(f'cubo perdido: {o.cor} ({o.pos}) na plataforma {plat.cor}', -10)
                     st['devolver'] = True
                     st['penalizado'] = True
-            elif tipo == 'chao':
+            elif tipo in ('chao', 'caiu'):
+                if tipo == 'caiu':
+                    self.log(f'cubo não ficou em pé na plataforma {plat.cor} e caiu: {self._nome(o)}')
                 if st['penalizado']:
                     st['devolver'] = True
                 # senão: cubo no chão é julgado como qualquer outro em _objetos
+            elif tipo == 'derrubado':
+                if st['devolver']:
+                    continue                  # já ia ser tirado pelo árbitro (plataforma errada)
+                self.contagem['derrubados'] += 1
+                self.log(f'cubo derrubado da plataforma {plat.cor}: {self._nome(o)}', -45)
+                st['devolver'] = True
+                st['penalizado'] = True
 
     # ------------------------------------------------------------------ objetos
     def _objetos(self):

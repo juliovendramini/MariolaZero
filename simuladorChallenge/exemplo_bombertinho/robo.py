@@ -50,6 +50,7 @@ MM_POR_GRAU = 12.0 * math.pi / 180.0
 ABERTA = 25                   # mm que a comporta abre (A DEFINIR)
 ALTA = 54                     # base do cubo com as barras na horizontal: passa por cima de cubos e plataformas
 PEGAR = 10                    # base do cubo para pegar (a comporta aperta 17 mm da lateral do cubo)
+SOLTOU = 105                  # depois de soltar na plataforma: a comporta (23 mm acima da base) passa por cima do cubo
 TEMPO_SERVO = 0.4             # s para o servo chegar (com folga)
 
 # TCS34725: contagem de cada canal num branco encostado (a equipe usa estes) e o "escuro" (0-255)

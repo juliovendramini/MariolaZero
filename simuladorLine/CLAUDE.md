@@ -34,7 +34,8 @@ O programa roda em processo separado (`rodar.py`; para `.ino`, `rodar_pacoca.py`
 
 ```bash
 python simulador.py --sem-janela --velocidade 8 --mapa mapas/completo.json
-#   exemplo em Python, robô 4x4 → TOTAL 295, rodada de 71,3 s (igual a 2x; 73,2 s antes do peso nas rodas de 04/11)
+#   exemplo em Python, robô 4x4 → TOTAL 295, rodada de 71,5 s (09/11, reset por software do vl53.py
+#   na criação dos sensores; antes 71,3 s, igual a 2x; 73,2 s antes do peso nas rodas de 04/11)
 python simulador.py --programa exemplo_pacoca/exemplo_pacoca.ino --sem-janela --velocidade 4 --semente 1
 #   Paçoca, mapa de treino → TOTAL 160, 0 LoP
 #   com --mapa mapas/completo.json --tempo 300 → 230 (3 LoP), chega na fita vermelha

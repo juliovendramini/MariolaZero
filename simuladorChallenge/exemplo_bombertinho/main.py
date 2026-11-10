@@ -15,14 +15,17 @@ trás bate em cima do cubo; longe demais, a comporta bate.
 4. volta de ré até a linha azul, entra na área verde e dá meia-volta;
 5. anda até ficar a FOLGA_PLATAFORMA da plataforma da frente (o cubo passa por cima dela);
 6. anda de lado pelos locais de descarte lendo a cor de cada plataforma com o TCS baixo da frente;
-7. achou a da cor do cubo: centraliza, abre a comporta (o cubo cai em cima dela) e recua.
+7. achou a da cor do cubo: centraliza, abre a comporta (o cubo cai em cima dela), levanta a garra
+   (senão a comporta puxa o cubo) e recua.
+
+Empilhando cubos na plataforma: empilha.py.
 
 Com o cenarios/exemplo.json o cubo é o azul do A3 e a plataforma azul é a P1, lá embaixo.
 """
 
 import time
 
-from robo import ABERTA, ALTA, PEGAR, PRETO, Robo
+from robo import ABERTA, ALTA, PEGAR, PRETO, SOLTOU, Robo
 
 VEL = 40             # velocidade de cruzeiro (-100 a 100)
 LENTO = 15
@@ -164,6 +167,10 @@ def main():
     # 6 e 7. acha a plataforma da cor do cubo e solta
     if procura_plataforma(r, cor):
         r.garra('frente', abertura=ABERTA)
+        # a comporta aberta fica do outro lado do cubo, na altura dele: recuando assim ela puxa o
+        # cubo da plataforma. Levanta antes (subindo, a cabeça chega para perto do robô, mas a
+        # comporta passa por cima do cubo antes de encostar nele)
+        r.garra('frente', altura=SOLTOU)
         print(f'cubo {cor} solto na plataforma')
     else:
         print(f'não achei a plataforma {cor}')

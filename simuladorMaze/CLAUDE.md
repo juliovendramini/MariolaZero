@@ -16,7 +16,8 @@ painel da tela/teclado): ao corrigir algo comum aqui, veja se vale lá também, 
 # apague exemplo_aluno/checkpoint_maze.json antes de cada rodada sem janela
 # (senão o programa retoma do checkpoint da rodada anterior)
 python simulador.py --sem-janela --programa exemplo_aluno/main.py --mapa mapas/exemplo1.json --velocidade 5 --tempo 480 --semente 1
-#   → TOTAL 415, rodada de 320,6 s
+#   → TOTAL 415, rodada de 321,2 s (desde 09/11: o reset por software do vl53.py, ~2 ms por
+#     sensor na criação, desloca a rodada; antes 320,6 s, o número que aparece nas notas abaixo)
 python avalia.py --desafio M01 --programa exemplo_aluno/main.py
 #   o exemplo cumpre 3/3 em M01-M04 e M06; M05 2/3 (31/10, ver "VL53 em leque" abaixo)
 ```

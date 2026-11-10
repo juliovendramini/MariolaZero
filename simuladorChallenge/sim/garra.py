@@ -10,8 +10,10 @@ Garra simples na frente do robô: dois dedos (um servo abre/fecha) num braço qu
   batem nas plataformas; com a garra acima de 50 mm passam por cima de tudo.
 * Fechando, o cubo que estiver entre os dedos (e na altura deles) fica preso: sai da física 2D e
   acompanha a garra. Os dedos param na largura do cubo (o servo trava nele).
-* Abrindo, o cubo é solto: se a garra está alta e o centro do cubo fica em cima de uma plataforma,
-  ele fica em cima dela; senão, cai no chão.
+* Abrindo, o cubo é solto: se a garra está alta e o centro do cubo fica em cima de uma plataforma
+  (ou dos cubos que já estão nela), ele fica lá; senão, cai no chão (Mundo.solta).
+* Lá no alto as garras não estão na física 2D: o Mundo pega as peças delas (pecas()) e derruba o
+  cubo da pilha em que elas entrarem.
 
 Os servos são os do Mariola (porta SERVO1..4, lib motores.py: move_servo + atualiza_servos). O ângulo
 de cada um anda até o alvo com a velocidade do servo; servo solto (ângulo > 180, ou o timeout de 5 s do
@@ -161,6 +163,15 @@ class Garra:
         o.atualiza_altura()
         b.space.reindex_shapes_for_body(b)
 
+    def pecas(self):
+        """[(forma, z de baixo, z de cima)] dos dedos e do cubo preso: o Mundo confere se eles
+        entram nos cubos que estão em cima das plataformas (fora da física 2D)."""
+        h = self.altura()
+        res = [(s, h, h + ALTURA_OBJETO) for s in self.dedos]
+        if self.preso is not None:
+            res.append((self.preso.forma, self.preso.z, self.preso.z + self.preso.altura))
+        return res
+
     def desenho(self):
         """Traços para a janela, no referencial do robô: [(a, b, espessura_mm, no_alto)]."""
         alto = self.altura() >= ALTURA_OBJETO
@@ -199,8 +210,11 @@ class GarraParalela:
     * Pegar: a cabeça desce por cima do cubo (com a comporta aberta) e a comporta fecha, apertando o
       cubo contra a parede. Se o robô estiver mal posicionado, a parede, a comporta ou os braços do
       "V" batem em cima do cubo e a cabeça para ali (o servo trava).
-    * Soltar: abrindo a comporta o cubo cai; em cima da plataforma se a cabeça está alta (base do
-      cubo a 45 mm ou mais) e o centro do cubo fica sobre ela.
+    * Soltar: abrindo a comporta o cubo cai; em cima da plataforma (ou de cubos que já estão nela)
+      se a base dele está no máximo 5 mm abaixo do topo do apoio e o centro dele fica sobre o
+      apoio (Mundo.solta).
+    * Peças da cabeça que entram num cubo da pilha (na altura dele) derrubam o cubo: ao recuar
+      depois de soltar, a comporta aberta passa por cima do cubo só com a cabeça levantada.
 
     Referencial da garra: u = para fora (direção 'angulo' do robô), v = para a esquerda de quem
     olha para fora. As medidas da cabeça partem do furo de baixo dela (onde a barra de baixo gira);
@@ -241,6 +255,7 @@ class GarraParalela:
         self.bracos_baixo = float(c.get('bracos_acima_da_base_mm', 38.0))
         self.teto = float(c.get('comprimento_teto_mm', 61.0))
         self.teto_larg = float(c.get('largura_teto_mm', 30.0))
+        self.topo = float(c.get('topo_acima_da_base_mm', 58.0))     # teto, por cima do cubo (estimado)
         # a parede de trás encosta no chão: limite de baixo da barra
         s = (-self.parede_baixo - self.dz_cubo - self.h_eixo) / self.barra
         self.barra_min = math.degrees(math.asin(max(-1.0, min(1.0, s))))
@@ -395,6 +410,15 @@ class GarraParalela:
 
     def posicao_preso(self):
         return self.robo.corpo.local_to_world(self._local(self._uh() + self.parede_u + CUBO / 2, 0.0))
+
+    def pecas(self):
+        """[(forma, z de baixo, z de cima)] das peças da cabeça e do cubo preso: o Mundo confere se
+        elas entram nos cubos que estão em cima das plataformas (fora da física 2D)."""
+        base = self.altura()
+        res = [(s, base + s.baixo, base + self.topo) for s in self.partes]
+        if self.preso is not None:
+            res.append((self.preso.forma, self.preso.z, self.preso.z + self.preso.altura))
+        return res
 
     def segue(self):
         """Depois do passo da física: o cubo preso acompanha a cabeça."""

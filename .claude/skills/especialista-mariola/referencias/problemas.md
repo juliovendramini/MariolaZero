@@ -28,6 +28,13 @@ Cada item: sintoma → causa → o que fazer (e onde ler mais). Confira no códi
   gravidade) corrige: peça ao professor para regravar.
 * **`Portas.abre_porta_serial` "funciona" mas nada responde** → com o conversor ausente ela devolve um
   Serial **fechado**, não `None`. Teste `porta.is_open` e confira o cabo/porta (curso referência portas).
+* **VL53 para de responder (`OSError`/`TimeoutError`, ou "Sensor não encontrado") depois de um Ctrl+C,
+  e só volta desligando o robô** → `vl53.py` antigo (antes de 09/11/2026). O Ctrl+C no meio de uma
+  sequência deixava o sensor no banco de registradores errado (0xFF = 1) e a inicialização seguinte o
+  travava (passava a recusar quase todos os registradores). A lib nova reinicia o sensor por software
+  (0xBF) antes de inicializar e no `recover()`: não precisa de fio no XSHUT. Copiar o `libs/vl53.py`
+  atual para o robô. Medido num Mariola: 8 travamentos em 300 Ctrl+C com a lib antiga, 0 em 400 com
+  a nova. Se travar **sem** Ctrl+C, é outra coisa (cabo, ruído dos motores, alimentação).
 * **Leitura I2C travando ou com lixo usando threads** → o I2C só pode ser usado por uma thread (curso 7).
 * **Motores continuam girando depois de um erro** → falta `try/finally` parando os motores (curso 3). Com
   `Motores(False)` nada muda até `atualiza_motores()` (curso 4).

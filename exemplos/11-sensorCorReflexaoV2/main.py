@@ -1,15 +1,25 @@
 #Atualmente ainda é necessário inserir os arquivos python das bibliotecas que serão utilizadas dentro do projeto
 #Futuramente, quando tudo estiver estável, isso não será mais necessário
 #Exemplo de uso do giroscopio
+import sys
 from time import sleep
 from portas import Portas
 from sensorCorReflexao import CorReflexao
 
-SensorCorReflexao = CorReflexao(Portas.SERIAL6)
+SensorCorReflexao = CorReflexao(Portas.SERIAL1)
 #Declaração das bibliotecas que serão usadas
 #SensorCorReflexao.calibra_branco()
-SensorCorReflexao.calibra_preto()
+#SensorCorReflexao.calibra_preto()
 try:   
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "1":
+            SensorCorReflexao.calibra_branco()
+        elif sys.argv[1] == "2":
+            SensorCorReflexao.calibra_preto()
+        else:
+            print("Parâmetro inválido. Use 1 para calibrar branco ou 2 para calibrar preto.")
+            sys.exit(2)
+
     #o código de calibração não precisa ser executado todas as vezes... Uma vez o giroscópio no lugar e calibrado, não é necessário repetir
     # if(giroscopio.calibra()):
     #     print("Giroscópio calibrado com sucesso!")
@@ -28,4 +38,3 @@ try:
 except KeyboardInterrupt as e:
     print("\nInterrupção detectada! Parando os motores e encerrando...")
     print("Programa encerrado com segurança.")
-

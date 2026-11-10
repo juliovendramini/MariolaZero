@@ -1,0 +1,28 @@
+{
+ "formato": "rcb_challenge_cenario_1",
+ "nome": "empilha",
+ "_comentario": "Para o exemplo_bombertinho/empilha.py: 5 cubos azuis na rua do meio e a plataforma azul em frente a ela (P3). Fora da regra de propósito: todos os cubos azuis da pista, os dois do lado direito incluídos.",
+ "plataformas": {
+  "P3": "azul",
+  "P3'": "azul"
+ },
+ "cubos": {
+  "A3": "azul",
+  "B3": "azul",
+  "C3": "azul",
+  "B3'": "azul",
+  "A3'": "azul"
+ },
+ "inicio": {
+  "esq": [
+   380.0,
+   750.0,
+   0.0
+  ],
+  "dir": [
+   2460.0,
+   750.0,
+   180.0
+  ]
+ }
+}

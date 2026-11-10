@@ -26,6 +26,10 @@ class VL53L0X:  # noqa
 
         self.select_channel()
 
+        # Reinicia o sensor por software (como o XSHUT): o programa anterior pode ter
+        # morrido (Ctrl+C) no meio de uma sequência e deixado o sensor travado
+        self._reset_software()
+
         # Aborta qualquer medição em andamento antes de inicializar
         self._abort_ranging()
 
@@ -56,20 +60,63 @@ class VL53L0X:  # noqa
 
     def recover(self):
         """
-        Fecha o canal do mux e reabre — libera o segmento downstream
-        sem precisar do pino XSHUT. Após recuperação reinicializa o sensor.
+        Reinicia o sensor por software (registrador 0xBF, sem precisar do pino
+        XSHUT) e inicializa de novo.
         """
         print(f'[VL53L0X] Recuperando sensor no canal {self.porta_mux}...')
         try:
-            self.close_channel()
-            time.sleep(0.1)
             self.select_channel()
-            time.sleep(0.5)  # VL53L0X precisa de tempo pra reinicializar
-            self._abort_ranging()
+            self._reset_software()
+            self.VL53L0X_I2C_ADDR = self._detect_address()
+            if self.VL53L0X_I2C_ADDR == self.VL53L0X_DEFAULT_ADDR:
+                self.set_i2c_address(self.VL53L0X_ALT_ADDR)
             self._init_sensor()
             print(f'[VL53L0X] Canal {self.porta_mux} recuperado com sucesso.')
         except OSError as e:
             raise OSError(f'[VL53L0X] Falha na recuperação do canal {self.porta_mux}: {e}')
+
+    # ------------------------------------------------------------------
+    # Reset por software
+    # ------------------------------------------------------------------
+
+    def _reset_software(self):
+        """
+        Reinicia o VL53L0X pelo registrador 0xBF (SOFT_RESET_GO2_SOFT_RESET_N),
+        com o mesmo efeito do pino XSHUT: o sensor volta ao estado de quando ligou,
+        no endereço 0x29.
+
+        Por que isso existe: muitas sequências da lib trocam o "banco" de
+        registradores (0xFF = 1) e voltam no fim (0xFF = 0). Se o programa morre no
+        meio (Ctrl+C), o sensor fica no banco errado e o programa seguinte escreve
+        a inicialização nos registradores errados. O sensor trava e passa a recusar
+        (NACK) quase todos os registradores, mas o 0xFF e, no banco 0, o 0xBF
+        continuam aceitos: por isso primeiro volta ao banco 0 e depois reinicia.
+        Testado num Mariola em 09/11/2026, com Ctrl+C em instantes aleatórios.
+        """
+        # 1) banco 0 e reset ligado, no endereço em que o sensor estiver
+        for addr in (self.VL53L0X_ALT_ADDR, self.VL53L0X_DEFAULT_ADDR):
+            for reg, valor in ((0xFF, 0x00), (0xBF, 0x00)):
+                try:
+                    self.bus.write_byte_data(addr, reg, valor)
+                except OSError:
+                    pass
+        time.sleep(0.002)
+        # 2) solta o reset: o sensor real volta ao 0x29 (o do simulador continua onde estava)
+        for addr in (self.VL53L0X_DEFAULT_ADDR, self.VL53L0X_ALT_ADDR):
+            try:
+                self.bus.write_byte_data(addr, 0xBF, 0x01)
+            except OSError:
+                continue
+            # 3) espera o boot: o ID do modelo (0xC0 = 0xEE) volta a aparecer
+            limite = time.monotonic() + 0.05
+            while time.monotonic() < limite:
+                try:
+                    if self.bus.read_byte_data(addr, 0xC0) == 0xEE:
+                        return True
+                except OSError:
+                    pass
+                time.sleep(0.001)
+        return False
 
     # ------------------------------------------------------------------
     # Detecção de endereço

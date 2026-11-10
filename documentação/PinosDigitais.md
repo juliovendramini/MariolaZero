@@ -237,5 +237,5 @@ duas davam "Device or resource busy" juntas, e ela foi juntada a esta: `le_botao
 
 ## Ver Também
 
-- Exemplos em `exemplos/05-pinosDigitais/` (e `04-vl53l0x/`, que lê os botões)
+- Exemplos em `exemplos/05-pinosDigitais/`
 - Documentação gpiod: https://libgpiod.readthedocs.io/

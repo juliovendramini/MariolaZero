@@ -26,7 +26,7 @@ Caminhos a partir da raiz do repositório (a pasta em que o especialista roda).
 | BNO085 | `curso/referencia/bno085.md` | | |
 | sensor de linha/cor Pro1616 (V2) | `curso/referencia/sensorCorReflexao.md`, `documentação/CorReflexaoV2.md` | `06-sensor-de-linha.md` | `exemplos/11-sensorCorReflexaoV2/` |
 | TCS34725 avulso | `curso/referencia/tcs34725.md` | | |
-| VL53L0X (distância), placas mux | `curso/referencia/vl53.md`, `curso/referencia/placasMux.md` | `07-sensores-de-distancia.md` | `libs/` |
+| VL53L0X (distância), placas mux | `curso/referencia/vl53.md`, `curso/referencia/placasMux.md` | `07-sensores-de-distancia.md` | `libs/`, `exemplos/04-vl53l0x/` (leitura com `recover()` e por que travava no Ctrl+C) |
 | botões, pinos P1-P8 | `curso/referencia/pinosDigitais.md`, `curso/referencia/botoes.md` | `08-botoes-tela-teclado.md` | `libs/pinosDigitais.py` |
 | tela OLED e teclado | `curso/referencia/teclado-tela.md` | 08 | `libs/tela.py`, `libs/teclado.py` |
 | portas seriais (qual USB é qual) | `curso/referencia/portas.md`, `documentação/Portas.md` | | `libs/portas.py` |

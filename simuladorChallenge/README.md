@@ -177,8 +177,40 @@ A da frente tem as barras mais curtas (66,5 mm contra 79), porque a base é reta
   do chão (`altura_max_pegar_mm`). Se o robô estiver mal posicionado, a parede de trás, a comporta ou
   os braços do "V" batem **em cima do cubo** e a cabeça para ali (o servo trava). O mesmo vale descendo
   em cima de uma plataforma ou com o cubo preso.
-* **Soltar**: abrindo a comporta o cubo cai: em cima da plataforma se a base dele está a 45 mm ou mais
-  e o centro dele fica sobre ela; senão, no chão.
+* **Soltar**: abrindo a comporta o cubo cai no que estiver embaixo: em cima da plataforma, ou dos
+  cubos que já estão nela (ver "Empilhar", abaixo), se o centro dele fica sobre o apoio; senão, no
+  chão.
+* **Depois de soltar, levante a garra antes de recuar**: a comporta aberta fica do outro lado do cubo
+  e, na altura dele (23 mm acima da base), puxa o cubo da plataforma. Subindo, a cabeça chega para
+  perto do robô, mas a comporta passa por cima do cubo antes de encostar nele.
+
+### Empilhar (até 5 cubos por plataforma)
+
+A regra (seção 6) deixa a plataforma com até cinco cubos "de qualquer forma, desde que fiquem em cima
+da plataforma"; em fila cabem 3. O simulador empilha:
+
+* O cubo solto cai no apoio mais alto que fica embaixo de algum ponto da base dele: a plataforma
+  (topo a 50 mm) ou um cubo que já está nela (topo a 100, 150...). Fica em pé se o centro dele cai
+  sobre um apoio, ou entre apoios (um cubo em cima de dois, na emenda); senão escorrega e cai no chão,
+  para fora da plataforma ("não ficou em pé e caiu", julgado como cubo no chão).
+* Lá no alto os cubos ficam fora da física 2D. O robô, as peças da cabeça e o cubo preso que entram
+  num deles (na altura dele) o empurram por cima do apoio; se o centro sai do apoio, ele cai
+  (−45 se já estava entregue), e o que estava em cima dele, sem apoio, cai junto.
+* Plataforma empurrada leva a pilha junto.
+* Não simulado: cubo que pula ou tomba ao cair de muito alto, cubo de baixo que escorrega quando o de
+  cima cai na beirada.
+
+O que isso pede do Bombertinho (`exemplo_bombertinho/empilha.py` faz tudo):
+
+* A **2ª camada só com a garra da esquerda**: subindo, a cabeça do paralelogramo chega para perto do
+  robô. Com a base do cubo a 108 mm (o topo da 1ª camada fica a 100) a da frente pediria a
+  plataforma a 96 mm do centro do robô, e as rodas da frente vão até 97,5. A da esquerda (barra de
+  79) alcança com a lateral do robô a uns 23 mm da plataforma.
+* Os braços do "V" vão até 40 mm do centro do cubo e começam 38 mm acima da base dele: soltando ao
+  lado de outro cubo da mesma camada, solte mais alto (o do meio da 1ª camada, com a base a 65 mm) ou
+  deixe 30 mm entre eles (os da 2ª camada).
+* Nunca passe com a cabeça (ou o cubo preso) do lado da pilha e na altura dela: ajuste a posição ao
+  longo da plataforma longe dela e só depois chegue perto.
 * Servo de subir solto: a cabeça desce sozinha com o peso. O pé curvo da barra de baixo, que apoia o
   cubo com a garra levantada, não entra no simulador.
 * **Na janela**, o painel mostra cada garra vista de lado (robô à esquerda, chão embaixo): as duas
@@ -282,10 +314,11 @@ meça com a trena).
 
 | situação | pontos | o que acontece |
 |---|---|---|
-| cubo de cor solto em cima da plataforma da mesma cor | +100 | entregue |
+| cubo de cor solto em cima da plataforma da mesma cor (direto ou em cima de outros cubos) | +100 | entregue |
 | cubo branco identificado: um LED do Mariola acende (ou o buzzer começa a tocar) com o cubo à frente do robô, a até 20 cm da frente dele, ainda no lugar | +50 | uma vez por cubo; cada aviso vale para o cubo branco mais perto |
 | cubo solto na plataforma de outra cor | −10 | cubo perdido: o árbitro tira e põe no lugar dele |
-| cubo novo caindo em cima de um já entregue (centros a menos de 40 mm) | −45 | o de antes é derrubado e volta para o lugar dele |
+| cubo que não fica em pé ao ser solto (centro fora do apoio) | — | cai no chão: julgado como cubo no chão (−10, cubo perdido) |
+| cubo já entregue derrubado (empurrado pelo robô, pela garra ou pelo cubo preso até sair do apoio, ou o de baixo saiu) | −45 | volta para o lugar dele |
 | centro do robô passa da linha vermelha, ou da linha azul do lado do adversário | −5 | o robô volta para o início dele; o programa continua |
 | Reinício (botão) | −15 | robô no início, programa reiniciado |
 | cubo de cor tirado do quadrado (mais de 25 mm) e largado fora da plataforma e fora da área verde da equipe | −10 | cubo perdido: volta para o lugar |
@@ -320,10 +353,35 @@ plataforma (o cubo passa por cima dela) e procura a cor com o TCS baixo da frent
 30 s (+100); com o A3 amarelo, procura para um lado, volta e entrega na P4; com o A3 branco, +50.
 
 A distância de 34 mm tem pouca folga: de ~29 a ~38 mm a garra desce certo; mais perto a parede de trás
-bate em cima do cubo, mais longe a comporta. O `exemplo_bombertinho/robo.py` converte a altura (mm) e
+bate em cima do cubo, mais longe a comporta. Soltou o cubo, sobe a garra (base a 105 mm) e só então
+recua. O `exemplo_bombertinho/robo.py` converte a altura (mm) e
 a abertura (mm) em ângulo dos servos com as constantes do robo.json, desconta os 60 mm a mais dos VL53,
 inverte a ordem dos IR do sensor de linha e carrega as cores da lona de `cores_lona.json`
 (o papel do `aprende_cor()` no campo).
+
+## Empilhando (`exemplo_bombertinho/empilha.py`, com o `cenarios/empilha.json`)
+
+    python simulador.py --robo robo_bombertinho.json --programa exemplo_bombertinho/empilha.py --cenario cenarios/empilha.json
+
+ou dois cliques no `rodar_empilha.bat` (e "Iniciar partida", F5). Cinco cubos azuis na rua do meio (A3, B3, C3, B3', A3': fora da regra de propósito, todos do mesmo
+lado) e a plataforma azul na P3, em frente à rua. Um cubo por viagem; o robô volta de ré pela rua,
+andando de lado para o sensor de linha ficar em cima dela, e chega na frente do meio da plataforma.
+
+* **Embaixo, garra da frente**: cubos em −55, +55 e 0 mm ao longo da plataforma (+ = para o P5), nessa
+  ordem; o do meio é solto com a base a 65 mm (os braços do "V" passam por cima dos vizinhos). O VL53
+  da frente a 29 mm da plataforma deixa o centro do cubo no meio da largura dela.
+* **Em cima, garra da esquerda**: o robô traz o cubo na garra da frente, larga no chão da área verde
+  (a regra deixa ajustar o cubo lá por até 30 s), gira 90° para a direita, acerta a distância pelo
+  VL53 da esquerda e pega com a garra da esquerda (comporta toda aberta, 37 mm: o "V" fica longe do
+  cubo). Gira até a esquerda ficar para as plataformas, anda até −40 ou +40 mm, sobe o cubo até a base
+  a 108 mm e chega de lado até o VL53 da esquerda marcar 26 mm. Solta, sobe até 128 mm (a comporta
+  passa do topo do cubo, a 150) e sai de lado.
+* Os ajustes ao longo da plataforma são feitos longe dela; depois de soltar, sempre sobe a garra antes
+  de recuar.
+
+Resultado: 500 pontos, partida completa em 3:16.85. Na competição a plataforma muda de lugar: ache a da
+cor (`procura_plataforma` do `main.py`) enquanto ela está vazia e guarde quanto o robô andou de lado.
+`EFICIENCIA_LATERAL`, os VL53 e o ângulo das barras na horizontal estão **A DEFINIR** no robô.
 
 ## O que falta
 
@@ -343,7 +401,7 @@ inverte a ordem dos IR do sensor de linha e carrega as cores da lona de `cores_l
 | `simulador.py`, `rodar.py`, `Simulador.bat` | entrada; o programa do aluno roda em outro processo |
 | `lote.py` | várias sementes sem janela, em paralelo; resumo com as partidas com problema (`resultados/`) |
 | `sim/arena.py` | geometria da arena, cor do piso em cada ponto, posições nomeadas, cenário e sorteio |
-| `sim/fisica.py` | `Motor`, `Objeto` (cubo, plataforma; solto, preso ou em cima da plataforma), `Robo` (rodas mecanum/comuns, sensores), `Mundo` (prende, solta) |
+| `sim/fisica.py` | `Motor`, `Objeto` (cubo, plataforma; solto, preso ou em cima da plataforma), `Robo` (rodas mecanum/comuns, sensores), `Mundo` (prende, solta, pilhas em cima das plataformas) |
 | `sim/garra.py` | as garras: a simples (`Garra`) e a de paralelogramo do Bombertinho (`GarraParalela`) |
 | `sim/juiz.py` | tempo, entregas, cubo branco, saídas da área, penalidades |
 | `sim/app.py` | relógio sincronizado, processo do programa, partida, reinício (igual ao da Maze) |
@@ -353,5 +411,5 @@ inverte a ordem dos IR do sensor de linha e carrega as cores da lona de `cores_l
 | `fake_hw/` | serial, I2C (VL53, TCS34725, mux), GPIO, tela/teclado, relógio (cópia da Line sem a câmera; o `CorReflexaoV2` de `dispositivos.py` passa a porta, para ter dois sensores de linha) e um Flask falso (`fake_flask.py`: o `app.run()` só avisa; um servidor web de verdade esperando conexão tiraria a partida do relógio sincronizado) |
 | `libs_mariola/` | cópia das libs do Mariola (a mesma da Line) |
 | `exemplo_aluno/` | `robo.py` (mecanum, garra, cor), `main.py` (pega o cubo e entrega), `anda_mecanum.py` (só locomoção) |
-| `exemplo_bombertinho/` | o mesmo para o robô real: `robo.py` (duas garras, dois sensores de linha), `main.py` e `cores_lona.json` |
+| `exemplo_bombertinho/` | o mesmo para o robô real: `robo.py` (duas garras, dois sensores de linha), `main.py`, `empilha.py` (5 cubos numa plataforma, com o `cenarios/empilha.json`) e `cores_lona.json` |
 | `robo_real/simdebug.py` | o `simdebug` que não faz nada, para o mesmo código rodar no robô |

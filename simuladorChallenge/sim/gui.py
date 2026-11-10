@@ -771,7 +771,8 @@ class Interface:
             self._desenha_objetos([o for o in snap['objetos'] if o[0] == 'plataforma'])
             self._desenha_objetos([o for o in snap['objetos'] if o[0] == 'cubo' and o[3] == 'livre'])
             self._desenha_robo(snap)
-            self._desenha_objetos([o for o in snap['objetos'] if o[0] == 'cubo' and o[3] != 'livre'])
+            self._desenha_objetos(sorted((o for o in snap['objetos'] if o[0] == 'cubo' and o[3] != 'livre'),
+                                         key=lambda o: o[4]))    # pilha: o de cima por último
             self.garra_info = snap['garras']
             self.brick.desenha(self.tela, rb, self._area(), self.f12b, self.f11)
             # painel

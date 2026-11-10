@@ -31,14 +31,27 @@ programa continua); `_reinicio_ate` é o antigo `_lop_ate`.
 ```bash
 python simulador.py --sem-janela --velocidade 8 --tempo 200
 #   garra (robo_garra.json, cenarios/exemplo.json, semente 1): pega o cubo azul do A3 e entrega na
-#   plataforma azul (P1): "+100 cubo entregue" em 0:25.66,
-#   pose final x=345 y=201 ângulo=178.9°, TOTAL 100
+#   plataforma azul (P1): "+100 cubo entregue" em 0:25.76,
+#   pose final x=344 y=200 ângulo=178.8°, TOTAL 100
+#   (09/11: o reset por software do vl53.py, ~2 ms por sensor na criação, deslocou os tempos;
+#   antes 0:25.66, x=345 y=201 178.9°)
 python simulador.py --sem-janela --velocidade 8 --tempo 120 --robo robo_mecanum.json --programa exemplo_aluno/anda_mecanum.py --cenario cenarios/vazio.json
 #   só locomoção: 3 cruzamentos, anda de lado, gira 180°, volta; pose final x=449 y=1050 ângulo=179.8°, 0 pontos
 python simulador.py --sem-janela --velocidade 8 --tempo 200 --robo robo_bombertinho.json --programa exemplo_bombertinho/main.py
-#   Bombertinho, garra da frente: "+100 cubo entregue: azul (A3)" em 0:30.25,
-#   pose final x=341 y=214 ângulo=179.5° (igual a 2x); A3 amarelo: +100 em 0:44.01; A3 branco: +50 em 0:06.45
+#   Bombertinho, garra da frente: "+100 cubo entregue: azul (A3)" em 0:30.32,
+#   pose final x=341 y=213 ângulo=178.9° (09/11, reset do vl53.py; antes 0:30.25 e 178.8°;
+#   07/11: sobe a garra antes de recuar; antes y=214 179.5°);
+#   A3 amarelo: +100 em 0:44.01; A3 branco: +50 em 0:06.45
+python simulador.py --sem-janela --velocidade 8 --tempo 300 --robo robo_bombertinho.json --programa exemplo_bombertinho/empilha.py --cenario cenarios/empilha.json
+#   empilhando: 5 entregues (2 com "em cima de outro cubo"), 500, partida completa em 3:17.11,
+#   pose final x=213 y=805 ângulo=88.6° (09/11, reset do vl53.py; antes 3:16.85, x=218 y=804);
+#   lote das sementes 1-8: 500 em todas (medido antes do reset)
+python testa_pilha.py
+#   física das pilhas: "TUDO CERTO"
 ```
+
+O código da Challenger (`professor/challenger2026/`, `cenario_challenger.json`, `--tempo 200`) continua
+com 200 (entregas em 2:40.95 e 2:58.96) depois das pilhas.
 
 Números de 31/10/2026, depois da ligação do código da equipe no Bombertinho, da mancha de 19 pontos do
 sensor de linha (`PONTOS_MANCHA` em `sim/fisica.py`; antes era uma cruz de 5 pontos e os números eram
@@ -73,6 +86,23 @@ sensor de linha (`PONTOS_MANCHA` em `sim/fisica.py`; antes era uma cruz de 5 pon
   (`fake_flask.py`, só aqui no Challenge): o servidor de verdade fica parado num `select` do socket,
   que o relógio não vê como espera, e a partida inteira iria pelo tempo real. Antes o Flask falso
   estava só no adaptador da equipe.
+* **Pilhas** (07/11, pedido do Julio: "colocar um cubo em cima do outro"; regra seção 6: até cinco
+  cubos por plataforma "de qualquer forma"). Antes o cubo solto ia sempre para z = 50 e um cubo a
+  menos de 40 mm de um entregue o derrubava (−45, `DIST_DERRUBA`, que saiu). Agora `Mundo.solta`
+  usa `_apoio()`: 7 × 7 pontos da base; vale o apoio (plataforma ou cubo nela, `sobre` = a
+  plataforma) mais alto embaixo de algum ponto, com o topo até 5 mm acima da base; em pé se o centro
+  cai sobre um apoio ou no casco dos pontos de apoio; senão `'caiu'` (vai para o chão, para fora da
+  plataforma, `_para_fora`). `_derruba_pilhas()` a cada passo: o corpo do robô, as `pecas()` das
+  garras (forma, z de baixo, z de cima; o topo da cabeça é `topo_acima_da_base_mm`, 58, estimado) e
+  o cubo preso que entram num cubo da pilha na altura dele o **empurram** (`_empurra`); cai
+  (`'derrubado'`, −45 no juiz) só se o centro sai do apoio, e `_confere_pilha` derruba o que ficou
+  sem apoio em cima. A primeira versão derrubava com 1,5 mm de penetração: no código da Challenger a
+  parede de trás da cabeça encosta no cubo ao subir depois de soltar e derrubava a entrega (155 em
+  vez de 200). Efeito no `exemplo_bombertinho/main.py`: recuar com a comporta aberta na altura do cubo
+  puxava o cubo da plataforma; agora ele sobe a garra (`SOLTOU`, 105) antes. Teste direto dos casos
+  (em cima, beirada, emenda de dois, empurrado, plataforma andando): `python testa_pilha.py`.
+  Exemplo: `exemplo_bombertinho/empilha.py` (README, "Empilhando"). Não simulado: cubo que pula ou
+  tomba caindo de alto, o de baixo escorregando quando o de cima cai na beirada.
 
 Em 30/10 os dois deram a mesma pose final em `--velocidade 2` e `8` (relógio sincronizado). Trocando o
 cubo do A3 (e do A3') no cenário: amarelo → procura para um lado, volta e entrega na P4 (+100);
@@ -197,7 +227,7 @@ também deixou de gerar `Traceback` falso (`_Interrupcao` no `cliente.py`; ver o
 ## Pendências
 
 * **Bombertinho**: ângulos dos servos, canais do mux, porta do 2º sensor de linha, massa, motores,
-  roletes. A pose de início dos cenários (x = 380) é a do robô provisório: a cabeça da garra da frente
+  roletes, altura do teto da cabeça (`topo_acima_da_base_mm`, conta para as pilhas). A pose de início dos cenários (x = 380) é a do robô provisório: a cabeça da garra da frente
   na horizontal passa da linha azul. Juiz: limite de 2 cubos por viagem.
 * **Adversário**: um `Servidor` por robô (o construtor já aceita `robo=`), `SIM_PORTA` próprio para
   cada programa e o relógio sincronizado esperando os dois.

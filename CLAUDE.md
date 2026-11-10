@@ -15,7 +15,7 @@ equipes Titãs da Robótica). Tudo em português: código, comentários, commits
 | `exemplos/`, `menuPrincipal/`, `telemetria/` | programas do robô real |
 | `simuladorLine/` | simulador da RoboCupJunior Rescue Line (tem `CLAUDE.md` próprio). Mapa a partir de foto de pista de verdade: `ferramentas/foto_mapa.py` + `ferramentas/MAPA_DA_FOTO.md`, e a skill `.claude/skills/mapa-da-foto/` (06/11/2026; para usar na competição) |
 | `simuladorMaze/` | simulador da RoboCupJunior Rescue Maze (tem `CLAUDE.md` próprio). Mapa a partir de foto de labirinto de verdade: `ferramentas/foto_mapa.py` + `ferramentas/MAPA_DA_FOTO.md` e a skill `.claude/skills/mapa-da-foto-maze/` (06/11/2026; calibra também por pontos de fuga; a primeira foto real, de um canto e com dois níveis, não fechou o mapa) |
-| `simuladorChallenge/` | simulador da RCB Challenge (CBR 2026), começado em 30/10/2026: arena, cubos e plataformas, mecanum, juiz e o robô real **Bombertinho** (`robo_bombertinho.json`, 31/10: duas garras de paralelogramo, medido no DXF do Julio); os robôs provisórios continuam; **falta o adversário** (tem `CLAUDE.md` próprio) |
+| `simuladorChallenge/` | simulador da RCB Challenge (CBR 2026), começado em 30/10/2026: arena, cubos e plataformas, mecanum, juiz e o robô real **Bombertinho** (`robo_bombertinho.json`, 31/10: duas garras de paralelogramo, medido no DXF do Julio); os robôs provisórios continuam; desde 07/11 empilha cubos nas plataformas (até 5, regra seção 6; exemplo `exemplo_bombertinho/empilha.py`); **falta o adversário** (tem `CLAUDE.md` próprio) |
 | `curso/` | curso para os alunos (público): 18 módulos em Markdown, `referencia/`, `codigos/`, `curso-mariola.html` (tem `CLAUDE.md` próprio) |
 | `professor/` | material do professor: **NUNCA vai para o GitHub** (`.gitignore` = `*`; tem `CLAUDE.md` próprio). `professor/especialista/` = bot de Telegram dos alunos (06/11/2026, na VM da Igro, usuário `mariola`), que usa a skill pública `.claude/skills/especialista-mariola/` (mapa do repositório e problemas conhecidos: mantenha atualizada quando mudar uma lib ou o curso). O mesmo `bot.py` roda também como o bot da equipe Maze (`ESPECIALISTA=maze`, serviço `maze-bot`), com a skill `.claude/skills/especialista-maze/` (mapa, regras 2026 em resumo e problemas da Maze: mantenha atualizada quando mudar o `simuladorMaze` ou os módulos 12/16) |
 | `simuladorLine.zip` | zip antigo do simulador; o zip atual para os laboratórios sai de `simuladorLine/ferramentas/monta_portatil.py` |
@@ -136,6 +136,21 @@ Os simuladores emulam estes firmwares byte a byte. Na dúvida sobre um comportam
   formatação). O `gpiod` falso dos simuladores responde `get_info()` como o PIO principal.
 * Giroscópio do Mariola: Z em graus, acumulando, positivo no sentido horário. O curso usa
   `z()` positivo = esquerda e troca o sinal numa função só.
+* VL53L0X travando depois de Ctrl+C (investigado num Mariola em 09/11/2026, mux 0x70 no `i2c-1`):
+  o driver I2C do H618 (`i2c-mv64xxx`, `wait_event_timeout`) não corta transação no meio, então não
+  é o barramento preso. É protocolo: várias sequências da lib fazem `0xFF=1` ... `0xFF=0`; morrendo
+  no meio, o sensor fica no banco 1 e a inicialização seguinte (escrita no banco errado) o trava: ele
+  passa a dar NACK em tudo menos 0xFF e, no banco 0, 0xBF. Lib antiga: 8 travamentos em 300 Ctrl+C,
+  todos dentro dessas janelas; 150 inicializações sem Ctrl+C, nenhum. Solução no `libs/vl53.py`
+  (`_reset_software()`, no `__init__` e no `recover()`): `0xFF=0` e `0xBF=0` nos dois endereços,
+  `0xBF=1` no 0x29 e espera o `0xC0 = 0xEE` (o sensor volta ao 0x29, como no XSHUT); 0 travamentos
+  em 400 Ctrl+C (21 deixaram o sensor sujo), ~7 ms a mais para 3 sensores. O `recover()` antigo
+  (fechar/reabrir o canal do mux) não destravava. Copiado para `exemplos/04` e os três
+  `libs_mariola` e, por merge (mantendo o `print`/`I2C_LOCK` das equipes), para as cópias em
+  `professor/*/codigo*/libs/`. Scripts do teste no brick: `~/teste_vl53/` (`estressa2.py N`,
+  `diag.py`, `recupera.py`; `exemplo04/testa_recover.py` trava o sensor de propósito, na 1ª
+  tentativa: `0x80=1`, `0xFF=1`, `0x00=0` e `_init_sensor()` por cima, e confere o `recover()`).
+  O `exemplos/04-vl53l0x/main.py` explica isso aos alunos e usa `recover()` no `except`.
 * Servos inteligentes do Julio (lib `placaControleServo`) no mesmo barramento serial (SERIAL1) das
   placas de motor.
 * Conectores: `documentação/Conectores.pdf`/`.odp` (fonte, o Julio edita) e `documentação/Conectores.md`
