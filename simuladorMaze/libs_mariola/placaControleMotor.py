@@ -52,6 +52,7 @@ class PlacaControleMotor:
     GIRANDO_INVERTIDO = 2
 
     ignorar_retorno = False
+    TEMPO_RECUPERACAO = 3.0  # s esperando a porta voltar quando ela cai (abaixo do timeout de 5 s da placa)
 
     def __init__(self, objeto_porta_serial, id_equipamento):
         self.id_equipamento = id_equipamento & 0xFF
@@ -64,10 +65,16 @@ class PlacaControleMotor:
         #self.reset()
 
     def __del__(self):
-        if self.ser is not None:
-            self.ser.close()
-            if self.DEBUG:
-                print('Fechando a porta serial do PlacaControleMotor')
+        # Chamado quando o programa termina: manda o motor parar (antes ele seguia até o timeout de 5 s da placa).
+        # A porta serial é a mesma para todas as placas do barramento, por isso não é fechada aqui: fechar na
+        # primeira placa impedia as outras de mandar o comando de parar. O Python fecha a porta ao sair.
+        try:
+            if self.ser is not None and getattr(self.ser, 'is_open', True):
+                self.envia_comando(self.MODO_PID, 0, tentativas=1)
+                if self.DEBUG:
+                    print('Parando o motor da PlacaControleMotor')
+        except Exception:
+            pass
 
     @staticmethod
     def _calcular_crc(buf):
@@ -131,16 +138,25 @@ class PlacaControleMotor:
         pacote = self._montar_pacote(modo, valor, giro)
 
         for i in range(tentativas):
-            self.ser.reset_input_buffer()
-            self.ser.write(pacote)
-            self.ser.flush()
+            try:
+                self.ser.reset_input_buffer()
+                self.ser.write(pacote)
+                self.ser.flush()
 
-            # Descarta o eco do próprio envio (one-wire: HOST ouve o que envia)
-            eco = self.ser.read(self.TAMANHO_PACOTE_CMD)
+                # Descarta o eco do próprio envio (one-wire: HOST ouve o que envia)
+                eco = self.ser.read(self.TAMANHO_PACOTE_CMD)
 
-            # time.sleep(0.001)
-            # Lê a resposta do equipamento
-            resposta = self.ser.read(self.TAMANHO_PACOTE_RESP)
+                # time.sleep(0.001)
+                # Lê a resposta do equipamento
+                resposta = self.ser.read(self.TAMANHO_PACOTE_RESP)
+            except Exception as erro:
+                # A porta caiu (o hub USB do brick reiniciou: ver o Portas.reabre_porta_serial). Antes isso
+                # derrubava o programa; agora reabre a porta (a mesma de todas as placas) e tenta de novo.
+                print(f'[PlacaControleMotor {self.id_equipamento}] porta serial caiu ({erro}); reabrindo')
+                if not Portas().reabre_porta_serial(self.ser, self.TEMPO_RECUPERACAO):
+                    raise Exception(f'PlacaControleMotor {self.id_equipamento}: a porta serial caiu e não '
+                                    f'voltou em {self.TEMPO_RECUPERACAO} s ({erro})')
+                continue
             if self.DEBUG:
                 print(f'TX:  {[f"0x{b:02x}" for b in pacote]}')
                 print(f'ECO: {[f"0x{b:02x}" for b in eco]}')
@@ -237,17 +253,35 @@ class PlacaControleMotor:
             self.angulo_delta = 0
         return resultado
 
+    # resultado da última calibração feita desde que a placa ligou
+    RESULTADO_CALIBRACAO = ('ok', 'o encoder não contou', 'contou para o mesmo lado nos dois sentidos',
+                            'um sentido bem mais lento que o outro')
+
+    def _estado_calibracao(self, estado, giro_horario):
+        """Interpreta o byte de estado das respostas de calibração (firmware de 10/11/2026 em diante).
+
+        'calibrado': há calibração válida em uso; 'encoder_invertido': o encoder contou ao contrário do
+        motor e a placa já corrige sozinha (só um aviso); 'resultado': 'ok' ou o que deu errado na
+        última calibração ('o encoder não contou' = motor ou encoder desligado, ou um canal solto; a
+        calibração nova não é gravada). Firmware antigo não informa: os dois últimos vêm None."""
+        if giro_horario != 0 and not estado & 0x01:
+            return {'calibrado': True, 'encoder_invertido': None, 'resultado': None}
+        return {'calibrado': bool(estado & 0x01), 'encoder_invertido': bool(estado & 0x02),
+                'resultado': self.RESULTADO_CALIBRACAO[(estado >> 2) & 0x03]}
+
     def calibrar(self, tentativas=1):
         """Inicia a calibração de velocidade máxima do motor.
 
         O firmware roda o motor em ambos os sentidos e mede a velocidade.
-        Este comando é bloqueante no firmware (~12s).
+        Este comando é bloqueante no firmware (~14s). A calibração também descobre se o
+        encoder conta ao contrário do motor e corrige.
 
         Args:
             tentativas: Número de tentativas em caso de falha
 
         Returns:
-            dict com 'giro_max_horario' e 'giro_max_antihorario' ou None se falhou
+            dict com 'giro_max_horario', 'giro_max_antihorario', 'calibrado', 'encoder_invertido'
+            e 'resultado' (ver _estado_calibracao) ou None se a placa não respondeu
         """
         pacote = self._montar_pacote(self.MODO_CALIBRACAO, 0)
 
@@ -274,10 +308,12 @@ class PlacaControleMotor:
                 if crc_calculado == resposta[7]:
                     giro_horario = struct.unpack('>h', bytes(resposta[3:5]))[0]
                     giro_antihorario = struct.unpack('>h', bytes(resposta[5:7]))[0]
-                    return {
+                    resultado = {
                         'giro_max_horario': giro_horario,
                         'giro_max_antihorario': giro_antihorario,
                     }
+                    resultado.update(self._estado_calibracao(resposta[2], giro_horario))
+                    return resultado
 
             if self.DEBUG:
                 print(f'Tentativa {i + 1}/{tentativas} de calibração falhou')
@@ -292,8 +328,10 @@ class PlacaControleMotor:
         máximos de giro para ambas as direções.
 
         Args:
-            giro_max_horario: Valor máximo de giro no sentido horário (int16)
-            giro_max_antihorario: Valor máximo de giro no sentido anti-horário (int16)
+            giro_max_horario: Valor máximo de giro no sentido horário (int16). Negativo quer dizer
+                encoder invertido em relação ao motor (é assim que a calibração grava)
+            giro_max_antihorario: Valor máximo de giro no sentido anti-horário (int16), com o sinal
+                contrário ao do horário
             tentativas: Número de tentativas em caso de falha
 
         Returns:
@@ -372,7 +410,8 @@ class PlacaControleMotor:
         """Lê os valores atuais de calibração sem alterar nada.
 
         Returns:
-            dict com 'giro_max_horario', 'giro_max_antihorario' e 'encoder_ativo' ou None se falhou
+            dict com 'giro_max_horario', 'giro_max_antihorario', 'encoder_ativo', 'calibrado',
+            'encoder_invertido' e 'resultado' (ver _estado_calibracao) ou None se falhou
         """
         pacote = self._montar_pacote(self.MODO_GET_CALIBRACAO, 0)
 
@@ -394,11 +433,13 @@ class PlacaControleMotor:
                 if crc_calculado == resposta[7]:
                     giro_horario = struct.unpack('>h', bytes(resposta[3:5]))[0]
                     giro_antihorario = struct.unpack('>h', bytes(resposta[5:7]))[0]
-                    return {
+                    resultado = {
                         'giro_max_horario': giro_horario,
                         'giro_max_antihorario': giro_antihorario,
-                        'encoder_ativo': resposta[2] == 1,
+                        'encoder_ativo': bool(resposta[2] & 0x01),
                     }
+                    resultado.update(self._estado_calibracao(resposta[2], giro_horario))
+                    return resultado
 
             if self.DEBUG:
                 print(f'Tentativa {i + 1}/{tentativas} de leitura de calibração falhou')

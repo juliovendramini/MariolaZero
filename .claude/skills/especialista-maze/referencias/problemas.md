@@ -5,6 +5,13 @@ libs e do envio estão em `.claude/skills/especialista-mariola/referencias/probl
 
 ## Movimento: andar e girar
 
+* **`Exception: Erro ao ler o estado dos motores` no meio da rodada** (aconteceu com a equipe em
+  12/11/2026, no `zerar_distancia()` do `andar_mm_corrigindo`, com `usb 1-1: reset high-speed USB device`
+  no `dmesg`) → o hub USB do brick reiniciou e a lib antiga da equipe desistiu em 10 ms. Causa elétrica e
+  o que fazer: o item do hub USB nos problemas da skill especialista-mariola. A correção da lib (12/11) está
+  em `libs/motores.py`, `placaControleMotor.py` e `portas.py` do repositório do Mariola; na pasta `libs/` da
+  equipe, trocar o `from portas import Portas` por `from libs.portas import Portas` nas duas primeiras
+  (o professor tem os três prontos). Não diga que a causa está confirmada sem o `dmesg` do momento do erro.
 * **Motores soltam e os LEDs apagam sozinhos (esperando o botão, num `time.sleep` longo, procurando
   vítima)** → timeout de 5 s do firmware do Mariola: 5 s sem nenhum pacote solta os motores e apaga
   **todos** os LEDs, inclusive a iluminação das câmeras. Espere num laço que manda comando (como o

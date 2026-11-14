@@ -1,0 +1,32 @@
+{
+ "_comentario": "Ladrilhos próprios do simulador da Line. Feito e explicado pela ferramentas/ladrilho_proprio.py (LADRILHO_PROPRIO.md).",
+ "blocos": {
+  "exemplo_foto": {
+   "imagem": "exemplo_foto.png",
+   "largura": 2,
+   "altura": 2,
+   "descricao": "pista de treino da foto do laboratório (13/11/2026): quadrados com verdes",
+   "_fonte": "foto foto.jpg, pontos 415,751,125,330 1014,774.5,370,330 1064.5,1372,370,575 383.5,1431,125,575",
+   "pecas": {
+    "0,1": {
+     "caminhos": {
+      "L": "O"
+     },
+     "intersecoes": 2
+    },
+    "1,1": {
+     "caminhos": {
+      "L": "O"
+     },
+     "intersecoes": 1,
+     "gaps": 1,
+     "ponto": [
+      120.0,
+      135.0
+     ],
+     "rumo": "O"
+    }
+   }
+  }
+ }
+}

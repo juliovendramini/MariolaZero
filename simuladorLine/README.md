@@ -295,6 +295,17 @@ A área de resgate vai em `zona_resgate` (as células dela não têm ladrilhos n
 `[{"u": 300, "v": 450, "ang": 30, "comp": 45}, ...]` (centro, ângulo em graus, comprimento em mm), que
 é o que o editor grava. Mapa antigo com `"obstaculo": {"u": ..., "v": ...}` (um só) continua abrindo.
 
+### Ladrilhos próprios (pista de treino que não é ladrilho oficial)
+
+Um desenho de linha feito de uma **foto** (pista de treino do laboratório) ou de um **desenho** (Paint),
+de 1 ladrilho ou de um **bloco** de vários (2x2, 3x1...). Fica em `ladrilhos_proprios/` (a imagem a
+1 mm por pixel + o `proprios.json` com os caminhos de cada peça) e aparece **no fim da paleta**, inteiro:
+um clique põe o bloco todo, com o canto de cima à esquerda na célula clicada (R gira). No arquivo do mapa
+cada peça é um ladrilho `NOME@coluna,linha`. A ferramenta `ferramentas/ladrilho_proprio.py` faz a imagem
+(endireita a foto pelos pontos que você dá), mostra onde as linhas cruzam as bordas e escreve as peças;
+o passo a passo está em `ferramentas/LADRILHO_PROPRIO.md`. Exemplo: o bloco `exemplo_foto` (2x2, de uma
+foto) no mapa `mapas/exemplo_ladrilho_proprio.json`.
+
 ---
 
 ## Os robôs do Mariola
@@ -357,6 +368,10 @@ mudar.
 * Cada posição é a **leitura do potenciômetro** (0–1023) que vocês calibram no robô: braço `baixo`
   (garra no chão) e `alto`; dedos `aberto` e `fechado` (encostando no outro); porta `fechada`,
   `solta_esq` e `solta_dir`.
+* Dedo `com_bola` (opcional): a leitura com a garra fechada numa bolinha. Sem ela o dedo fecha em
+  linha reta e encosta na bolinha no meio do curso; num dedo que gira, a bolinha só para o dedo quase
+  fechado (ex.: o do Boberto, 8° com bolinha e 0° vazio). Programa que confere pela posição se pegou a
+  bolinha precisa dela.
 * MG90S a 5 V pela ponte L9110S: ~0,12 s por 60° com potência 255 (`graus_por_s`), parado abaixo de
   `pwm_minimo` (45, estimado: tem de ficar abaixo dos 60 de PWM mínimo do firmware, senão o
   controle proporcional para antes do alvo). O braço é mais lento (`carga`). Sem inércia: no
@@ -742,6 +757,7 @@ exemplo_pacoca/     programa de exemplo do Paçoca (.ino)
 sim/                ladrilhos, mapa, física, área de resgate (resgate.py), juiz, servidor, interface,
                     camera_linha.py (geometria e imagem da câmera de linha)
 ladrilhos/          os 82 ladrilhos oficiais (1 mm por pixel) + ladrilhos.json
+ladrilhos_proprios/ ladrilhos próprios (imagem + proprios.json; ferramentas/LADRILHO_PROPRIO.md)
 fake_hw/            serial, smbus2, gpiod, firmware das placas, relógio virtual, camera.py (cv2.VideoCapture)
 libs_mariola/       cópia das libs do Mariola (reserva)
 mapas/              treino.json, completo.json e resgate.json
@@ -752,7 +768,8 @@ resultados/         (criada pelo avalia.py) relatórios, logs e pistas surpresa
 ferramentas/        importa_ladrilhos.py (refaz os ladrilhos a partir do rcj-rescue-cms), gera_mapas.py,
                     gera_desafios.py, pista_surpresa.py (gerador de pistas sorteadas),
                     monta_portatil.py (pacote portátil para Windows),
-                    foto_mapa.py + MAPA_DA_FOTO.md (mapa a partir de foto de uma pista de verdade)
+                    foto_mapa.py + MAPA_DA_FOTO.md (mapa a partir de foto de uma pista de verdade),
+                    ladrilho_proprio.py + LADRILHO_PROPRIO.md (ladrilho próprio de foto ou desenho)
 fotos_mapa/         o trabalho de cada foto do foto_mapa.py (fica fora do zip do laboratório)
 Simulador.bat       abre o simulador no Windows (com o Python de portatil/, se existir)
 Avaliar.bat         roda o avalia.py no Windows (idem)

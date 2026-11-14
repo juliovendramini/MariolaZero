@@ -36,6 +36,28 @@ Cada item: sintoma → causa → o que fazer (e onde ler mais). Confira no códi
   atual para o robô. Medido num Mariola: 8 travamentos em 300 Ctrl+C com a lib antiga, 0 em 400 com
   a nova. Se travar **sem** Ctrl+C, é outra coisa (cabo, ruído dos motores, alimentação).
 * **Leitura I2C travando ou com lixo usando threads** → o I2C só pode ser usado por uma thread (curso 7).
+* **Motor dispara na velocidade máxima com qualquer velocidade pedida (ou quando o HOLD liga), só em
+  velocidade e não em potência** → o encoder conta ao contrário do motor (cabo ou motor diferente). Com
+  o firmware de 10/11/2026 em diante basta calibrar de novo (`calibra_motores()` no brick, `calibrar()`
+  na placa de motor, rodas no ar): a calibração descobre a polaridade e corrige. `estado_calibracao_motores()`
+  mostra `'encoder_invertido'` e o `'resultado'`. Com firmware antigo, trocar os dois fios do motor **ou**
+  os canais A/B do encoder. Roda girando para trás é outra coisa: `direcao_motor()`.
+* **Um motor não anda nos comandos de velocidade, mas anda em potência** → está sem calibração (a última
+  calibração deu `'o encoder não contou'`: encoder ou motor desligado, fio do encoder solto). Confira o
+  cabo e calibre de novo.
+* **`Exception: Erro ao ler o estado dos motores` (ou dos servos, do LED) no meio da rodada, com o robô
+  andando, e no `dmesg` `usb 1-1: reset high-speed USB device number 2`** → o hub USB do brick reiniciou.
+  Atrás dele ficam os conversores do Mariola e das placas de motor (`_SERIAL0` a `SERIAL3`; giroscópio e
+  sensor de cor nas `SERIAL4`-`6` são UART do Banana Pi e não caem). Quase sempre é elétrico: queda dos
+  5 V (bateria fraca, motor travado ou partindo forte) ou ruído dos motores (capacitor de 100 nF nos
+  terminais, fios trançados, longe do cabo USB; conector do hub firme). Conferir logo depois do erro:
+  `dmesg -T | tail -40` (o horário bate; `ch341-uart ... disconnected` = os seriais caíram). Até 12/11/2026
+  a lib desistia em 10 ms e o programa morria com os motores girando até o timeout de 5 s; desde 12/11 o
+  `libs/motores.py` espera a resposta até 50 ms, reabre a porta (achada de novo pelo lugar no hub, porque
+  o `ttyUSB` pode mudar) e manda de novo por até 3 s (`TEMPO_RECUPERACAO`; `falhas_comunicacao` conta), e
+  a `placaControleMotor.py` reabre a porta quando ela cai. Comando com ângulo não é mandado duas vezes se
+  já tinha chegado. Precisa das três libs novas (`motores.py`, `placaControleMotor.py`, `portas.py`); a
+  equipe que usa `libs.portas` troca só o `from portas import Portas` por `from libs.portas import Portas`.
 * **Motores continuam girando depois de um erro** → falta `try/finally` parando os motores (curso 3). Com
   `Motores(False)` nada muda até `atualiza_motores()` (curso 4).
 * **Servos comuns, ventoinha e buzzer brigando** → os três dividem o Timer2 do ATmega: desde o firmware de

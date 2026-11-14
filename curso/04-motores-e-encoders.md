@@ -171,7 +171,8 @@ Se você não sabe os IDs das suas placas: `PlacaControleMotor.buscar_motores(Po
   oscilar ou demorar a atingir a velocidade.
 * **Calibração:** se o robô anda torto com `anda(40, 40)` mesmo sem patinar, os motores podem estar
   com calibrações diferentes. `obtem_calibracao_motores()` mostra; `calibra_motores()` mede de
-  novo (robô **suspenso**, ~26 s).
+  novo (robô **suspenso**, ~30 s). A calibração também descobre se o encoder está ligado ao
+  contrário do motor e corrige sozinha; `estado_calibracao_motores()` diz como foi.
 
 ## 4.8 LEDs e servos comuns
 

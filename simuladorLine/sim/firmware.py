@@ -181,9 +181,12 @@ class FirmwareMariola:
             m1, m2 = self.motor(1), self.motor(2)
             c1 = m1.cal[0] if m1 else 0
             c2 = m2.cal[0] if m2 else 0
-            return (b'\xF4' + struct.pack('>ii', c1, c2) + bytes([self._estado()]), 0.0004)
-        if cmd == 0xF3:                                      # CALIBRA_MOTORES (bloqueia ~26 s)
-            self.ocupado_ate = t + 26.0
+            # último byte: estado da calibração (firmware de 10/11/2026), 4 bits por motor: bit 0 =
+            # calibrado, bit 1 = encoder invertido, bits 2-3 = resultado da última calibração (0 = ok)
+            estado = (0x01 if c1 else 0) | (0x10 if c2 else 0)
+            return (b'\xF4' + struct.pack('>ii', c1, c2) + bytes([estado]), 0.0004)
+        if cmd == 0xF3:                                      # CALIBRA_MOTORES (bloqueia ~30 s)
+            self.ocupado_ate = t + 30.0
             return (b'\xF3', 0.0002)
         if cmd == 0xF2:                                      # ATIVA_VENTOINHA
             if self.modo_timer2 == TIMER2_LIVRE:             # configuraTimer2PWMVentoinha: desliga os servos
@@ -307,14 +310,14 @@ class FirmwarePlaca:
             c = int(0.8 * m.vlivre / 40.0)
             m.cal = [c, -c]
             h, ah = struct.pack('>h', c), struct.pack('>h', -c)
-            return (self._resp(0, h + ah, self.CALIBRACAO), 14.0)
+            return (self._resp(1, h + ah, self.CALIBRACAO), 14.0)    # [2] = estado: calibrado, ok
         if modo == self.GET_CAL:
             return (self._resp(1 if m.cal[0] != 0 else 0, h + ah, self.GET_CAL), 0.0008)
         if modo == self.SET_CAL:
             d = f[2]
             m.cal[0 if d == 0 else 1] = _s16((f[3] << 8) | f[4])
             h, ah = struct.pack('>h', _s16(m.cal[0])), struct.pack('>h', _s16(m.cal[1]))
-            return (self._resp(d, h + ah, self.SET_CAL), 0.0008)
+            return (self._resp(1 if m.cal[0] != 0 else 0, h + ah, self.SET_CAL), 0.0008)
         if modo in (self.SET_KP, self.SET_KI, self.SET_KD, self.SET_KP_FREIO,
                     self.SET_KD_FREIO, self.SET_DELTA_FREIO):
             return (self._resp(0, bytes([f[2], f[3], 0, 0]), modo), 0.0008)

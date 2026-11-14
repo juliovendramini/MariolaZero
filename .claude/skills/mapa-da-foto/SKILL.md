@@ -36,6 +36,9 @@ exemplo completo é `simuladorLine/fotos_mapa/mundial2026/` (`projeto.json` e `d
 * Não mexa no código do simulador para encaixar a foto. Se faltar um recurso (como faltou a lombada
   solta e a inclinação em 04/11), proponha e espere ele pedir.
 * Não use os ladrilhos de competição fora do catálogo oficial: escolha o oficial mais parecido e anote.
+  Trecho que não é ladrilho oficial (pista de treino, desenho livre) vira **ladrilho próprio**: skill
+  `ladrilho-proprio` (`ferramentas/LADRILHO_PROPRIO.md`); as peças dele entram na `descricao.json` pelo
+  nome `NOME@coluna,linha`.
 * As imagens `*.png` da pasta de trabalho o git ignora; `foto.jpg`, `projeto.json` e `descricao.json`
   ficam (ele decide o commit). Commits só quando ele pedir.
 * Mudou algo no método ou aprendeu uma lição nova: atualize o `MAPA_DA_FOTO.md` (seção "Lições").

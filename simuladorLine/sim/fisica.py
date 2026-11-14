@@ -520,6 +520,12 @@ class Mundo:
         t = m.ladrilhos[k]
         saida = (p['saida'] if p else None) or m.inicio_dir or 'N'
         x, y = m.centro(t['x'], t['y'])
+        info = m.cat.info(t['tipo'])
+        if info.get('ponto'):         # ladrilho próprio com a linha fora do centro
+            u, v = LT.gira_ponto(info['ponto'][0], info['ponto'][1], t['rot'])
+            x, y = m.mundo(t, u, LT.TAM - v)
+        if info.get('rumo'):
+            saida = LT.gira_dir(info['rumo'], t['rot'])
         return x, y, math.radians(LT.ANGULO[saida]), t
 
     def vai_para_inicio(self, idx_caminho=0):

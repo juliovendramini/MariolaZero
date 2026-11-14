@@ -36,7 +36,8 @@ python simulador.py --sem-janela --velocidade 8 --tempo 200
 #   (09/11: o reset por software do vl53.py, ~2 ms por sensor na criação, deslocou os tempos;
 #   antes 0:25.66, x=345 y=201 178.9°)
 python simulador.py --sem-janela --velocidade 8 --tempo 120 --robo robo_mecanum.json --programa exemplo_aluno/anda_mecanum.py --cenario cenarios/vazio.json
-#   só locomoção: 3 cruzamentos, anda de lado, gira 180°, volta; pose final x=449 y=1050 ângulo=179.8°, 0 pontos
+#   só locomoção: 3 cruzamentos, anda de lado, gira 180°, volta; pose final x=447 y=1049 ângulo=180.2°, 0 pontos
+#   (conferido em 12/11, igual com as libs do commit 333c442; a anotação antiga, x=449 y=1050 179.8°, era de antes)
 python simulador.py --sem-janela --velocidade 8 --tempo 200 --robo robo_bombertinho.json --programa exemplo_bombertinho/main.py
 #   Bombertinho, garra da frente: "+100 cubo entregue: azul (A3)" em 0:30.32,
 #   pose final x=341 y=213 ângulo=178.9° (09/11, reset do vl53.py; antes 0:30.25 e 178.8°;
@@ -162,10 +163,13 @@ branco → acende os LEDs e não pega (+50). Rode depois de mexer em `sim/` ou `
 
 ## Bombertinho (`robo_bombertinho.json`, 31/10/2026)
 
-* Medido no DXF que o Julio exportou do AutoCAD ("Bombertinho 2026 - Nacional CBR_claude.dxf", em
-  `Downloads`; o .dwg não dá para ler, e o DXF 2013 sai com os sólidos em ACIS binário, que o `ezdxf`
-  1.x não interpreta: as coordenadas saíram de um leitor feito à mão dos registros `point`,
-  `transform` e `ellipse-curve`). No desenho: camadas `sensor_distancia`, `sensor_cor`,
+* Medido no DXF que o Julio exportou do AutoCAD. O .dwg não dá para ler, e o DXF 2013 sai com os
+  sólidos em ACIS binário, que o `ezdxf` 1.x não interpreta: as coordenadas saem de um leitor feito à
+  mão dos registros `point`, `transform` e `ellipse-curve`. O DXF de 31/10 (em `Downloads`) foi
+  apagado. Desde 12/11/2026 o DXF e o leitor ficam em `Documents\modelos3D\robotica\challenge2026\`:
+  `Bombertinho 2026 - Nacional CBR.dxf` e `extrator_dxf\` (`arame.py`, o arame já no referencial do
+  robô em `bombertinho_arame.json`, as vistas e um `LEIAME.md`). **Não precisa pedir ao Julio para
+  exportar de novo.** No desenho: camadas `sensor_distancia`, `sensor_cor`,
   `sensores reflexao`, `giroscópio`, `servos`, `mães`; **verde = parte fixa** (presa ao robô), a peça
   que abre em laranja-avermelhado (RGB 242,103,34). Referencial do DXF → robô: x_r = −y_dxf − 113,7,
   y_r = x_dxf + 262,9, altura = z_dxf − 1,7 (chão com as rodas de 58 mm medidas pelo Julio; no

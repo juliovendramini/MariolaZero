@@ -45,7 +45,10 @@ Construtor da classe. Inicializa os atributos e configura a comunicação serial
 ---
 
 ### `__del__(self)`
-Destrutor da classe. Para os motores e fecha a porta serial.
+Destrutor da classe (roda quando o programa termina). Manda os motores pararem, desliga a ventoinha e o
+buzzer se estiverem em uso e fecha a porta serial. Desde 10/11/2026 o comando de parar é enviado também
+com `Motores()` / `Motores(False)` (antes só saía com `Motores(True)`). Programa morto com `kill` não
+passa por aqui: os motores só param no timeout de 5 s do firmware.
 
 ---
 
@@ -148,7 +151,13 @@ Define a potência (PWM) dos motores 1 e 2.
 ---
 
 ### `para_motores(self)`
-Para todos os motores.
+Para todos os motores: velocidade 0 nos quatro e nenhum giro por ângulo pendente. O modo de freio continua
+o do `set_modo_freio`. Com `Motores(False)` só preenche a lista: chame `atualiza_motores()` depois.
+
+Desde 10/11/2026 o comando mantém o tipo do último enviado (4x4 ou normal). Antes ia sempre como 4x4, e
+nesse modo o firmware copia nos motores 3 e 4 o que faz nos motores 1 e 2, inclusive as correções do
+freio `HOLD`: num robô de duas rodas com `HOLD`, o motor 3 ou 4 (uma garra, por exemplo) se mexia depois
+do `para_motores()`.
 
 ---
 
@@ -355,10 +364,40 @@ Pacote de 10 bytes como os outros comandos (os bytes que sobram são ignorados).
 
 ### `obtem_calibracao_motores(self)`
 Retorna `(calibracao_motor1, calibracao_motor2)`: a velocidade (contagens a cada 25 ms) que vale 100.
+Zero = motor sem calibração.
 
 ### `calibra_motores(self)`
 Manda a placa medir a velocidade máxima dos motores e gravar a calibração. Os motores giram sozinhos
-e a placa fica ~26 s sem responder: faça com o robô suspenso.
+e a placa fica ~30 s sem responder: faça com o robô suspenso.
+
+Desde o firmware de 10/11/2026 a calibração também:
+
+- **descobre a polaridade do encoder.** Se com potência positiva o encoder conta para baixo (motor ou
+  encoder ligado ao contrário), a placa passa a inverter a contagem desse motor. Antes disso o PID e
+  o freio HOLD disparavam o motor a 100%. O sentido em que o motor gira não muda: se a roda anda
+  para trás, continua sendo com `direcao_motor()`. Não há como a placa saber qual dos dois está
+  trocado, só que estão diferentes entre si;
+- **não grava resultado ruim.** Se o encoder não contou (motor ou encoder desligado, ou um canal do
+  encoder solto), fica valendo a calibração que já estava gravada;
+- **vale na hora** (antes só depois de religar o brick).
+
+Na EEPROM a polaridade é o sinal do valor "horário" (negativo = encoder invertido), sem campo novo:
+um brick calibrado com o firmware antigo e o encoder invertido passa a funcionar só com a troca do
+firmware. EEPROM vazia vale como "sem calibração": os motores 1 e 2 andam por potência, sem PID. Com
+só um dos dois calibrado, o outro não anda nos comandos de velocidade.
+
+### `estado_calibracao_motores(self)`
+Lista com um dicionário por motor (1 e 2):
+
+| chave | valor |
+|---|---|
+| `'calibrado'` | `True` se há calibração válida em uso |
+| `'encoder_invertido'` | `True` se a calibração achou o encoder contando ao contrário do motor (já corrigido: é só um aviso) |
+| `'resultado'` | `'ok'` ou o que deu errado na última calibração feita desde que o brick ligou: `'o encoder não contou'`, `'contou para o mesmo lado nos dois sentidos'` (os dois não gravam) ou `'um sentido bem mais lento que o outro'` (aviso; grava) |
+
+Com firmware antigo, que não informa o estado, devolve `None`. No protocolo é o último byte da
+resposta do `OBTEM_CALIBRACAO_MOTORES`: 4 bits por motor (bit 0 calibrado, bit 1 encoder invertido,
+bits 2-3 resultado).
 
 ---
 

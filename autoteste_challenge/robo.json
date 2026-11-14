@@ -1,0 +1,45 @@
+{
+  "nome": "Bombertinho (Challenge)",
+  "_fonte": "defs.py e movimentos.py da equipe da RCB Challenge, commit 9b1c3f2 (professor/challenger2026/codigo). Se a equipe mudar a ligacao, mude aqui.",
+  "brick": {
+    "motores_encoder": [1, 2],
+    "_motores": "motores traseiros no brick: 1 normal, 2 invertido",
+    "motores_sem_encoder": [],
+    "timer2": "servos",
+    "_timer2": "as garras usam os servos comuns do brick, entao o buzzer nao funciona neste robo (Timer2)",
+    "fita_porta4": false,
+    "servos_comuns": [
+      {"servo": 1, "nome": "mao lateral", "repouso": 180, "teste": 160},
+      {"servo": 2, "nome": "tronco lateral", "repouso": 170, "teste": 150},
+      {"servo": 3, "nome": "tronco frontal", "repouso": 170, "teste": 150},
+      {"servo": 4, "nome": "mao frontal", "repouso": 180, "teste": 160}
+    ]
+  },
+  "barramento": {
+    "porta": "SERIAL2",
+    "placas_motor": [
+      {"id": 8, "nome": "frente esq"},
+      {"id": 51, "nome": "frente dir"}
+    ],
+    "servos": []
+  },
+  "giroscopio": "SERIAL5",
+  "sensores_linha": [
+    {"porta": "SERIAL1", "nome": "frontal"},
+    {"porta": "SERIAL3", "nome": "lateral"}
+  ],
+  "vl53": [
+    {"porta": "I2C4", "nome": "frente"},
+    {"porta": "I2C2", "nome": "lateral esq"},
+    {"porta": "I2C5", "nome": "lateral dir"},
+    {"porta": "I2C7", "nome": "tras"}
+  ],
+  "tcs": [
+    {"porta": "I2C3", "nome": "frente"},
+    {"porta": "I2C6", "nome": "garra lateral"},
+    {"porta": "I2C8", "nome": "garra frontal"}
+  ],
+  "pinos": [],
+  "pinos_nao_mexer": [],
+  "cameras": []
+}

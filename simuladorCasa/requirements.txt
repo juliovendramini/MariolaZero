@@ -1,0 +1,14 @@
+pygame>=2.5
+pymunk>=6.6
+numpy>=1.24
+opencv-python>=4.8
+# só para o cérebro com o Claude (exemplo_casa/cerebro.py, CEREBRO=claude):
+# anthropic
+# só para a voz (exemplo_casa/voz.py, CASA_VOZ): falar, ouvir, som e reconhecer quem fala
+# piper-tts
+# faster-whisper
+# sounddevice
+# speechbrain
+# só para o ferramentas/planta_dxf.py (converter uma planta em DXF):
+# ezdxf>=1.1
+# matplotlib>=3.7

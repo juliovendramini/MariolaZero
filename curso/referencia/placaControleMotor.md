@@ -105,11 +105,18 @@ calibração da EEPROM. Também zera o desconto da lib.
 | `pid_motor(kp, ki, kd)` | grava as três constantes (×100) na EEPROM; `True` se todas confirmaram |
 | `set_kp(v)`, `set_ki(v)`, `set_kd(v)` | uma constante de cada vez |
 | `set_kp_freio(v)`, `set_kd_freio(v)`, `set_delta_freio(v)` | ajuste do freio travado |
-| `calibrar()` | a placa gira o motor nos dois sentidos e mede a velocidade máxima (~12–14 s, **robô suspenso**). Devolve `{'giro_max_horario', 'giro_max_antihorario'}` |
-| `calibracao_manual(horario, antihorario)` | grava a calibração sem medir (ex.: para igualar ao motor do Mariola) |
-| `obter_calibracao()` | lê a calibração e se o encoder está ativo |
+| `calibrar()` | a placa gira o motor nos dois sentidos e mede a velocidade máxima (~14 s, **robô suspenso**). Devolve `{'giro_max_horario', 'giro_max_antihorario', 'calibrado', 'encoder_invertido', 'resultado'}` |
+| `calibracao_manual(horario, antihorario)` | grava a calibração sem medir (ex.: para igualar ao motor do Mariola). `horario` negativo quer dizer encoder invertido |
+| `obter_calibracao()` | lê a calibração, se o encoder está ativo e o estado (as mesmas três chaves do `calibrar()`) |
 
 Sem calibração gravada, a placa trabalha em PWM direto (a "velocidade" vira potência).
+
+**Polaridade do encoder (firmware de 10/11/2026 em diante):** a calibração descobre se o encoder
+conta ao contrário do motor e corrige sozinha (`'encoder_invertido': True` é só um aviso). O que ela
+não descobre é para que lado a roda gira: isso continua com `direcao_motor()`. `'resultado'` é
+`'ok'` ou o que deu errado: `'o encoder não contou'` (motor ou encoder desligado, ou um fio do
+encoder solto; a calibração nova não é gravada) ou `'um sentido bem mais lento que o outro'`
+(aviso). Com firmware antigo, `'encoder_invertido'` e `'resultado'` vêm `None`.
 
 ## Para descobrir e configurar placas
 
@@ -133,6 +140,7 @@ O envio "cru". Os outros métodos usam este. Só use para experimentos com o pro
 | Tudo devolve `None` | ID errado, porta errada, baud diferente de 250000 ou placa sem energia |
 | Rodas da frente e de trás andando diferente | calibração diferente: veja `obter_calibracao()` e `Motores.obtem_calibracao_motores()` (lembre do ×4 vs ×2) |
 | Contagem volta para 0 sozinha | a placa ficou 10 s sem pacote e reiniciou |
+| Motor dispara na velocidade máxima com qualquer velocidade pedida, ou quando o freio travado liga | encoder contando ao contrário do motor: rode `calibrar()` (firmware de 10/11/2026 em diante corrige sozinho) |
 | `PlacaControleMotor(Portas.SERIAL1, 8)` dá erro estranho | passou o número da porta: esta classe quer a porta **aberta** |
 
 ## No simulador

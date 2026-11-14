@@ -39,7 +39,8 @@ COR_RAIOS = [(255, 120, 80), (255, 180, 80), (90, 200, 255), (120, 160, 255), (1
 FERRAMENTAS = [
     ('ladrilho', 'Ladrilho', 'Clique numa célula para pôr o ladrilho escolhido na paleta (abaixo). '
                              'Clicar de novo no mesmo ladrilho gira 90°. R ou roda do mouse giram o da paleta. '
-                             'Botão direito apaga.'),
+                             'Botão direito apaga. Os ladrilhos próprios (fim da paleta) de várias peças entram '
+                             'inteiros, com o canto de cima à esquerda na célula clicada.'),
     ('girar', 'Girar', 'Clique: gira 90° no sentido horário. Botão direito: anti-horário.'),
     ('inicio', 'Início', 'Clique para marcar o ladrilho de início; clique de novo para trocar a direção de saída.'),
     ('checkpoint', 'Checkpoint', 'Clique para marcar/desmarcar checkpoint (não pode ter item pontuável).'),
@@ -420,7 +421,14 @@ class Interface:
         if s is None:
             rgb = self.cat.rgb(tipo, rot)
             base = pygame.surfarray.make_surface(np.ascontiguousarray(rgb.transpose(1, 0, 2)))
-            s = pygame.transform.smoothscale(base, (px, px))
+            if rgb.shape[0] != rgb.shape[1]:            # bloco próprio retangular: cabe no quadrado
+                f = px / max(rgb.shape[:2])
+                s = pygame.Surface((px, px))
+                s.fill(COR_FUNDO)
+                pw, ph = max(1, round(rgb.shape[1] * f)), max(1, round(rgb.shape[0] * f))
+                s.blit(pygame.transform.smoothscale(base, (pw, ph)), ((px - pw) // 2, (px - ph) // 2))
+            else:
+                s = pygame.transform.smoothscale(base, (px, px))
             if len(self.cache_lad) > 600:
                 self.cache_lad.clear()
             self.cache_lad[k] = s
@@ -1083,7 +1091,7 @@ class Interface:
 
     def _desenha_paleta(self, x, y, larg):
         lw, lh = self.tela.get_size()
-        nomes = self.cat.nomes()
+        nomes = self.cat.nomes_paleta()
         # ladrilho escolhido (com a rotação)
         img = self._sup_ladrilho(self.tipo_paleta, self.rot_paleta, 64)
         self.tela.blit(img, (x, y))
@@ -1194,6 +1202,10 @@ class Interface:
             if botao == 3:
                 if t:
                     m.remove(*c, z)
+            elif self.cat.eh_bloco(self.tipo_paleta):
+                fora = m.coloca_bloco(c[0], c[1], z, self.tipo_paleta, self.rot_paleta)
+                if fora:
+                    self._aviso(f'{fora} peça(s) do bloco ficaram fora do campo')
             elif t and t['tipo'] == self.tipo_paleta:
                 t['rot'] = (t['rot'] + 90) % 360
             else:

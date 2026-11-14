@@ -40,6 +40,16 @@ solta os motores e **apaga todos os LEDs**. É proteção para o robô não sair
 programa travar. Consequência: **nunca dê `time.sleep()` longo sem mandar nada** quando os motores
 ou LEDs precisam continuar como estão (espere em um laço que reenvia o comando).
 
+**Quando a comunicação falha:** os conversores USB-serial do Mariola e das placas de motor ficam
+atrás de um hub USB dentro do brick. Se o hub reinicia (bateria fraca, motor travado ou ruído dos
+motores; no `dmesg` aparece `usb 1-1: reset high-speed USB device`), a resposta da placa não chega
+e a porta some e volta. A lib não desiste na primeira falha: espera a resposta um pouco mais,
+reabre a porta e manda de novo, por até 3 segundos (`TEMPO_RECUPERACAO`). No terminal aparece
+`[Motores] ... Tentando de novo` e depois `comunicação de volta`. Só se não voltar nesse tempo vem o
+erro `Erro ao ler o estado dos motores`. Um comando com ângulo não é mandado duas vezes se já tinha
+chegado (o giro não dobra). `falhas_comunicacao` conta quantas vezes isso aconteceu: se aumenta
+sempre, procure a causa no robô (bateria, fios dos motores, cabo do hub).
+
 ## Criando o objeto
 
 ### `Motores(atualiza_instantaneo=False)`
@@ -52,8 +62,9 @@ motores.direcao_motor(2, Motores.INVERTIDO)   # quase sempre um lado é espelhad
 ```
 
 * Crie **um só** objeto `Motores` no programa inteiro e passe-o para quem precisar.
-* Quando o objeto é destruído (fim do programa), `__del__` chama `para_motores()` e fecha a
-  serial. Com `Motores(False)` o `para_motores()` não envia nada: pare você mesmo no `finally`.
+* Quando o objeto é destruído (fim do programa), `__del__` manda os motores pararem e fecha a
+  serial. Não conte com isso: pare você mesmo no `finally`. Num brick com a lib antiga (antes de
+  10/11/2026), com `Motores(False)` o `__del__` não enviava nada e o robô andava mais 5 s.
 
 ## Constantes
 
@@ -124,8 +135,9 @@ motores.move_motores(40, 1156, 40, 1156)    # uma volta da roda nos dois motores
   * o robô passa um pouco do alvo (inércia). Para precisão, desacelere perto do fim.
 
 ### `para_motores()`
-Velocidade 0 nos quatro motores (modo 4x4). Com `Motores(False)`, chame `atualiza_motores()`
-depois (senão nada é enviado).
+Velocidade 0 nos quatro motores. Com `Motores(False)`, chame `atualiza_motores()` depois (senão
+nada é enviado). O freio continua o do `set_modo_freio`: com `HOLD` a placa segura as rodas por
+5 s depois do último comando e então solta.
 
 ### `set_modo_freio(modo)`
 `Motores.BREAK` (padrão): parado, o motor fica livre. `Motores.HOLD`: parado, a placa **segura**
@@ -188,9 +200,31 @@ Devolve `(calibracao_motor1, calibracao_motor2)`: a velocidade (contagens a cada
 
 ### `calibra_motores()`
 Manda a placa medir a velocidade máxima dos motores e gravar a calibração. **Os motores giram
-sozinhos** e a placa fica ~26 s sem responder. Faça com o robô **suspenso** (rodas no ar).
+sozinhos** e a placa fica ~30 s sem responder. Faça com o robô **suspenso** (rodas no ar).
 
-* **Quando usar:** motor novo, troca de redução/roda, robô andando torto com velocidades iguais.
+* **Quando usar:** motor novo, troca de redução/roda, robô andando torto com velocidades iguais,
+  motor que dispara sozinho na velocidade máxima.
+* **Polaridade do encoder (firmware de 10/11/2026 em diante):** a calibração descobre se o encoder
+  conta ao contrário do motor e corrige sozinha. Não importa de que lado o cabo foi ligado. O que
+  ela **não** descobre é para que lado a roda gira: isso continua com `direcao_motor()`.
+
+### `estado_calibracao_motores()`
+Diz como está a calibração dos motores 1 e 2. Devolve uma lista com um dicionário por motor:
+
+```python
+for n, m in enumerate(motores.estado_calibracao_motores(), 1):
+    print(n, m)
+# 1 {'calibrado': True, 'encoder_invertido': False, 'resultado': 'ok'}
+# 2 {'calibrado': True, 'encoder_invertido': True, 'resultado': 'ok'}
+```
+
+* `'calibrado'`: tem calibração válida. Sem ela o motor não usa o encoder.
+* `'encoder_invertido'`: o encoder estava ao contrário e a placa já corrigiu. É só um aviso.
+* `'resultado'`: `'ok'` ou o que deu errado na última calibração. `'o encoder não contou'` quer
+  dizer motor ou encoder desligado (ou um fio do encoder solto): confira o cabo e calibre de novo.
+* Com firmware antigo devolve `None`.
+* **Quando usar:** logo depois de `calibra_motores()` (espere os 30 s) e quando um motor não anda
+  ou anda estranho.
 
 ## Servos comuns
 

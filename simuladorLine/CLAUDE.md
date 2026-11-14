@@ -18,7 +18,7 @@ O programa roda em processo separado (`rodar.py`; para `.ino`, `rodar_pacoca.py`
 | arquivo | papel |
 |---|---|
 | `sim/fisica.py` | robôs, motores (inclusive DC na ponte H do Paçoca), sensores, pymunk + altura do piso |
-| `sim/mapa.py`, `sim/ladrilhos.py` | mapa, editor, os 82 ladrilhos oficiais (`ladrilhos/`, 1 mm/px) |
+| `sim/mapa.py`, `sim/ladrilhos.py` | mapa, editor, os 82 ladrilhos oficiais (`ladrilhos/`, 1 mm/px) e os próprios (`ladrilhos_proprios/`) |
 | `sim/resgate.py` | área de resgate: vítimas, triângulos, garra e caçamba (cinemático) |
 | `sim/juiz.py` | pontuação e LoP (regra 2026) |
 | `sim/servidor.py` | operações pedidas pelo hardware virtual (inclusive `imu`, `motor_dc`, `leds` do Paçoca) |
@@ -26,8 +26,9 @@ O programa roda em processo separado (`rodar.py`; para `.ino`, `rodar_pacoca.py`
 | `sim/app.py`, `sim/gui.py`, `sim/painel_brick.py` | janela, painéis, tela OLED e teclado (tecla O) |
 | `sim/camera_linha.py`, `fake_hw/camera.py` | câmera de linha: geometria e imagem (compartilhado), `cv2.VideoCapture` falso (tecla C mostra) |
 | `avalia.py` | várias sementes sem janela, desafios L01-L13 (`desafios/desafios.json`), relatório em `resultados/` |
-| `ferramentas/` | `pista_surpresa.py`, `gera_desafios.py`, `gera_mapas.py`, `importa_ladrilhos.py`, `monta_portatil.py`, `foto_mapa.py` + `MAPA_DA_FOTO.md` (mapa a partir de foto) |
-| `fotos_mapa/` | trabalho do `foto_mapa.py`, uma pasta por foto (`foto.jpg`, `projeto.json`, `descricao.json`; os `.png` o git ignora; fica fora do zip portátil) |
+| `ferramentas/` | `pista_surpresa.py`, `gera_desafios.py`, `gera_mapas.py`, `importa_ladrilhos.py`, `monta_portatil.py`, `foto_mapa.py` + `MAPA_DA_FOTO.md` (mapa a partir de foto), `ladrilho_proprio.py` + `LADRILHO_PROPRIO.md` (ladrilho próprio de foto ou desenho) |
+| `fotos_mapa/` | trabalho do `foto_mapa.py`, uma pasta por foto (`foto.jpg`, `projeto.json`, `descricao.json`; os `.png` o git ignora; fica fora do zip portátil); `ladrilho_exemplo_foto/foto.jpg` = a foto do ladrilho próprio de exemplo |
+| `ladrilhos_proprios/` | ladrilhos próprios: `proprios.json` (blocos e peças) + `NOME.png` (1 mm/px); `_conferir/` o git ignora |
 | `robo_4x4.json`, `robo_4x4_camera.json`, `robo_esteira.json`, `robo_pacoca_amarelo.json`, `robo_pacoca_ev3.json` | os robôs |
 
 ## Testes de referência (rode depois de qualquer mudança em `sim/`, `fake_hw/` ou `pacoca/`)
@@ -169,7 +170,9 @@ depois consulta `entrada_estado` a cada 50 ms reais.
 * O enxugamento do w64devkit é por exclusão (`GCC_BIN`, `GCC_LIBEXEC_FORA`, `GCC_PASTAS_FORA`): se uma
   versão nova do w64devkit mudar de layout e o teste do Paçoca falhar, é ali que se mexe.
 * `opencv-python-headless` entrou no `requirements.txt` em 22/10 (câmera de linha): o zip cresce uns
-  40 MB. O zip de 19/10 ainda não tem o OpenCV (refazer com o `monta_portatil.py`).
+  40 MB. O zip de 19/10 ainda não tem o OpenCV. Refeito em 10/11/2026: `SimuladorLine-portatil-20261110.zip`
+  (165 MB; cpython 3.12.16, w64devkit 2.11.0 / g++ 16.2, opencv-python-headless 5.0.0.93, demais iguais);
+  passou no teste do script e no `seguidor_camera.py` com o `robo_4x4_camera.json` (160, 14/14, sem LoP).
 * O pacote só tem o que está no `requirements.txt`. Biblioteca nova que o simulador (ou o programa de
   alguma equipe) precisar tem de entrar lá antes de montar o zip.
 * Python do Windows no Wine 9: numpy ≥ 2.2 aborta (falta `ucrtbase.crealf` no Wine, não no Windows).
@@ -186,6 +189,11 @@ depois consulta `entrada_estado` a cada 50 ms reais.
   caçamba de dois lados), no mesmo barramento serial das placas de motor; posições variam por robô e
   ficam no JSON; a garra cai se o servo desliga no meio do curso. Câmera da frente a ~5 cm do chão
   (a garra atrapalha a visão); bolinha despejada a ~10 cm de altura com o robô faceado no triângulo.
+* Dedo da garra com `com_bola` (opcional, 10/11/2026, `Mecanismo._c_bola`/`_y_de_fracao`/`_fracao_de_y`):
+  leitura do servo fechado numa bolinha no meio. Sem ela o dedo fecha em linha reta (para na bolinha a
+  meio curso, como antes; robôs do curso sem mudança, exemplo do módulo 15 deu 220 de novo); com ela, dois
+  trechos retos aberto → com_bola → fechado. Veio do Boberto (código de 06/11 confere `lePos(1) > 15`
+  para "garra aberta"; o dedo real gira e para a 8°, o do simulador parava a ~47°).
 * Placa de servo (`FirmwareServo` em `sim/resgate.py`) emula o `placaControleServo.ino` de
   21/10/2026 (`Documents\Arduino\placaControleServo`): controle proporcional (padrão; KP 3, KD 8,
   PWM mín. 60, histerese 4, período 5 ms, KI 0) ou liga-desliga, comandos 65000-65003, polaridade
@@ -308,6 +316,24 @@ posições de todas em `mapa.zona['vitimas']` (u, v a partir do `retangulo_zona(
   `fotos_mapa/mundial2026/` (as duas calibrações e a `descricao.json`); o `monta` dela reproduz o
   `pista_foto.json` idêntico. O `inclinacao` estima 3,4-3,9° para o tabuleiro do fundo (o mapa
   continua com 5°).
+* **Ladrilhos próprios (13/11/2026):** `ladrilhos_proprios/proprios.json` lista blocos de L x A
+  ladrilhos (uma imagem `NOME.png` de L*300 x A*300 px, 1 mm/px, só as cores do simulador). O
+  `Catalogo.carrega_proprios()` registra cada peça como tipo `NOME@c,l` (1x1 = `NOME`; `info` com
+  `proprio`, `bloco`, `peca`, caminhos N/L/S/O ou top/right..., gaps, interseções, `ponto`/`rumo`
+  opcionais) e corta a peça da imagem do bloco (`_material_bloco`). `nomes()` inclui as peças (o
+  `foto_mapa` pode casar com elas); `nomes_paleta()` troca as peças pelo bloco; `eh_bloco()`,
+  `pecas_bloco(bloco, rot)` + `pos_peca()` (bloco girado no horário). `Mapa.coloca_bloco()` põe o bloco
+  com o canto noroeste (já girado) na célula; o editor faz isso quando a paleta está num bloco (a
+  miniatura de bloco retangular cabe no quadrado). `pose_inicio()` usa o `ponto`/`rumo` da peça
+  (`gira_ponto()`), senão o centro, como antes. `_le_png` reconhece a prata exata `(180, 186, 196)` (0
+  pixels nos oficiais). Ferramenta `ferramentas/ladrilho_proprio.py` (foto por homografia ou desenho,
+  fundo normalizado, sujeira < 300 mm² e verde cortado pela borda da foto tirados, `--prolonga`, `bordas`,
+  `pecas`, `confere`) + `LADRILHO_PROPRIO.md`. Exemplo: `exemplo_foto` (2x2, foto em
+  `fotos_mapa/ladrilho_exemplo_foto/`, pontos = cantos do quadrado grande = 245 mm, verdes 25-29 mm,
+  linha ~20 mm) no `mapas/exemplo_ladrilho_proprio.json` (entra pela direita; `exemplo_aluno` sementes
+  1-3: passa o bloco nas três, 114/103/125, LoP nos verdes em 1 e 2). Ao mudar: `completo` continua
+  295/71,5 s, `curso_pista` 80 (igual a antes) e `pista_foto` sai idêntico. Cuidado: `tile-7` não é reta
+  (é zigue-zague); a reta leste-oeste é o `tile-0`.
 
 ## Pista inclinada e física em piso inclinado (04/11/2026)
 

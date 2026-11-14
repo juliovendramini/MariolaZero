@@ -1,0 +1,87 @@
+{
+ "formato": "simuladorLine/1",
+ "regra": "RoboCupJunior Rescue Line 2026",
+ "nome": "exemplo_ladrilho_proprio",
+ "largura": 6,
+ "altura": 3,
+ "inicio": [
+  5,
+  1,
+  0
+ ],
+ "inicio_dir": "O",
+ "tempo": 480.0,
+ "ladrilhos": [
+  {
+   "x": 1,
+   "y": 0,
+   "z": 0,
+   "tipo": "exemplo_foto@0,0",
+   "rot": 0
+  },
+  {
+   "x": 2,
+   "y": 0,
+   "z": 0,
+   "tipo": "exemplo_foto@1,0",
+   "rot": 0
+  },
+  {
+   "x": 0,
+   "y": 1,
+   "z": 0,
+   "tipo": "chegada",
+   "rot": 270
+  },
+  {
+   "x": 1,
+   "y": 1,
+   "z": 0,
+   "tipo": "exemplo_foto@0,1",
+   "rot": 0
+  },
+  {
+   "x": 2,
+   "y": 1,
+   "z": 0,
+   "tipo": "exemplo_foto@1,1",
+   "rot": 0
+  },
+  {
+   "x": 3,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0,
+   "checkpoint": true
+  },
+  {
+   "x": 4,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0
+  },
+  {
+   "x": 5,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0
+  },
+  {
+   "x": 1,
+   "y": 2,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  },
+  {
+   "x": 2,
+   "y": 2,
+   "z": 0,
+   "tipo": "branco",
+   "rot": 0
+  }
+ ]
+}

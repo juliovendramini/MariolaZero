@@ -923,9 +923,37 @@ class Mecanismo:
             return -(p - f) / (e - f)
         return (p - f) / (d - f) if d != f else 0.0
 
+    def _c_bola(self, lado):
+        """Fração do fechamento em que o dedo encosta numa bolinha no meio da garra. Sem 'com_bola' no
+        JSON o dedo fecha em linha reta (a meio caminho com a garra de 45 mm de cada lado). Com ela
+        (posição medida no robô, ex. o dedo que gira e para quase fechado), o curso se divide em dois
+        trechos retos: aberto -> com_bola e com_bola -> fechado."""
+        c = self.cfg['dedo_' + lado]
+        if c.get('com_bola') is None:
+            return max(0.05, min(0.98, 1.0 - RAIO_BOLA / self.W))
+        a, b = float(c['aberto']), float(c['fechado'])
+        return max(0.05, min(0.98, (float(c['com_bola']) - a) / (b - a))) if b != a else 0.5
+
+    def _y_de_fracao(self, lado, c):
+        """Distância do dedo ao meio da garra (sem sinal) para a fração de fechamento c."""
+        if self.W <= RAIO_BOLA:                    # garra mais estreita que a bolinha: em linha reta
+            return self.W * (1.0 - c)
+        cb = self._c_bola(lado)
+        if c <= cb:
+            return self.W - (self.W - RAIO_BOLA) * c / cb
+        return RAIO_BOLA * (1.0 - c) / (1.0 - cb)
+
+    def _fracao_de_y(self, lado, y):
+        """O inverso de _y_de_fracao."""
+        if self.W <= RAIO_BOLA:
+            return 1.0 - y / self.W
+        cb = self._c_bola(lado)
+        if y >= RAIO_BOLA:
+            return (self.W - y) / (self.W - RAIO_BOLA) * cb
+        return cb + (RAIO_BOLA - y) / RAIO_BOLA * (1.0 - cb)
+
     def y_dedo(self, lado):
-        c = max(0.0, min(1.0, self.fechamento(lado)))
-        y = self.W * (1.0 - c)
+        y = self._y_de_fracao(lado, max(0.0, min(1.0, self.fechamento(lado))))
         return y if lado == 'esq' else -y
 
     def local(self, p):
@@ -963,14 +991,14 @@ class Mecanismo:
             # bolinha presa: cada dedo para encostado nela
             yb = self.na_garra['local'][1]
             ylim = yb + RAIO_BOLA if lado == 'esq' else -(yb - RAIO_BOLA)
-            mx = max(0.0, min(1.0, 1.0 - ylim / self.W))
+            mx = max(0.0, min(1.0, self._fracao_de_y(lado, ylim)))
         elif self._bola_entre_dedos() is not None:
             # o dedo pode fechar até a bolinha ficar espremida contra o outro dedo
             if lado == 'esq':
                 ylim = self.y_dedo('dir') + 2 * RAIO_BOLA
             else:
                 ylim = -(self.y_dedo('esq') - 2 * RAIO_BOLA)
-            mx = max(0.0, min(1.0, 1.0 - ylim / self.W))
+            mx = max(0.0, min(1.0, self._fracao_de_y(lado, ylim)))
         return self._pot(nome, 'aberto', 'fechado', -0.12), self._pot(nome, 'aberto', 'fechado', mx)
 
     def _bola_entre_dedos(self):

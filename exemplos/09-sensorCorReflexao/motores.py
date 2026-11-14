@@ -87,6 +87,16 @@ class Motores:
     MELODIA_GRAN_VALS = 23  # o toque clássico de celular
     QUANTIDADE_SONS = 23
 
+    # Comunicação com o brick. O Mariola tem um hub USB com os conversores seriais (o do brick e os das
+    # placas de motor). Se o hub reinicia (queda dos 5 V ou ruído dos motores; no dmesg: "usb 1-1: reset
+    # high-speed USB device"), a resposta não chega e a porta some e volta. Até 12/11/2026 a lib desistia em
+    # 10 ms ("Erro ao ler o estado dos motores") e o programa morria com os motores girando até o timeout
+    # de 5 s do firmware. Agora ela espera a resposta um pouco mais, reabre a porta e manda de novo, por até
+    # TEMPO_RECUPERACAO segundos; só depois disso dá o erro. falhas_comunicacao conta as falhas (diagnóstico).
+    TEMPO_RESPOSTA = 0.05      # s esperando a resposta completa (a porta lê com timeout de 10 ms)
+    TEMPO_RECUPERACAO = 3.0    # s tentando de novo (abaixo dos 5 s em que o firmware solta os motores)
+    falhas_comunicacao = 0
+
     def __init__(self, atualiza_instantaneo=False):
         #qualquer lista que for enviada deve ter o mesmo tamanho sempre. Para evitar problemas de sincronismo
         self.lista_servos = [self.ENVIA_SERVOS, 200, 200, 200, 200, 200, 200, 0, 0, 0]
@@ -107,14 +117,86 @@ class Motores:
         self.reseta_angulo_motor(2)
 
     def __del__(self):
-        self.para_motores()
-        if self.ventoinha_ativa:
-            self.desliga_ventoinha()  # o timeout do firmware não desliga a ventoinha
-        if self.buzzer_ativo:
-            self.para_buzzer()
-        self.ser.close()
+        # Chamado quando o programa termina: manda os motores pararem em vez de esperar o timeout de 5 s do firmware.
+        # Cada passo fica num try: se a placa não responder (ou a porta nem tiver aberto), os outros ainda são tentados.
+        if self.ser is None:
+            return
+        self.TEMPO_RECUPERACAO = 0.5  # saindo do programa: não fica 3 s esperando um brick que sumiu
+        try:
+            self.para_motores()
+            if not self.atualiza_instantaneo:
+                # com Motores() ou Motores(False) o para_motores() só preenche a lista: sem isto nada era enviado
+                self.atualiza_motores()
+        except Exception:
+            pass
+        try:
+            if self.ventoinha_ativa:
+                self.desliga_ventoinha()  # o timeout do firmware não desliga a ventoinha
+        except Exception:
+            pass
+        try:
+            if self.buzzer_ativo:
+                self.para_buzzer()
+        except Exception:
+            pass
+        try:
+            self.ser.close()
+        except Exception:
+            pass
         if self.DEBUG:
             print('Fechando a porta serial do motores')
+
+    def _troca(self, pacote, tamanho):
+        """Manda o pacote e lê a resposta, esperando até TEMPO_RESPOSTA pelos bytes que faltarem."""
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
+        self.ser.write(pacote)
+        if self.DEBUG:
+            print(f'Enviando: {list(pacote)}')
+        resposta = bytes(self.ser.read(tamanho))
+        fim = time.monotonic() + self.TEMPO_RESPOSTA
+        while len(resposta) < tamanho and time.monotonic() < fim:
+            resposta += self.ser.read(tamanho - len(resposta))
+        if self.DEBUG:
+            print('retorno_serial (int):', list(resposta))
+        return resposta
+
+    def _conversa(self, pacote, tamanho, aceita, mensagem, repetir=True, ja_chegou=None):
+        """Manda o pacote e devolve a resposta (tamanho bytes, o primeiro em 'aceita').
+
+        Se falhar, reabre a porta (Portas.reabre_porta_serial) e manda de novo, por até TEMPO_RECUPERACAO
+        segundos; depois disso dá Exception(mensagem). repetir=False: uma tentativa só. ja_chegou: chamada
+        antes de mandar de novo; se devolver uma resposta, o comando já tinha chegado ao brick e não vai
+        outra vez (comando com ângulo)."""
+        pacote = bytes(pacote)
+        inicio = time.monotonic()
+        falhou = False
+        while True:
+            try:
+                if falhou and ja_chegou is not None:
+                    resposta = ja_chegou()
+                    if resposta is not None:
+                        print(f'[Motores] comunicação de volta em {time.monotonic() - inicio:.2f} s')
+                        return resposta
+                resposta = self._troca(pacote, tamanho)
+                if len(resposta) == tamanho and resposta[0] in aceita:
+                    if falhou:
+                        print(f'[Motores] comunicação de volta em {time.monotonic() - inicio:.2f} s')
+                    return resposta
+                problema = f'resposta {list(resposta)}' if resposta else 'sem resposta'
+                porta_caiu = False
+            except Exception as erro:  # SerialException, OSError, termios.error: a porta caiu
+                problema = str(erro) or type(erro).__name__
+                porta_caiu = True
+            self.falhas_comunicacao += 1
+            restante = self.TEMPO_RECUPERACAO - (time.monotonic() - inicio)
+            if not repetir or restante <= 0:
+                raise Exception(f'{mensagem} ({problema})')
+            if not falhou:
+                print(f'[Motores] {mensagem}: {problema}. Tentando de novo por até {restante:.1f} s')
+            if porta_caiu or falhou:  # na primeira falha sem erro da porta, só manda de novo
+                Portas().reabre_porta_serial(self.ser, restante)
+            falhou = True
 
     def move_servo(self, servo, angulo):
         if servo <= 0:
@@ -132,75 +214,55 @@ class Motores:
             self.atualiza_servos()
 
     def atualiza_servos(self):
-        self.ser.reset_input_buffer()
-        self.ser.reset_output_buffer()
-        self.ser.write(bytes(self.lista_servos))
-        if self.DEBUG:
-            print(f'Enviando: {self.lista_servos}')
-        retorno_serial = self.ser.read(1)
-        if self.DEBUG:
-            retorno_serial_lista = list(retorno_serial)
-            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
-            # print(f'retorno_serial: {retorno_serial}')
-        if len(retorno_serial) == 1:
-            if retorno_serial[0] == self.ENVIA_SERVOS:
-                if any(angulo <= 180 for angulo in self.lista_servos[1:7]):
-                    self.servos_ativos = True  # o firmware reservou o Timer2 para os servos
-                return True
-        raise Exception('Erro ao ler o estado dos servos')
+        self._conversa(self.lista_servos, 1, (self.ENVIA_SERVOS,), 'Erro ao ler o estado dos servos')
+        if any(angulo <= 180 for angulo in self.lista_servos[1:7]):
+            self.servos_ativos = True  # o firmware reservou o Timer2 para os servos
+        return True
 
     def atualiza_motores(self):
-        self.ser.reset_input_buffer()
-        self.ser.reset_output_buffer()
-        self.ser.write(bytes(self.lista_motores))
-        if self.DEBUG:
-            print(f'Enviando: {self.lista_motores}')
+        pacote = bytes(self.lista_motores)
+        estado_antes = self.estado_motores
         self.angulo_motor1 = 0  # assim q envio zero isso pq zerado ele nao anda por angulo
         self.angulo_motor2 = 0
         self.lista_motores[5] = 0
         self.lista_motores[6] = 0
         self.lista_motores[7] = 0
         self.lista_motores[8] = 0
-        # leio o retorno da serial e salvo na lista
+        ja_chegou = None
+        if any(pacote[5:9]):  # comando com ângulo: não pode chegar duas vezes
+            ja_chegou = lambda: self._comando_ja_chegou(pacote, estado_antes)
+        resposta = self._conversa(pacote, 10, (self.ENVIA_MOTORES, self.ATUALIZA_MOTORES),
+                                  'Erro ao ler o estado dos motores', ja_chegou=ja_chegou)
+        self._le_estado(resposta)
+        return True
 
-        retorno_serial = self.ser.read(10)
-        if self.DEBUG:
-            retorno_serial_lista = list(retorno_serial)
-            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
-            # print(f'retorno_serial: {retorno_serial}')
-        if len(retorno_serial) == 10:  # só leio se o retorno for exatamente 10 bytes
-            if retorno_serial[0] == self.ENVIA_MOTORES:
-                self.angulo_absoluto_motor1 = struct.unpack('>i', bytes(retorno_serial[1:5]))[0]
-                self.angulo_absoluto_motor2 = struct.unpack('>i', bytes(retorno_serial[5:9]))[0]
-                self.estado_motores = retorno_serial[9]
-                return True
-        raise Exception('Erro ao ler o estado dos motores')
+    def _le_estado(self, resposta):
+        self.angulo_absoluto_motor1 = struct.unpack('>i', bytes(resposta[1:5]))[0]
+        self.angulo_absoluto_motor2 = struct.unpack('>i', bytes(resposta[5:9]))[0]
+        self.estado_motores = resposta[9]
+
+    def _comando_ja_chegou(self, pacote, estado_antes):
+        """Depois de uma falha num comando com ângulo. O brick conta o ângulo a partir de onde o motor está,
+        então mandar de novo um comando que já tinha chegado dobraria o giro. Pergunta o estado (o ATUALIZA
+        não muda nada): se um motor com ângulo estava parado e agora gira, o comando chegou e não vai de
+        novo. Motor que já girava antes não dá para saber: o comando vai de novo (no pior caso o giro
+        dobra, mas o motor para; sem o comando ele não pararia)."""
+        consulta = bytes([self.ATUALIZA_MOTORES]) + pacote[1:]
+        resposta = self._conversa(consulta, 10, (self.ATUALIZA_MOTORES,), 'Erro ao ler o estado dos motores',
+                                  repetir=False)
+        for bits, posicao in ((0, 5), (2, 7)):     # motor 1: bits 0-1 e ângulo em 5-6; motor 2: 2-3 e 7-8
+            if any(pacote[posicao:posicao + 2]) and not (estado_antes >> bits) & 0b11 and (resposta[9] >> bits) & 0b11:
+                return resposta
+        return None
 
     # funcao que envia informacao mas sem atualizar velocidades do controlador de motor
     def estado(self):
-        self.ser.reset_input_buffer()
-        self.ser.reset_output_buffer()
-        temp = self.lista_motores[0]
-        self.lista_motores[0] = self.ATUALIZA_MOTORES
-        self.ser.write(bytes(self.lista_motores))
+        pacote = bytes([self.ATUALIZA_MOTORES]) + bytes(self.lista_motores[1:])
+        resposta = self._conversa(pacote, 10, (self.ATUALIZA_MOTORES,), 'Erro ao ler o estado dos motores')
+        self._le_estado(resposta)
         if self.DEBUG:
-            print(f'Enviando: {self.lista_motores}')
-        self.lista_motores[0] = temp
-        # leio o retorno da serial e salvo na lista
-        retorno_serial = self.ser.read(10)
-        if self.DEBUG:
-            retorno_serial_lista = list(retorno_serial)
-            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
-            # print(f'retorno_serial: {retorno_serial}')
-        if len(retorno_serial) == 10:  # só leio se o retorno for exatamente 10 bytes
-            if retorno_serial[0] == self.ATUALIZA_MOTORES:
-                self.angulo_absoluto_motor1 = struct.unpack('>i', bytes(retorno_serial[1:5]))[0]
-                self.angulo_absoluto_motor2 = struct.unpack('>i', bytes(retorno_serial[5:9]))[0]
-                self.estado_motores = retorno_serial[9]
-                if self.DEBUG:
-                    print('Estado atualizado')
-                return True
-        raise Exception('Erro ao ler o estado dos motores')
+            print('Estado atualizado')
+        return True
 
     def direcao_motor(self, motor, direcao):
         self.lista_motores[0] = self.ENVIA_MOTORES  # comando para enviar motores como velocidade
@@ -421,23 +483,17 @@ class Motores:
             self.atualiza_motores()
 
 
-    # para todos os 4 motores
+    # para todos os 4 motores (o modo de freio continua o que foi escolhido no set_modo_freio)
     def para_motores(self):
-        self.velocidade_motores_4x4(0,0)
-        #self.lista_motores[3] = 0
-        #self.lista_motores[4] = 0
-        #self.move_motores(0, 1, 0, 1)
-        return
-        self.lista_motores[0] = 0xFC
-        self.lista_motores[1] = 0
-        self.lista_motores[2] = 0
-        self.lista_motores[3] = 0
-        self.lista_motores[4] = 0
-        self.lista_motores[5] = 0
-        self.lista_motores[6] = 0
-        self.lista_motores[7] = 0
-        self.lista_motores[8] = 0
-        self.lista_motores[9] = 0
+        # Mantém o tipo do último comando. No 4x4 o firmware copia nos motores 3 e 4 tudo o que faz nos
+        # motores 1 e 2, inclusive as correções do freio HOLD: antes o para_motores() mandava sempre o
+        # comando 4x4, e num robô de duas rodas o motor 3 ou 4 (uma garra, por exemplo) se mexia com o HOLD.
+        if self.lista_motores[0] in (self.ENVIA_MOTORES_4X4, self.ENVIA_MOTORES_4X4_POTENCIA):
+            self.lista_motores[0] = self.ENVIA_MOTORES_4X4
+        else:
+            self.lista_motores[0] = self.ENVIA_MOTORES
+        for posicao in range(1, 9):  # velocidade dos 4 motores e ângulo dos motores 1 e 2
+            self.lista_motores[posicao] = 0
         self.angulo_motor1 = 0
         self.angulo_motor2 = 0
         if self.atualiza_instantaneo:
@@ -525,19 +581,8 @@ class Motores:
         self.lista_led[7] = 0  # reservado para futuro uso
         self.lista_led[8] = 0  # reservado para futuro uso
         self.lista_led[9] = 0  # reservado para futuro uso
-        self.ser.reset_input_buffer()
-        self.ser.reset_output_buffer()
-        self.ser.write(bytes(self.lista_led))
-        if self.DEBUG:
-            print(f'Enviando LED RGB ALL: {self.lista_led}')
-        retorno_serial = self.ser.read(1)
-        if self.DEBUG:
-            retorno_serial_lista = list(retorno_serial)
-            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
-        if len(retorno_serial) == 1:
-            if retorno_serial[0] == self.LED_RGB_ALL:
-                return True
-        raise Exception('Erro ao enviar dados do LED RGB ALL')
+        self._conversa(self.lista_led, 1, (self.LED_RGB_ALL,), 'Erro ao enviar dados do LED RGB ALL')
+        return True
     
     def set_led_rgb_one(self, index, r, g, b):
         self.lista_led[0] = self.LED_RGB_ONE
@@ -554,19 +599,8 @@ class Motores:
         self.lista_led[7] = 0  # reservado para futuro uso
         self.lista_led[8] = 0  # reservado para futuro uso
         self.lista_led[9] = 0  # reservado para futuro uso
-        self.ser.reset_input_buffer()
-        self.ser.reset_output_buffer()
-        self.ser.write(bytes(self.lista_led))
-        if self.DEBUG:
-            print(f'Enviando LED RGB ONE: {self.lista_led}')
-        retorno_serial = self.ser.read(1)
-        if self.DEBUG:
-            retorno_serial_lista = list(retorno_serial)
-            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
-        if len(retorno_serial) == 1:
-            if retorno_serial[0] == self.LED_RGB_ONE:
-                return True
-        raise Exception('Erro ao enviar dados do LED RGB ONE')
+        self._conversa(self.lista_led, 1, (self.LED_RGB_ONE,), 'Erro ao enviar dados do LED RGB ONE')
+        return True
 
     # A porta 4 de servo/led (pino 17) pode ser servo ou uma segunda fita de LEDs WS2812B (10 LEDs).
     # O firmware decide pelo último comando: um comando de LED da porta 4 desliga o servo 4 e liga a
@@ -589,58 +623,54 @@ class Motores:
         self.lista_led[4] = index  # só o LED_RGB_ONE_PORTA4 usa
         for i in range(5, 10):
             self.lista_led[i] = 0  # reservado para futuro uso
-        self.ser.reset_input_buffer()
-        self.ser.reset_output_buffer()
-        self.ser.write(bytes(self.lista_led))
-        if self.DEBUG:
-            print(f'Enviando LED RGB porta 4: {self.lista_led}')
-        retorno_serial = self.ser.read(1)
-        if self.DEBUG:
-            retorno_serial_lista = list(retorno_serial)
-            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
-        if len(retorno_serial) == 1:
-            if retorno_serial[0] == comando:
-                return True
-        raise Exception('Erro ao enviar dados do LED RGB da porta 4')
+        self._conversa(self.lista_led, 1, (comando,), 'Erro ao enviar dados do LED RGB da porta 4')
+        return True
 
     def obtem_calibracao_motores(self):
-        self.ser.reset_input_buffer()
-        self.ser.reset_output_buffer()
-        self.lista_motores[0] = self.OBTEM_CALIBRACAO_MOTORES  # comando para obter calibração dos motores
-        self.ser.write(bytes(self.lista_motores))
-        if self.DEBUG:
-            print(f'Enviando: {self.lista_motores}')
-        # leio o retorno da serial e salvo na lista
-        retorno_serial = self.ser.read(10)
-        if self.DEBUG:
-            retorno_serial_lista = list(retorno_serial)
-            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
-            # print(f'retorno_serial: {retorno_serial}')
-        if len(retorno_serial) == 10:  # só leio se o retorno for exatamente 10 bytes
-            if retorno_serial[0] == self.OBTEM_CALIBRACAO_MOTORES:
-                calibracao_motor1 = struct.unpack('>i', bytes(retorno_serial[1:5]))[0]
-                calibracao_motor2 = struct.unpack('>i', bytes(retorno_serial[5:9]))[0]
-                return calibracao_motor1, calibracao_motor2
-        raise Exception('Erro ao ler a calibração dos motores')
+        # o comando vai num pacote à parte: antes ele ficava no lista_motores[0], e o próximo
+        # atualiza_motores() sem um velocidade_...() antes mandava o pedido de calibração de novo
+        pacote = bytes([self.OBTEM_CALIBRACAO_MOTORES]) + bytes(self.lista_motores[1:])
+        resposta = self._conversa(pacote, 10, (self.OBTEM_CALIBRACAO_MOTORES,), 'Erro ao ler a calibração dos motores')
+        calibracao_motor1 = struct.unpack('>i', bytes(resposta[1:5]))[0]
+        calibracao_motor2 = struct.unpack('>i', bytes(resposta[5:9]))[0]
+        self._byte_estado_calibracao = resposta[9]
+        return calibracao_motor1, calibracao_motor2
+
+    # resultado da última calibração feita desde que o brick ligou (bits 2-3 de cada motor)
+    RESULTADO_CALIBRACAO = ('ok', 'o encoder não contou', 'contou para o mesmo lado nos dois sentidos',
+                            'um sentido bem mais lento que o outro')
+
+    def estado_calibracao_motores(self):
+        """Estado da calibração dos motores 1 e 2 (firmware de 10/11/2026 em diante).
+
+        Devolve uma lista com um dicionário por motor:
+          'calibrado': True se há calibração válida em uso (sem ela o motor não usa o encoder);
+          'encoder_invertido': True se, na calibração, o encoder contou ao contrário do motor
+              (motor ou encoder ligado invertido). O brick já corrige sozinho: é só um aviso;
+          'resultado': 'ok' ou o que deu errado na última calibração feita desde que o brick ligou
+              ('o encoder não contou' = motor ou encoder desligado, ou um canal do encoder solto;
+              nesse caso a calibração nova não é gravada).
+        Com firmware antigo, que não informa o estado, devolve None."""
+        calibracao = self.obtem_calibracao_motores()
+        estado = self._byte_estado_calibracao
+        motores = []
+        for i in range(2):
+            bits = (estado >> (4 * i)) & 0x0F
+            if calibracao[i] != 0 and not bits & 0x01:
+                return None  # firmware antigo: esse byte era o estado dos motores
+            motores.append({'calibrado': bool(bits & 0x01), 'encoder_invertido': bool(bits & 0x02),
+                            'resultado': self.RESULTADO_CALIBRACAO[(bits >> 2) & 0x03]})
+        return motores
     
     def calibra_motores(self):
-        self.ser.reset_input_buffer()
-        self.ser.reset_output_buffer()
-        self.lista_motores[0] = self.CALIBRA_MOTORES  # comando para calibrar os motores
-        self.ser.write(bytes(self.lista_motores))
-        if self.DEBUG:
-            print(f'Enviando: {self.lista_motores}')
-        # leio o retorno da serial e salvo na lista
-        retorno_serial = self.ser.read(1)
-        if self.DEBUG:
-            retorno_serial_lista = list(retorno_serial)
-            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
-            # print(f'retorno_serial: {retorno_serial}')
-        if len(retorno_serial) == 1:
-            if retorno_serial[0] == self.CALIBRA_MOTORES:
-                print('Calibração dos motores iniciada, aguarde...')
-                return True
-        raise Exception('Erro ao calibrar os motores')
+        """Manda o brick calibrar os motores 1 e 2 (rodas no ar: eles giram sozinhos por ~30 s e o brick
+        não responde nesse tempo). A calibração também descobre se o encoder conta ao contrário do motor
+        e corrige. Depois dos 30 s, estado_calibracao_motores() diz como foi."""
+        # uma tentativa só: se o pedido chegou, o brick fica ~30 s calibrando sem responder
+        pacote = bytes([self.CALIBRA_MOTORES]) + bytes(self.lista_motores[1:])
+        self._conversa(pacote, 1, (self.CALIBRA_MOTORES,), 'Erro ao calibrar os motores', repetir=False)
+        print('Calibração dos motores iniciada, aguarde...')
+        return True
 
     # Ventoinha no pino 11 (o TX do serialDebug), PWM do Timer2 a ~976 Hz.
     # Servos, ventoinha e buzzer dividem o Timer2: o primeiro que for usado fica com ele até o brick
@@ -657,19 +687,8 @@ class Motores:
         for servo in range(1, 7):
             self.lista_servos[servo] = 200  # o firmware já desligou os servos
         lista = [self.ATIVA_VENTOINHA, pwm, 0, 0, 0, 0, 0, 0, 0, 0]
-        self.ser.reset_input_buffer()
-        self.ser.reset_output_buffer()
-        self.ser.write(bytes(lista))
-        if self.DEBUG:
-            print(f'Enviando ventoinha: {lista}')
-        retorno_serial = self.ser.read(1)
-        if self.DEBUG:
-            retorno_serial_lista = list(retorno_serial)
-            print("retorno_serial (int):", [int(b) for b in retorno_serial_lista])
-        if len(retorno_serial) == 1:
-            if retorno_serial[0] == self.ATIVA_VENTOINHA:
-                return True
-        raise Exception('Erro ao enviar dados da ventoinha')
+        self._conversa(lista, 1, (self.ATIVA_VENTOINHA,), 'Erro ao enviar dados da ventoinha')
+        return True
 
     def desliga_ventoinha(self):
         return self.set_ventoinha(0)
@@ -744,16 +763,7 @@ class Motores:
     # Envia um comando do buzzer. O firmware responde [comando, status, modo do Timer2].
     def _envia_buzzer(self, lista):
         comando = lista[0]
-        self.ser.reset_input_buffer()
-        self.ser.reset_output_buffer()
-        self.ser.write(bytes(lista))
-        if self.DEBUG:
-            print(f'Enviando buzzer: {lista}')
-        retorno_serial = self.ser.read(3)
-        if self.DEBUG:
-            print("retorno_serial (int):", [int(b) for b in retorno_serial])
-        if len(retorno_serial) != 3 or retorno_serial[0] != comando:
-            raise Exception('Erro ao enviar dados do buzzer')
+        retorno_serial = self._conversa(lista, 3, (comando,), 'Erro ao enviar dados do buzzer')
         status = retorno_serial[1]
         modo = retorno_serial[2]
         if comando in (self.CONSULTA_BUZZER, self.CONFIGURA_BUZZER):

@@ -1,4 +1,5 @@
 import subprocess
+import time
 
 import serial
 
@@ -76,8 +77,34 @@ class Portas:
         porta_real = self.porta_serial_real(porta)
         try:
             ser = serial.Serial(porta_real, baud_rate, timeout=timeout)
+            ser.porta_mariola = porta  # para o reabre_porta_serial achar a porta de novo
             print(f'Comunicação estabelecida com sucesso na porta {porta_real}.')
             return ser
         except serial.SerialException as e:
             print(f'Erro ao tentar se comunicar com a porta {porta_real}: {e}')
             return None
+
+    def reabre_porta_serial(self, ser, tempo_maximo=3.0):
+        """Reabre uma porta que caiu e devolve True se conseguiu (tenta por até tempo_maximo segundos).
+
+        As portas USB do brick (_SERIAL0 a SERIAL3) ficam atrás de um hub. Se o hub reinicia (queda dos
+        5 V ou ruído dos motores; no dmesg: "usb 1-1: reset high-speed USB device"), os conversores somem
+        e voltam, e o Linux pode dar outro ttyUSB a cada um. Por isso a porta é achada de novo pelo lugar
+        no hub e o MESMO objeto é reaberto: quem divide a porta (as placas de motor do barramento)
+        continua com ele."""
+        porta = getattr(ser, 'porta_mariola', None)
+        fim = time.monotonic() + tempo_maximo
+        try:
+            ser.close()  # solta o ttyUSB antigo
+        except Exception:
+            pass
+        while True:
+            try:
+                if porta is not None:
+                    ser.port = self.porta_serial_real(porta)
+                ser.open()
+                return True
+            except Exception:
+                if time.monotonic() >= fim:
+                    return False
+                time.sleep(0.1)

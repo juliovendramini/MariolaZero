@@ -21,7 +21,7 @@ motores.para_buzzer()
 if IDS_PLACAS_MOTOR:
     from placaControleMotor import PlacaControleMotor
     porta = Portas().abre_porta_serial(Portas.SERIAL1, 250000, timeout=0.005)
-    placas = []  # guardadas até o fim: o __del__ de cada placa fecha a porta serial que todas usam
+    placas = []  # guardadas até o fim do script (ao serem destruídas, as placas mandam o motor parar de novo)
     for id_placa in IDS_PLACAS_MOTOR:
         try:
             placas.append(PlacaControleMotor(porta, id_equipamento=id_placa))

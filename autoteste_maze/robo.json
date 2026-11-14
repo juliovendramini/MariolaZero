@@ -1,0 +1,72 @@
+{
+  "nome": "Robo da Maze",
+  "_fonte": "robo.py, sensores.py e constantes.py da equipe Maze (IzadoraVB/maze2026, ramo adaptacao-claude, commit 75a33d1 de 14/11/2026). Se a equipe mudar a ligacao, mude aqui.",
+  "brick": {
+    "motores_encoder": [1, 2],
+    "_motores": "motores traseiros no brick: 1 invertido (esquerdo), 2 normal (direito)",
+    "motores_sem_encoder": [],
+    "timer2": "livre",
+    "_timer2": "a equipe nao usa buzzer, ventoinha nem servo comum. O teste do buzzer fica de fora: ele prenderia o Timer2 ate reiniciar o brick, e o dispenser de kits ainda pode ser um servo comum",
+    "fita_porta4": false,
+    "servos_comuns": []
+  },
+  "barramento": {
+    "porta": "SERIAL2",
+    "placas_motor": [
+      {"id": 72, "nome": "frente esq"},
+      {"id": 5, "nome": "frente dir"}
+    ],
+    "servos": []
+  },
+  "giroscopio": "SERIAL4",
+  "giroscopio_direita": "diminui",
+  "_giroscopio_direita": "o girar_graus() do robo.py faz angulo_alvo - graus para girar a direita",
+  "sensores_linha": [
+    {"porta": "SERIAL6", "nome": "chao"}
+  ],
+  "vl53": [
+    {"porta": "I2C8", "nome": "frente"},
+    {"porta": "I2C3", "nome": "meio esq"},
+    {"porta": "I2C1", "nome": "borda esq"},
+    {"porta": "I2C7", "nome": "meio dir"},
+    {"porta": "I2C6", "nome": "borda dir"}
+  ],
+  "tcs": [],
+  "pinos": [
+    {"pino": "P1", "nome": "para-choque esq"},
+    {"pino": "P8", "nome": "para-choque dir"}
+  ],
+  "pinos_nao_mexer": [],
+  "cameras": ["/dev/video_usb3"],
+  "maze": {
+    "_maze": "testes proprios da Maze (testes/maze.py): paredes no ladrilho, cores do piso com as faixas da equipe e andar/girar. Os numeros sao os do constantes.py e do sensores.py da equipe.",
+    "brick_invertidos": [1],
+    "placa_esq": 72,
+    "placa_dir": 5,
+    "placas_invertidas": [5],
+    "velocidade": 25,
+    "velocidade_giro_min": 14,
+    "velocidade_giro_max": 45,
+    "kp_giro": 0.7,
+    "contagens_por_mm": 1.8182,
+    "_contagens_por_mm": "constantes.py: CONTAGENS_POR_MM = 100 / 55",
+    "distancia_sem_parede": 150,
+    "vl53_frente": "frente",
+    "paredes": [
+      {"lado": "esquerda", "meio": "meio esq", "borda": "borda esq"},
+      {"lado": "direita", "meio": "meio dir", "borda": "borda dir"}
+    ],
+    "descontos": {"borda esq": 13, "meio dir": 37},
+    "_descontos": "sensores.py: o que a equipe tira de cada VL53 (mm)",
+    "tcs_chao": 2,
+    "_tcs_chao": "o TCS do meio do sensor de linha (le_rgbc(2))",
+    "faixas_cor": [
+      {"cor": "preto", "r": [0, 15], "g": [0, 15], "b": [0, 15]},
+      {"cor": "vermelho", "r": [100, 125], "g": [15, 35], "b": [15, 35]},
+      {"cor": "azul", "r": [10, 30], "g": [35, 60], "b": [100, 127]},
+      {"cor": "prata", "r": [180, 200], "g": [185, 210], "b": [90, 210]},
+      {"cor": "branco", "r": [100, 140], "g": [100, 140], "b": [100, 140]}
+    ],
+    "_faixas_cor": "SensorChao.cor() do sensores.py, na mesma ordem (a primeira que bate ganha). Fora de todas, o codigo da equipe devolve branco."
+  }
+}

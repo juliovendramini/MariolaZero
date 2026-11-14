@@ -1,0 +1,50 @@
+{
+  "nome": "Boberto (Line)",
+  "_fonte": "defs.py, sensoresI2C.py, servos.py, parachoque.py, buzzer.py e camera.py da equipe Boberto, versao de 06/11/2026 (professor/boberto2026/codigo_20261106). Se a equipe mudar a ligacao, mude aqui.",
+  "brick": {
+    "motores_encoder": [1, 2],
+    "_motores": "motores traseiros no brick: 1 normal, 2 invertido",
+    "motores_sem_encoder": [],
+    "timer2": "buzzer",
+    "buzzer_nivel": "LOW",
+    "fita_porta4": false,
+    "servos_comuns": []
+  },
+  "barramento": {
+    "porta": "SERIAL1",
+    "placas_motor": [
+      {"id": 11, "nome": "frente esq"},
+      {"id": 65, "nome": "frente dir"}
+    ],
+    "servos": [
+      {"id": 5, "nome": "garra 1", "passo": 60},
+      {"id": 47, "nome": "garra 2", "passo": 60},
+      {"id": 69, "nome": "braco", "passo": 60},
+      {"id": 59, "nome": "porta", "passo": 60}
+    ]
+  },
+  "giroscopio": "SERIAL2",
+  "giroscopio_direita": "diminui",
+  "_giroscopio_direita": "no robo deles o Z cresce para a esquerda (conferido pela equipe em 03/11)",
+  "sensores_linha": [],
+  "vl53": [
+    {"porta": "I2C1", "nome": "garra"},
+    {"porta": "I2C5", "nome": "frente"},
+    {"porta": "I2C4", "nome": "bola preta"},
+    {"porta": "I2C3", "nome": "prata 1"},
+    {"porta": "I2C2", "nome": "prata 2"},
+    {"porta": "I2C7", "nome": "esquerda"},
+    {"porta": "I2C8", "nome": "direita"}
+  ],
+  "tcs": [
+    {"porta": "I2C6", "nome": "prata"}
+  ],
+  "pinos": [
+    {"pino": "P1", "nome": "para-choque esq"},
+    {"pino": "P2", "nome": "para-choque dir"},
+    {"pino": "P3", "nome": "botao da garra"}
+  ],
+  "pinos_nao_mexer": ["P4", "P8"],
+  "_pinos_nao_mexer": "a equipe usa P4 e P8 como saida para reiniciar os VL53 (sensoresI2C.py); o autoteste nao mexe neles",
+  "cameras": ["/dev/video_usb1", "/dev/video_usb2"]
+}

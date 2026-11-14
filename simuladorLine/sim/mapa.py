@@ -115,6 +115,17 @@ class Mapa:
         self.mudou()
         return t
 
+    def coloca_bloco(self, x, y, z, bloco, rot=0):
+        """Põe um ladrilho próprio de várias peças com o canto noroeste (já girado) na célula (x, y).
+        Devolve quantas peças ficaram fora do campo (essas não entram)."""
+        fora = 0
+        for dx, dy, peca in self.cat.pecas_bloco(bloco, rot):
+            if self.dentro(x + dx, y + dy):
+                self.coloca(x + dx, y + dy, z, peca, rot)
+            else:
+                fora += 1
+        return fora
+
     def remove(self, x, y, z):
         self.ladrilhos.pop((x, y, z), None)
         if self.inicio == (x, y, z):
@@ -855,7 +866,8 @@ class Mapa:
         m = cls(int(d['largura']), int(d['altura']), d.get('nome', 'mapa'))
         for t in d['ladrilhos']:
             if not m.cat.existe(t['tipo']):
-                raise ValueError(f"ladrilho desconhecido: {t['tipo']}")
+                raise ValueError(f"ladrilho desconhecido: {t['tipo']} (se for um ladrilho próprio, falta ele no "
+                                 f"ladrilhos_proprios/proprios.json deste simulador)")
             n = novo_ladrilho(int(t['x']), int(t['y']), int(t.get('z', 0)), t['tipo'], int(t.get('rot', 0)))
             for kk in ('checkpoint', 'rampa', 'inclinacao', 'lombadas', 'obstaculos', 'detritos', 'gangorra'):
                 if kk in t:
