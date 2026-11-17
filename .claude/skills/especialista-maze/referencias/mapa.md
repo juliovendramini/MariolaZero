@@ -53,7 +53,9 @@ sensores em geral: `.claude/skills/especialista-mariola/referencias/mapa.md`.
   2026": motores (Mariola canal 1 invertido e 2; placas id 8 à esquerda e 16 invertida à direita no
   `SERIAL1` a 250000), giroscópio no `SERIAL4` diminuindo para a direita, Pro1616 no `SERIAL5`, 5 VL53
   (borda esq `I2C2`, meio esq `I2C1`, borda dir `I2C7`, meio dir `I2C8`, frente `I2C6`), para-choque
-  P1/P8, 440 contagens por volta no Mariola (880 na placa). Até 16/11 eram as placas 72/5 no `SERIAL2`,
+  P2/P7 (desde 17/11; antes P1/P8), VL53 com desconto no meio esq (30 mm) e na borda dir (10 mm),
+  400 contagens por volta no Mariola (800 na placa; `CONTAGENS_POR_MM = 100 / 55`). Duas câmeras
+  (`/dev/video_usb1` esquerda, `/dev/video_usb2` direita) desde 17/11. Até 16/11 eram as placas 72/5 no `SERIAL2`,
   a cor no `SERIAL6` e os VL53 em `I2C1/3/6/7/8`: código antigo da equipe dá "Sensor não encontrado"
   ou não acha as placas com o json de agora.
 * Rodar o programa da equipe: `python simulador.py --robo robo_maze2026.json --programa CAMINHO/main.py`

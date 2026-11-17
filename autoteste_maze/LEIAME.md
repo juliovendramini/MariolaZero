@@ -21,8 +21,10 @@ ramo `adaptacao-claude`; portas do commit `a707453` e cores do `acb24cb`, de 16/
 * giroscópio no **SERIAL4** (o Z diminui girando para a direita);
 * sensor de linha/cor (Pro1616) no **SERIAL5**: o TCS do meio lê a cor do chão;
 * 5 VL53: frente I2C6, meio esq I2C1, borda esq I2C2, meio dir I2C8, borda dir I2C7;
-* para-choques no P1 (esquerdo) e P8 (direito);
-* câmera `/dev/video_usb3` (o `camera.py` da equipe abre o `/dev/video1`, mas ajusta o `video_usb3`).
+* para-choques no P2 (esquerdo) e P7 (direito) desde 17/11 (antes P1 e P8);
+* descontos dos VL53: 30 mm no meio esquerdo e 10 mm na borda direita desde 17/11 (antes 13 mm na borda
+  esquerda e 37 mm no meio direito);
+* câmeras `/dev/video_usb1` (esquerda) e `/dev/video_usb2` (direita) desde 17/11 (antes uma no `/dev/video_usb3`).
 
 Até 16/11 a ligação era outra: placas 72 e 5 no SERIAL2, sensor de linha no SERIAL6 e VL53 frente I2C8,
 meio esq I2C3, borda esq I2C1, meio dir I2C7, borda dir I2C6.
@@ -157,8 +159,9 @@ python simulador.py --robo robo_maze2026.json --mapa mapas/treino.json --program
 * **Teste completo:** tudo ok menos a câmera, que o simulador não tem. A parte do Linux e o que precisa
   de alguém (botões, LEDs, giro à mão, cores do piso) ficam como PULOU.
 * **`andar` (`$env:AUTOTESTE_TESTES='andar'`):** mediu `CONTAGENS_POR_MM` 2,00 contra os 1,82 do
-  `constantes.py`. O simulador usa 2 (440 contagens por volta), então a medida bateu. Os 4 giros
-  terminaram com 0° de erro.
+  `constantes.py`. O simulador usava 2 (440 contagens por volta), então a medida bateu. Os 4 giros
+  terminaram com 0° de erro. (Desde 17/11 o `robo_maze2026.json` tem 400 contagens por volta, os 1,82
+  da equipe; esse teste não foi refeito.)
 * **`cores_piso` e `paredes` com uma pessoa respondendo:** testados com sensores e teclado falsos. Um
   vermelho fora da faixa da equipe dá FALHA, com a dica de ajustar o `sensores.py`; meio e borda
   diferentes dão AVISO. Em 16/11, com as regras de proporção: vermelho e azul certos; um prata de

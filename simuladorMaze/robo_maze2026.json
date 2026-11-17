@@ -1,5 +1,5 @@
 {
-  "_comentario": "Robô da equipe Maze 2026 (repositório maze2026, branch adaptacao-claude; montado no commit fa547c3 de 05/11/2026, ligação atualizada pelo a707453 de 16/11/2026), montado a partir do robo.json. A ligação é a que a equipe pôs no robô real (robo.py e sensores.py): de 05/11 a 16/11 era outra (placas 72/5 no SERIAL2, cor no SERIAL6, outras portas dos VL53) e até 05/11 a do defs.py de 29/10. Unidades: mm, graus, kg. Robô: x para frente, y para a esquerda, ângulos anti-horários (0 = frente, 90 = esquerda). O que não está no código da equipe ficou igual ao robo.json e continua estimado.",
+  "_comentario": "Robô da equipe Maze 2026 (repositório maze2026, branch adaptacao-claude; montado no commit fa547c3 de 05/11/2026, ligação atualizada pelo a707453 de 16/11/2026 e pelo 9df9aae de 17/11/2026: para-choques P2/P7, descontos dos VL53 e contagens), montado a partir do robo.json. A ligação é a que a equipe pôs no robô real (robo.py e sensores.py): de 05/11 a 16/11 era outra (placas 72/5 no SERIAL2, cor no SERIAL6, outras portas dos VL53) e até 05/11 a do defs.py de 29/10. Unidades: mm, graus, kg. Robô: x para frente, y para a esquerda, ângulos anti-horários (0 = frente, 90 = esquerda). O que não está no código da equipe ficou igual ao robo.json e continua estimado.",
   "nome": "Maze 2026 (código da equipe)",
 
   "geometria": {
@@ -27,9 +27,9 @@
 
   "motor_padrao": {
     "_comentario": "Motor de aspirador Xiaomi. Contagens por volta da roda = pulsos_encoder_motor x reducao x multiplicador (Mariola x2: um canal nas duas bordas; placa x4: quadratura). rpm_livre = rotação da roda com PWM 100%; no PID o comando 100 = 80% disso.",
-    "_deduzido_do_codigo": "Contagens (05/11/2026): constantes.py da equipe, CONTAGENS_POR_MM = 2, ajustado no robô real: 2 x pi x 70 = 440 por volta da roda no Mariola; placa = o dobro (x4 contra x2), 880. De 03/11 a 05/11 eram 940/1880 (medida do robô Boberto, que não valeu para este); antes, 481/962 (1 cm = 1000/45,7 do movimentos.py antigo). A CONFIRMAR: girar uma roda de trás 1 volta à mão e ler o angulo_motor(). As placas recebem calibracao_manual(32, -32); supondo que a equipe igualou a velocidade da frente com a de trás, o Mariola teria calibração 16. Com 440/880, essa calibração dá ~109 rpm livres. Os campos de baixo têm prioridade sobre pulsos x redução e rpm_livre.",
-    "contagens_por_volta_mariola": 440,
-    "contagens_por_volta_placa": 880,
+    "_deduzido_do_codigo": "Contagens (17/11/2026): constantes.py da equipe, CONTAGENS_POR_MM = 100 / 55 (1,818; já assim no commit 75a33d1 de 14/11, o comentário '#50' é o 100/50 = 2 de antes), ajustado no robô real: 1,818 x pi x 70 = 400 por volta da roda no Mariola; placa = o dobro (x4 contra x2), 800. De 05/11 a 17/11 o json teve 440/880 (CONTAGENS_POR_MM = 2 do commit fa547c3). De 03/11 a 05/11 eram 940/1880 (medida do robô Boberto, que não valeu para este); antes, 481/962 (1 cm = 1000/45,7 do movimentos.py antigo). A CONFIRMAR: girar uma roda de trás 1 volta à mão e ler o angulo_motor(). As placas recebem calibracao_manual(32, -32); supondo que a equipe igualou a velocidade da frente com a de trás, o Mariola teria calibração 16. Com 440/880, essa calibração dava ~109 rpm livres; com 400/800, ~120 (mesma velocidade em contagens). Os campos de baixo têm prioridade sobre pulsos x redução e rpm_livre.",
+    "contagens_por_volta_mariola": 400,
+    "contagens_por_volta_placa": 800,
     "calibracao_mariola": 16,
     "calibracao_placa": 32,
     "pulsos_encoder_motor": 17,
@@ -49,12 +49,12 @@
   },
   "latencia_serial_ms": 1.0,
 
-  "_vl53": "5 VL53L0X (sensores.py da equipe, 16/11/2026, commit a707453). 'meio' no meio da lateral, 'borda' perto da frente (confirmado pelo Julio em 29/10/2026; x e y A MEDIR); a frente no meio do para-choque (estimado). O código desconta 13 mm da borda esquerda (I2C2) e 37 mm do meio direito (I2C8): aqui esses dois ficam esse tanto para dentro, para lerem a mais o mesmo que no robô. De 05/11 a 16/11 as portas eram borda esq I2C1, meio esq I2C3, borda dir I2C6, meio dir I2C7 e frente I2C8 (os descontos ficaram com os mesmos sensores); antes de 05/11, 4 laterais.",
+  "_vl53": "5 VL53L0X (sensores.py da equipe, 16/11/2026, commit a707453). 'meio' no meio da lateral, 'borda' perto da frente (confirmado pelo Julio em 29/10/2026; x e y A MEDIR); a frente no meio do para-choque (estimado). Desde 17/11 (commit 9df9aae) o código desconta 30 mm do meio esquerdo (I2C1, com o nome DESCONTO_BORDA_ESQ) e 10 mm da borda direita (I2C7, com o nome DESCONTO_MEIO_DIR): aqui esses dois ficam esse tanto para dentro, para lerem a mais o mesmo que no robô. De 16/11 a 17/11 eram 13 mm da borda esquerda (I2C2) e 37 mm do meio direito (I2C8). De 05/11 a 16/11 as portas eram borda esq I2C1, meio esq I2C3, borda dir I2C6, meio dir I2C7 e frente I2C8 (os descontos ficaram com os mesmos sensores); antes de 05/11, 4 laterais.",
   "vl53": [
-    {"nome": "borda_esq", "mux": "I2C2", "x": 70, "y":  72, "angulo":  90},
-    {"nome": "meio_esq",  "mux": "I2C1", "x":  0, "y":  85, "angulo":  90},
-    {"nome": "borda_dir", "mux": "I2C7", "x": 70, "y": -85, "angulo": -90},
-    {"nome": "meio_dir",  "mux": "I2C8", "x":  0, "y": -48, "angulo": -90},
+    {"nome": "borda_esq", "mux": "I2C2", "x": 70, "y":  85, "angulo":  90},
+    {"nome": "meio_esq",  "mux": "I2C1", "x":  0, "y":  55, "angulo":  90},
+    {"nome": "borda_dir", "mux": "I2C7", "x": 70, "y": -75, "angulo": -90},
+    {"nome": "meio_dir",  "mux": "I2C8", "x":  0, "y": -85, "angulo": -90},
     {"nome": "frente",    "mux": "I2C6", "x": 90, "y":   0, "angulo":   0}
   ],
   "vl53_params": {
@@ -68,9 +68,9 @@
   },
 
   "para_choque": {
-    "_comentario": "botões de contato na frente; pino = P1..P8. Apertado = nível BAIXO. Na equipe: P1 esquerdo, P8 direito (threads/parachoque.py).",
-    "esquerdo": {"pino": "P1", "y_min": 5, "y_max": 80},
-    "direito":  {"pino": "P8", "y_min": -80, "y_max": -5},
+    "_comentario": "botões de contato na frente; pino = P1..P8. Apertado = nível BAIXO. Na equipe (robo.py, parachoque_esquerdo/direito): P2 esquerdo, P7 direito desde 17/11/2026 (commit 9df9aae); antes P1 e P8.",
+    "esquerdo": {"pino": "P2", "y_min": 5, "y_max": 80},
+    "direito":  {"pino": "P7", "y_min": -80, "y_max": -5},
     "curso_mm": 2.0
   },
   "botao_inicio": {"pino": "P3"},
@@ -88,7 +88,7 @@
   },
 
   "cor_reflexao": {
-    "_comentario": "Pro1616 (V2), mesma geometria do robo.json. Atenção ao código da equipe: rgb_dir() lê o TCS 1 e direito_externo() o IR 0, que pela convenção do Mariola são os da ESQUERDA (o mesmo com rgb_esq()/esquerdo_exeterno() à direita). Se o sensor estiver montado girado no robô, mude aqui.",
+    "_comentario": "Pro1616 (V2), mesma geometria do robo.json. A equipe (SensorChao.cor() do sensores.py) só lê o TCS do meio (le_rgbc(2)). Se o sensor estiver montado girado no robô, mude aqui.",
     "tcs": [ {"x": 71, "y": 20}, {"x": 71, "y": 0}, {"x": 71, "y": -20} ],
     "ir":  [ {"x": 80, "y": 26.6}, {"x": 80, "y": 8.9}, {"x": 80, "y": -8.9}, {"x": 80, "y": -26.6} ],
     "ruido": 3,
@@ -96,7 +96,7 @@
     "tempo_calibra_preto_s": 2.2
   },
   "cores_piso": {
-    "_comentario": "Escala do firmware: branco ~127 no TCS, IR 0 = preto e ~100 = branco; o prata lê MENOS que o branco no IR (~80). Valores estimados: troque pelos lidos no robô. (A threads/cores.py da equipe espera o cinza/prata entre 180 e 210.)",
+    "_comentario": "Escala do firmware: branco ~127 no TCS, IR 0 = preto e ~100 = branco; o prata lê MENOS que o branco no IR (~80). Valores estimados: troque pelos lidos no robô. (O SensorChao.cor() da equipe, 17/11, espera preto com r, g e b até 15, vermelho e azul pela proporção (1,5x), prata entre 235 e 255 e branco entre 100 e 140; com o prata daqui, ~195, o checkpoint deles não é reconhecido.)",
     "branco":   {"rgbc": [127, 128, 126, 127], "ir": 100},
     "preto":    {"rgbc": [3, 3, 4, 5],         "ir": 2},
     "prata":    {"rgbc": [190, 195, 200, 205], "ir": 80},
@@ -112,7 +112,7 @@
   },
   "led_vitima": "mariola_rgb",
 
-  "_cameras": "A equipe usa uma câmera USB (/dev/video_usb3) e OpenCV, que não funcionam no simulador. As câmeras daqui só servem ao módulo deteccaoVitimas do simulador (o código da equipe não usa).",
+  "_cameras": "A equipe usa duas câmeras USB (desde 17/11, /dev/video_usb1 à esquerda e /dev/video_usb2 à direita; antes, uma no /dev/video_usb3) e OpenCV, que não funcionam no simulador. As câmeras daqui só servem ao módulo deteccaoVitimas do simulador (o código da equipe não usa). Os kits saem por dois servos comuns do Mariola (1 = frente/lados, 2 = portinha), que o firmware emulado aceita.",
   "cameras": [
     {"nome": "esquerda", "x": 0, "y":  60, "angulo":  90, "fov": 70, "alcance_mm": 230},
     {"nome": "direita",  "x": 0, "y": -60, "angulo": -90, "fov": 70, "alcance_mm": 230}

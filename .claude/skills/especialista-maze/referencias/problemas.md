@@ -27,11 +27,12 @@ libs e do envio estão em `.claude/skills/especialista-mariola/referencias/probl
   um canal nas duas bordas (x2): o mesmo motor dá o dobro de contagens na placa. Use uma constante para
   cada (`CONTAGENS_POR_VOLTA` e `CONTAGENS_POR_VOLTA_PLACA` no exemplo).
 * **O robô anda o dobro do que pede no simulador com `robo_maze2026.json`** → o programa usa outra
-  contagem por volta. O robô da equipe está com 440 contagens por volta no Mariola (880 na placa), o
-  `CONTAGENS_POR_MM = 2` da equipe, que **ela acertou no robô real em 05/11/2026** (os comentários antigos
-  do código, com 1000/45,7 ≈ 2,19 ou 940 por volta, são de antes e não valem). Confira a constante do
-  programa. Não sugira trocar o 2,0 sem medida nova: no robô real, mande andar 300 mm com trena (ou gire a
-  roda 1 volta à mão e leia a contagem).
+  contagem por volta. O robô da equipe está com 400 contagens por volta no Mariola (800 na placa), o
+  `CONTAGENS_POR_MM = 100 / 55` (1,818) do `constantes.py` da equipe, ajustado no robô real (de 05/11 a
+  17/11/2026 o json tinha 440/880, do `CONTAGENS_POR_MM = 2` de 05/11; os comentários antigos do código,
+  com 1000/45,7 ≈ 2,19 ou 940 por volta, não valem). Confira a constante do programa. Não sugira trocar o
+  1,818 sem medida nova: no robô real, mande andar 300 mm com trena (ou gire a roda 1 volta à mão e leia
+  a contagem).
 * **Giro sai para o lado errado ou não para** → sinal do giroscópio. Na lib, Z positivo = horário; no robô
   da equipe o Z **diminui** girando para a direita (`z_horario_positivo: false` no `robo_maze2026.json`).
   Troque o sinal **num lugar só** (como o `z()` do exemplo) e use **alvo acumulado** (alvo += 90; não
@@ -64,7 +65,8 @@ libs e do envio estão em `.claude/skills/especialista-mariola/referencias/probl
   uma leitura ou espere uma medida nova.
 * **Leitura travando ou com lixo usando thread** → o I2C só pode ser usado por uma thread (curso 7.3).
 * **Sensor deslocado da borda do robô** → desconte a distância do sensor até a lateral (no robô da equipe,
-  13 mm e 37 mm para dentro).
+  desde 17/11/2026, 30 mm no meio esquerdo e 10 mm na borda direita; até 17/11 eram 13 mm na borda
+  esquerda e 37 mm no meio direito).
 
 ## Pisos
 

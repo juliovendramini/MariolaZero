@@ -140,14 +140,18 @@ depois chama `tem_branco()`; com OpenCV, procura os `.png` em `/home/banana/maze
 * motores: Mariola canal 1 invertido;
 * giroscópio no `SERIAL4`, **diminuindo para a direita** (`z_horario_positivo: false`; "o giroscópio
   diminui ao girar à direita", medido pela equipe);
-* 5 VL53: a borda esq fica 13 mm para dentro e o meio dir 37 mm (o código desconta esses dois); a
-  frente tem posição estimada. Até 05/11 eram 4;
-* para-choque P1/P8.
+* 5 VL53: desde 17/11 (commit `9df9aae`, json atualizado no mesmo dia a pedido do Julio) o meio esq
+  fica 30 mm para dentro e a borda dir 10 mm (o código desconta esses dois, com os nomes trocados:
+  `DESCONTO_BORDA_ESQ` no meio esquerdo, `DESCONTO_MEIO_DIR` na borda direita); de 16/11 a 17/11 eram
+  a borda esq (13 mm) e o meio dir (37 mm). A frente tem posição estimada. Até 05/11 eram 4;
+* para-choque P2 (esq) / P7 (dir) desde 17/11 (`9df9aae`); antes P1/P8.
 
-Contagens: 440 por volta no Mariola e 880 na placa desde 05/11/2026 (`CONTAGENS_POR_MM = 2` da
-equipe, ajustado no robô; ainda falta a volta da roda à mão). De 03/11 a 05/11 foram 940/1880 (medida
-do Boberto, que não valeu para este robô); antes, 481/962 (1 cm = 1000/45,7 do código antigo). A
-calibração (16 no Mariola, 32 nas placas, do `calibracao_manual(32, -32)`) não mudou: ~109 rpm livres.
+Contagens: 400 por volta no Mariola e 800 na placa desde 17/11/2026 (`CONTAGENS_POR_MM = 100 / 55`
+da equipe, que já estava assim no `75a33d1` de 14/11; ainda falta a volta da roda à mão). De 05/11 a
+17/11 o json teve 440/880 (`CONTAGENS_POR_MM = 2`). De 03/11 a 05/11 foram 940/1880 (medida do
+Boberto, que não valeu para este robô); antes, 481/962 (1 cm = 1000/45,7 do código antigo). A
+calibração (16 no Mariola, 32 nas placas, do `calibracao_manual(32, -32)`) não mudou: ~120 rpm livres
+com 400 contagens (~109 com 440).
 O `maze2026_simplificado` do professor usa `CONTAGENS_POR_VOLTA = 440` desde 05/11 (antes, 940: com
 este json ele andava o dobro do que pedia).
 
