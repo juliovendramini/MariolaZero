@@ -440,6 +440,19 @@ Tudo local, sem internet:
   (0,2 s por frase) ou `small` na CPU.
 * **Som**: `sounddevice`, para tocar e para gravar do microfone.
 
+**Estúdio de voz** (17/11/2026), para achar a voz do robô de ouvido: `ferramentas\estudio_voz.bat` (ou
+`python ferramentas/estudio_voz.py`) abre uma página em http://127.0.0.1:8770 com 4 vozes lado a lado.
+Cada uma tem a voz (Piper `cadu`/`faber`, Kokoro `dora`/`alex`/`santa` ou a voz do Julio pelo F5-TTS do
+projeto `D:\voz_claude`) e os botões: tom, velocidade, volume, tremido, rouquidão (áspera, sopro,
+arranhado), metal (zumbido, eco de tubo), rádio (corta grave e agudo) e brinquedo (degrau, bits). Mexeu, ela
+fala de novo (0,2 a 0,7 s no Piper; o Kokoro e o F5 demoram mais na primeira vez de cada texto e tom).
+**Guardar** grava os parâmetros em `resultados/estudio_voz/escolhas.json` (com o `.wav` ao lado);
+**Copiar** põe os parâmetros na área de transferência. Os efeitos são os do `voz.receita()`, então a voz
+guardada sai igual no robô. Tudo no PC, sem internet. A voz do Julio carrega num processo à parte, com o
+Python da `.venv` dele (`ferramentas/estudio_voz_f5.py`): de ~10 s a ~3 min, enquanto as outras já
+funcionam. `--rede` deixa abrir do celular na mesma rede (o firewall do Windows pode barrar),
+`--sem-julio` não carrega a voz dele.
+
 Não há palavra de chamada treinada: o robô grava cada frase (do primeiro som até o silêncio), transcreve
 e só obedece se ela começar pelo nome dele ("Bombertinho, vai para a cozinha"), ou se vier até 20 s depois
 de uma pergunta que ele fez ("Qual banheiro?" / "O social").

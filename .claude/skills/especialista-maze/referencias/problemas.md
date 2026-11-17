@@ -49,7 +49,8 @@ libs e do envio estão em `.claude/skills/especialista-mariola/referencias/probl
 
 * **`OSError: [VL53L0X] Sensor não encontrado`** → o canal do mux (`Portas.I2C1` ... `I2C8`) não tem
   sensor: no robô, fio ou porta trocada; no simulador, o `robo.json` usado não tem um VL53 nesse canal
-  (`robo.json` tem 6; `robo_maze2026.json`, 5 em `I2C1/3/6/7/8`). Confira o `--robo`.
+  (`robo.json` tem 6; `robo_maze2026.json`, 5 em `I2C1/2/6/7/8` desde 16/11, antes `I2C1/3/6/7/8`).
+  Confira o `--robo` e se o código é da ligação nova (commit `a707453` em diante).
 * **No robô, um VL53 para de responder depois de um Ctrl+C e só volta desligando** → `vl53.py` antigo
   (antes de 09/11/2026; as libs da equipe em `maze2026/libs/` são antigas). O Ctrl+C no meio de uma
   sequência deixava o sensor no banco de registradores errado e a inicialização seguinte o travava. A

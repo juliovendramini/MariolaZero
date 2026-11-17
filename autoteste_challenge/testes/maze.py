@@ -97,9 +97,22 @@ def paredes(ctx):
 
 
 # ---------------------------------------------------------------------------- cores do piso
+def _bate(f, r, g, b):
+    """Uma regra das faixas_cor: faixas 'r'/'g'/'b' = [mín, máx] e/ou 'domina' = canal que tem de ser
+    pelo menos 'fator' vezes cada um dos outros dois (o 'r >= g*1.5 and r >= b*1.5' da equipe)."""
+    valores = {'r': r, 'g': g, 'b': b}
+    for canal in 'rgb':
+        if canal in f and not f[canal][0] <= valores[canal] <= f[canal][1]:
+            return False
+    if 'domina' in f:
+        fator = f.get('fator', 1.5)
+        return all(valores[f['domina']] >= valores[c] * fator for c in 'rgb' if c != f['domina'])
+    return True
+
+
 def _cor_da_equipe(cfg, r, g, b):
     for f in cfg.get('faixas_cor', []):
-        if f['r'][0] <= r <= f['r'][1] and f['g'][0] <= g <= f['g'][1] and f['b'][0] <= b <= f['b'][1]:
+        if _bate(f, r, g, b):
             return f['cor']
     return 'nenhuma'
 
@@ -142,8 +155,13 @@ def cores_piso(ctx):
             txt = (f'{cor}: RGBC {media[0]} {media[1]} {media[2]} {media[3]}, faixa R{faixa[0][0]}-{faixa[0][1]} '
                    f'G{faixa[1][0]}-{faixa[1][1]} B{faixa[2][0]}-{faixa[2][1]}; faixas da equipe: {vista} '
                    f'({certas}/{len(vistas)} certas)')
-            dica = (f'ajuste a faixa do {cor} no SensorChao.cor() (sensores.py) para cobrir o que foi medido '
-                    f'(com folga); lembre que a ordem dos if importa e que fora das faixas o código dá branco')
+            if 'domina' in f:
+                dica = (f'o {cor} medido não tem {f["domina"].upper()} {f.get("fator", 1.5)} vezes maior que os '
+                        f'outros dois: ajuste o fator no SensorChao.cor() (sensores.py) ou a luz do sensor; '
+                        f'lembre que a ordem dos if importa e que fora das faixas o código dá branco')
+            else:
+                dica = (f'ajuste a faixa do {cor} no SensorChao.cor() (sensores.py) para cobrir o que foi medido '
+                        f'(com folga); lembre que a ordem dos if importa e que fora das faixas o código dá branco')
             if certas == len(vistas):
                 rel.ok(txt)
             elif certas >= len(vistas) * 0.8:

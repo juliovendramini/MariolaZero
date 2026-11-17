@@ -43,6 +43,7 @@ O que é daqui:
 | `exemplo_casa/testa_cerebro.py` | bateria de 20 comandos numa casa de mentira (`Mundo`), conferidos pelo estado final; `local`, `claude`, `tipo:modelo`, `--so 3,7`, `--mostra`; grava `resultados/cerebro_<modelo>.json` |
 | `ferramentas/espalha_objetos.py` | põe a caixa (`--caixa x,y`) e N prismas em cômodos, visíveis do ponto do cômodo e alcançáveis (`--semente`, `--comodos`) |
 | `ferramentas/bagunca_casa.py` | cópia de uma casa com móveis tirados, deslocados e coisas fora do mapa (longe das rotas do passeio), para testar com `--mapa` |
+| `ferramentas/estudio_voz.py` (+ `.html`, `.bat`, `estudio_voz_f5.py`) | estúdio de voz (17/11/2026, pedido do Julio): página em 127.0.0.1:8770 com 4 vozes e os botões do `voz.receita()` (`voz.RECEITA_NEUTRA` = os nomes dos parâmetros; tom em semitons, feito sintetizando mais devagar e encolhendo). Motores: Piper, Kokoro e a voz dele (F5 de `D:\voz_claude`, `robo_ema_fp16.safetensors`, num processo da `.venv` dele que lê pedidos JSON por linha). O que ele guarda vai para `resultados/estudio_voz/escolhas.json`: quando ele disser "usa a N", leia de lá e ponha em `VOZES_ROBO` (falta a `Boca` aceitar esses parâmetros; o F5 não roda no brick) |
 | `ferramentas/planta_dxf.py` | planta DXF → casa JSON (camadas `PAREDE`, `ESQUADRIA`, `LAY OUT`; `--nomes "bloco=Cômodo"`, `--moveis-dos-blocos`, `--ver img`). Precisa de `ezdxf` (e `matplotlib` para o `--ver`) |
 
 ## Teste de referência

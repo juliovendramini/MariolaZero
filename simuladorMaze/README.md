@@ -351,8 +351,9 @@ simulador e ajuste `rpm_livre`, `forca_max_N`, `atrito_lateral` e `deriva_graus_
 
 ### Robô da equipe Maze 2026 — `robo_maze2026.json`
 
-Ligado como no código da equipe (repositório `maze2026`, branch `adaptacao-claude` de 05/11/2026:
-`robo.py`, `sensores.py` e `constantes.py`, com o que a equipe acertou no robô real):
+Ligado como no código da equipe (repositório `maze2026`, branch `adaptacao-claude`: `robo.py`,
+`sensores.py` e `constantes.py`, com o que a equipe pôs no robô real; portas de 16/11/2026, commit
+`a707453`):
 
 ```bash
 python simulador.py --robo robo_maze2026.json --programa ../../maze2026/main.py
@@ -363,9 +364,10 @@ um programa que troque o `codigo_le_vitima.identificar_simbolos` por um falso.
 
 | o quê | no robô da equipe |
 |---|---|
-| motores | Mariola canal 1 (traseira esquerda, invertido) e 2; placas no `SERIAL2` a 250000: id 72 na dianteira esquerda, id 5 na dianteira direita (invertida) |
-| giroscópio / cor | `SERIAL4` (o Z **diminui** girando para a direita: `z_horario_positivo: false`) / `SERIAL6` (Pro1616) |
-| VL53 | 5: borda esquerda `I2C1`, meio esquerdo `I2C3`, borda direita `I2C6`, meio direito `I2C7` e frente `I2C8`. As bordas ficam perto da frente. A borda esquerda e o meio direito ficam 13 mm e 37 mm para dentro, o mesmo que o código desconta |
+| motores | Mariola canal 1 (traseira esquerda, invertido) e 2; placas no `SERIAL1` a 250000: id 8 na dianteira esquerda, id 16 na dianteira direita (invertida) |
+| giroscópio / cor | `SERIAL4` (o Z **diminui** girando para a direita: `z_horario_positivo: false`) / `SERIAL5` (Pro1616) |
+| VL53 | 5: borda esquerda `I2C2`, meio esquerdo `I2C1`, borda direita `I2C7`, meio direito `I2C8` e frente `I2C6`. As bordas ficam perto da frente. A borda esquerda e o meio direito ficam 13 mm e 37 mm para dentro, o mesmo que o código desconta |
+| antes de 16/11 | placas 72 (esq) e 5 (dir) no `SERIAL2`, cor no `SERIAL6`, VL53 borda esq `I2C1`, meio esq `I2C3`, borda dir `I2C6`, meio dir `I2C7`, frente `I2C8`: código da equipe anterior ao `a707453` não abre as portas com este json |
 | para-choque | P1 esquerdo, P8 direito |
 | encoder e calibração | 440 contagens por volta da roda no Mariola (880 na placa): o `CONTAGENS_POR_MM = 2` da equipe, ajustado no robô real (de 03/11 a 05/11 eram 940, medidos no robô Boberto); calibração 32 nas placas (do código) e 16 no Mariola (estimada) |
 

@@ -11,17 +11,21 @@ aparecem.
 ## O que este robô tem (`robo.json`)
 
 Tirado do código da equipe (`robo.py`, `sensores.py` e `constantes.py`, repositório `IzadoraVB/maze2026`,
-ramo `adaptacao-claude`, commit `75a33d1` de 14/11/2026):
+ramo `adaptacao-claude`; portas do commit `a707453` e cores do `acb24cb`, de 16/11/2026):
 
 * brick: motores 1 (invertido, esquerdo) e 2 (direito) com encoder, nos traseiros, e 10 LEDs RGB. A
-  equipe não usa buzzer nem servo comum. Por isso o teste do buzzer fica de fora (`"timer2": "livre"`):
-  ele prenderia o Timer2 até reiniciar o brick, e o dispenser de kits ainda pode ser um servo comum;
-* barramento no **SERIAL2**: placas de motor 72 (frente esq) e 5 (frente dir, invertida);
+  equipe não usa buzzer. O dispenser de kits deve usar servos comuns do brick (constantes `SERVO_*` do
+  `constantes.py`, ainda em teste), por isso o teste do buzzer fica de fora (`"timer2": "livre"`): no
+  firmware de 26/10 ele prenderia o Timer2 até reiniciar o brick e os servos parariam;
+* barramento no **SERIAL1**: placas de motor 8 (frente esq) e 16 (frente dir, invertida);
 * giroscópio no **SERIAL4** (o Z diminui girando para a direita);
-* sensor de linha/cor (Pro1616) no **SERIAL6**: o TCS do meio lê a cor do chão;
-* 5 VL53: frente I2C8, meio esq I2C3, borda esq I2C1, meio dir I2C7, borda dir I2C6;
+* sensor de linha/cor (Pro1616) no **SERIAL5**: o TCS do meio lê a cor do chão;
+* 5 VL53: frente I2C6, meio esq I2C1, borda esq I2C2, meio dir I2C8, borda dir I2C7;
 * para-choques no P1 (esquerdo) e P8 (direito);
-* câmera `/dev/video_usb3`.
+* câmera `/dev/video_usb3` (o `camera.py` da equipe abre o `/dev/video1`, mas ajusta o `video_usb3`).
+
+Até 16/11 a ligação era outra: placas 72 e 5 no SERIAL2, sensor de linha no SERIAL6 e VL53 frente I2C8,
+meio esq I2C3, borda esq I2C1, meio dir I2C7, borda dir I2C6.
 
 A chave `maze` traz os números da equipe para os 3 testes próprios da Maze: inversões dos motores,
 velocidades, `CONTAGENS_POR_MM`, `DISTANCIA_SEM_PAREDE`, descontos dos VL53 e as faixas de cor do
@@ -136,14 +140,14 @@ scp -r banana@192.168.1.202:~/autoteste_maze/relatorios .
 | `pinos` | `pino` (`P1` a `P8`), `nome` |
 | `pinos_nao_mexer` | pinos que o robô usa como saída: o autoteste não mexe neles |
 | `cameras` | caminhos (`/dev/video_usb1`...) |
-| `maze` | só no robô da Maze (testes `paredes`, `cores_piso` e `andar`): `brick_invertidos`, `placa_esq`/`placa_dir`, `placas_invertidas`, `velocidade`, `velocidade_giro_min`/`max`, `kp_giro`, `contagens_por_mm`, `distancia_sem_parede`, `vl53_frente`, `paredes` (lado, VL53 do meio e da borda), `descontos` (mm tirados de cada VL53), `tcs_chao` (1 a 3) e `faixas_cor` (`cor`, `r`, `g`, `b` = [mín, máx], na ordem do `SensorChao.cor()`) |
+| `maze` | só no robô da Maze (testes `paredes`, `cores_piso` e `andar`): `brick_invertidos`, `placa_esq`/`placa_dir`, `placas_invertidas`, `velocidade`, `velocidade_giro_min`/`max`, `kp_giro`, `contagens_por_mm`, `distancia_sem_parede`, `vl53_frente`, `paredes` (lado, VL53 do meio e da borda), `descontos` (mm tirados de cada VL53), `tcs_chao` (1 a 3) e `faixas_cor` (na ordem do `SensorChao.cor()`: `cor` e `r`, `g`, `b` = [mín, máx] e/ou `domina` = canal que tem de ser pelo menos `fator` vezes cada um dos outros dois, como o `r >= g*1.5 and r >= b*1.5` da equipe) |
 
 Um teste só aparece se o `robo.json` tiver o que ele testa. Por exemplo, `linha` só aparece com
 `sensores_linha`.
 
-## Como foi testado (14/11/2026)
+## Como foi testado (14/11/2026; de novo em 16/11 com as portas novas)
 
-No simulador da Maze, com o `robo_maze2026.json` (pasta `simuladorMaze`):
+No simulador da Maze, com o `robo_maze2026.json` (pasta `simuladorMaze`; com as portas novas desde 16/11):
 
 ```powershell
 $env:AUTOTESTE_AUTOMATICO='1'; $env:AUTOTESTE_MOTORES='1'
@@ -157,7 +161,8 @@ python simulador.py --robo robo_maze2026.json --mapa mapas/treino.json --program
   terminaram com 0° de erro.
 * **`cores_piso` e `paredes` com uma pessoa respondendo:** testados com sensores e teclado falsos. Um
   vermelho fora da faixa da equipe dá FALHA, com a dica de ajustar o `sensores.py`; meio e borda
-  diferentes dão AVISO.
+  diferentes dão AVISO. Em 16/11, com as regras de proporção: vermelho e azul certos; um prata de
+  190/200/150 (o do simulador) dá FALHA contra a faixa 235-255 da equipe.
 
 O resto do código é o mesmo do Boberto e do Bombertinho, testado lá.
 

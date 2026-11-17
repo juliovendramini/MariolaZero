@@ -130,14 +130,18 @@ de conflito. O `main.py` da branch cai sem câmera (o `except` do import faz `te
 depois chama `tem_branco()`; com OpenCV, procura os `.png` em `/home/banana/maze2026`): para rodar,
 `professor/maze2026/simulador/main_sem_camera.py` troca só a detecção de vítimas. A ligação veio do
 `robo.py`/`sensores.py`/`constantes.py` da branch, que a equipe acertou no robô real em 04-05/11:
-* motores: Mariola canal 1 invertido; placas no `SERIAL2`: id **72** na dianteira esquerda, id **5**
-  invertida na direita (até 05/11 era o contrário, como os nomes do `defs.py` antigo; o Julio tinha
-  confirmado em 29/10, mas a equipe trocou no robô);
+* **portas novas desde 16/11/2026** (commit `a707453` "ajeitei as portas"; json atualizado no mesmo dia,
+  a pedido do Julio): placas no `SERIAL1` (id **8** na dianteira esquerda, id **16** invertida na
+  direita), Pro1616 no `SERIAL5`, VL53 borda esq `I2C2`, meio esq `I2C1`, borda dir `I2C7`, meio dir
+  `I2C8`, frente `I2C6`. Código da equipe anterior ao `a707453` não abre as portas com este json;
+* de 05/11 a 16/11: placas no `SERIAL2`, id 72 à esquerda e 5 invertida à direita (antes de 05/11, o
+  contrário, como o `defs.py` antigo), Pro1616 no `SERIAL6`, VL53 borda esq `I2C1`, meio esq `I2C3`,
+  borda dir `I2C6`, meio dir `I2C7`, frente `I2C8`;
+* motores: Mariola canal 1 invertido;
 * giroscópio no `SERIAL4`, **diminuindo para a direita** (`z_horario_positivo: false`; "o giroscópio
   diminui ao girar à direita", medido pela equipe);
-* 5 VL53: borda esq `I2C1` (13 mm para dentro), meio esq `I2C3`, borda dir `I2C6`, meio dir `I2C7`
-  (37 mm para dentro: o código desconta do meio agora) e frente `I2C8` (posição estimada). Até 05/11
-  eram 4, com o I2C6 no meio e o I2C7 (−37) na borda direita;
+* 5 VL53: a borda esq fica 13 mm para dentro e o meio dir 37 mm (o código desconta esses dois); a
+  frente tem posição estimada. Até 05/11 eram 4;
 * para-choque P1/P8.
 
 Contagens: 440 por volta no Mariola e 880 na placa desde 05/11/2026 (`CONTAGENS_POR_MM = 2` da

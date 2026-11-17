@@ -2,8 +2,9 @@
 #Futuramente, quando tudo estiver estável, isso não será mais necessário
 #Exemplo do buzzer do Mariola (pino DEBUG/PWM): sons prontos, melodias, tom avulso e motores andando
 #enquanto a melodia toca.
-#Atenção: servos, ventoinha e buzzer usam o mesmo timer da placa. O primeiro que for usado fica com
-#ele até o brick reiniciar: depois de tocar o buzzer, os servos e a ventoinha não funcionam.
+#Atenção: ventoinha e buzzer usam o mesmo pino e o mesmo timer da placa. O primeiro que for usado fica
+#com eles até o brick reiniciar: depois de tocar o buzzer, a ventoinha não funciona. Os servos
+#funcionam junto (desde o firmware de 15/11/2026).
 from time import sleep
 from portas import Portas
 from motores import Motores

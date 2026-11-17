@@ -69,6 +69,7 @@ Os exemplos de `exemplos/camera/` mostram, em ordem:
 | `05-usandoThreads` | capturar em uma thread e processar em outra (sempre o quadro mais novo) |
 | `06-projetoSalvaFotos` | salvar fotos originais e processadas para treinar a rede de novo e ver onde ela errou |
 | `07-detectandoAreas` | achar áreas de uma cor por faixa HSV (ex.: os triângulos verde e vermelho) |
+| `08-medeVelocidadeIA` | medir, sem câmera, quantos quadros por segundo a sua rede faz no brick em ONNX e em NCNN (com 4, 3 e 2 núcleos) e quantas bolas acha em fotos suas. Em 17/11/2026: ONNX 4,4 fps, NCNN 7,6 fps (módulo 10.5) |
 
 Para a área de resgate, o simulador da Line define uma interface simples (`visao`), descrita em
 [módulos do simulador](modulos-simulador.md). No robô, `simuladorLine/robo_real/visao.py` tem o

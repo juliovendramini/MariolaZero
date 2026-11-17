@@ -70,6 +70,7 @@ tem o estado completo dele e o que vale ajustar.
 - [Apêndice B — O que ficou só em `_instalacao_antiga/`](#apêndice-b--o-que-ficou-só-em-_instalacao_antiga)
 - [Apêndice C — Brick conferido em 20/10/2026](#apêndice-c--brick-conferido-em-20102026)
 - [Apêndice D — Imagem @Work (Ubuntu 24.04 + ROS2)](#apêndice-d--imagem-work-ubuntu-2404--ros2)
+- [Apêndice E — Imagem @Work no Raspberry Pi 4](#apêndice-e--imagem-work-no-raspberry-pi-4)
 
 ---
 
@@ -1438,3 +1439,134 @@ com a eMMC, que é o problema da seção 4. O cartão continua servindo de recup
 * a troca dos UUIDs em cópias do `fstab` e do `armbianEnv.txt`.
 
 **Ainda não testado:** a gravação de verdade numa eMMC de 32 GB.
+
+## Apêndice E — Imagem @Work no Raspberry Pi 4
+
+O robô da @Work também roda num **Raspberry Pi 4** (o hat `HatRasp4Brick`, em
+`Documents\eagle\ROBOTICA\`). A imagem dele não é Armbian: é o **Ubuntu Server 24.04 para
+Raspberry Pi** (kernel `6.8.0-raspi`), com **ROS2 Jazzy** (`ros-jazzy-ros-base`), usuário `rasp`,
+hostname `mafagafoRasp`. A rede vai pelo netplan/networkd: `eth0` fixa em 10.50.0.2/30 e Wi-Fi
+`robot5`. Os serviços do robô são de usuário (`systemctl --user`: `cbr-rasp`, `cbr-zenoh`,
+`cbr-logrotate`; o `rasp` tem *linger*) e ficam em `~/.config/systemd/user`, ou seja, na `/home`.
+Do sistema, só o `cbr-firewall.service` (nftables do DDS/Zenoh).
+
+Imagem de 11/11/2026 (`D:\usbimager-20261111T2055.dd.zst`, 31.914.983.424 bytes descompactada),
+como saiu do cartão:
+
+| Partição | Começo | Tamanho | Rótulo | Montagem |
+|---|---|---|---|---|
+| `p1` | setor 2048 | 512 MiB | `system-boot` (FAT) | `/boot/firmware` (firmware do Pi, kernel, `config.txt`, `cmdline.txt`) |
+| `p2` | setor 1050624 | 29,2 GiB | `writable` | `/` (7,5 GB de sistema + 1,5 GB de `/home`, dos quais 1,1 GB de `~/.ros/log`) |
+
+### Raiz somente leitura (jeito do Mariola)
+
+No Pi a partição FAT de boot não pode sair (o firmware só lê dela), então as "duas partições do
+Mariola" viram três. O [`instalacao/rasp4_somente_leitura.sh`](instalacao/rasp4_somente_leitura.sh)
+faz a conversão num Linux qualquer (PC ou VM), sobre o **arquivo** da imagem, sem mexer na original:
+
+```bash
+sudo bash rasp4_somente_leitura.sh ORIGINAL.img NOVA.img
+```
+
+| Partição | Tamanho | Rótulo | Montagem |
+|---|---|---|---|
+| `p1` | 512 MiB | `system-boot` | `/boot/firmware`, **somente leitura** |
+| `p2` | 16 GiB | `writable` (mesmo UUID) | `/`, **somente leitura** |
+| `p3` | 11,8 GiB | `rasp_home` | `/home`, gravável (`data=journal`, `nofail`) |
+
+A imagem nova tem 29.000 MiB (30,4 GB) para caber em qualquer cartão de "32 GB" (o da imagem
+original tinha 31,9 GB, outros têm menos). `RAIZ_GIB=` e `TOTAL_MIB=` mudam os tamanhos.
+
+O que o script faz:
+
+* **A raiz não é copiada arquivo por arquivo:** a imagem é copiada inteira, a `/home` e o conteúdo
+  do `/var/log` são apagados da raiz e ela é encolhida com `resize2fs`. Donos, permissões, xattrs e
+  capabilities ficam como estavam. Só a `/home` (26 mil arquivos) vai por `rsync` para a `p3`.
+  (A primeira tentativa, com `rsync` da raiz inteira, ia levar 6 horas pela pasta compartilhada do
+  VirtualBox: são 260 mil arquivos.)
+* **`fstab`** (o original fica em `/etc/fstab.antes-somente-leitura`): raiz e boot `ro`; `/home`
+  pela `LABEL=rasp_home`; `/tmp`, `/var/tmp` e `/var/log` (128 MB) em RAM.
+* **`/var/log` em RAM:** as pastas são recriadas a cada boot a partir de `/var/log.esqueleto`
+  (`var-log-esqueleto.service`), porque alguns serviços (sysstat, apt...) não criam a sua. O journal
+  fica só na RAM (`/etc/systemd/journald.conf.d/somente-leitura.conf`, 64 MB) e o rsyslog foi
+  desligado: use `journalctl` (e `journalctl --user` para os serviços do robô). Os logs somem a
+  cada boot, como no Mariola. Os do ROS (`~/.ros/log`) continuam na `/home`.
+* **Hora:** o Pi não tem relógio. O `systemd-timesyncd` guarda a última hora em
+  `/var/lib/systemd/timesync/clock`; esse diretório passou para `/home/.sistema/timesync` (bind
+  mount), senão a hora voltaria sempre para a data da imagem até achar um servidor NTP. O banco do
+  `vnstat` (`/var/lib/vnstat`) foi para `/home/.sistema/vnstat` do mesmo jeito: com ele na raiz,
+  o serviço falhava.
+* **Desligados (`mask`, que se desfaz com `systemctl unmask`):** cloud-init
+  (`/etc/cloud/cloud-init.disabled`; ele regravaria o netplan a cada boot), snapd (só tinha o snap
+  do próprio snapd), `unattended-upgrades` e os timers do apt, apport, `logrotate`, `man-db`,
+  `motd-news`, `fstrim`, `e2scrub`, `dpkg-db-backup`, `fwupd-refresh`, `ua-timer`,
+  `update-notifier-*`, `systemd-tmpfiles-clean.timer` (limpava `/tmp` e `/var/tmp`, que agora são
+  RAM, e enchia o journal de "Read-only" tentando limpar o cache do `man`) e o rsyslog.
+* **`cmdline.txt`** com `fsck.repair=yes` (o original fica em `cmdline.txt.antes-somente-leitura`):
+  a raiz já é verificada a cada boot pelo initramfs (`fsck -y`), e a `/home` com erro é consertada
+  sem cair no modo de emergência.
+* **`~/remonta.sh`** em cada usuário: remonta `/` **e** `/boot/firmware` como graváveis até o
+  próximo boot. É preciso para `apt` (o kernel novo vai para o `/boot/firmware`), `netplan`,
+  `systemctl enable` e qualquer coisa em `/etc`. Depois, `sudo reboot`.
+* Zera o espaço livre das duas partições, para a imagem compactada ficar menor.
+
+Continuam ligados e podem reclamar no journal por não conseguirem gravar: `pollinate` e
+`rpi-eeprom-update`. Este não consegue preparar atualização do EEPROM no `/boot/firmware`, o que na
+prática é bom. Também ficaram ligados `ModemManager`, `open-vm-tools` e `lxd-installer`, que não
+servem para o robô.
+
+Do ROS, só 567 dos 1832 `.py` de `/opt/ros` têm `.pyc` (o `rasp` não grava em `/opt`, e agora nem
+o root grava sem remontar). Funciona, só que o Python recompila esses na memória toda vez. Para
+gerar de uma vez: `~/remonta.sh`, `sudo python3 -m compileall -q /opt/ros/jazzy` e `sudo reboot`.
+
+### Imagem pronta e gravação
+
+`D:\work_img\work-rasp4-ro-20261114.dd.zst` (2,9 GB; descompactada: 30.408.704.000 bytes, SHA-256
+`44baf1d5190491e3f24b84e79b8b5af7376f63bad2295aab30b8188852cf6ef4`). Grave como a original, com o
+USBImager (lê o `.zst` direto) num cartão de 32 GB. Os UUIDs e rótulos são os mesmos da imagem
+original: não deixe dois cartões dela ligados no mesmo Pi (um no slot e outro num leitor USB).
+
+Primeiro boot com o Pi de verdade, para conferir:
+
+```bash
+findmnt / /boot/firmware /home /var/log      # ro, ro, rw (mmcblk0p3), tmpfs
+systemctl --failed
+systemctl --user status cbr-rasp cbr-zenoh   # serviços do robô
+journalctl -b | grep -i read-only            # quem ainda tenta gravar na raiz
+timedatectl
+```
+
+### Como foi convertida e testada (14/11/2026)
+
+Sem Pi 4 à mão. A conversão rodou numa VM Debian 9 (VirtualBox) com o D: compartilhado:
+`sudo JA_COPIADA=1 bash rasp4_somente_leitura.sh work_original.img work_ro.img`, com a cópia da
+imagem feita antes no Windows. Levou ~20 min. O `e2fsck -f` deu limpo nas duas partições, e o
+`rsync -n` da `/home` não achou diferença.
+
+O boot foi testado no **QEMU 11.1 para Windows**, máquina `raspi4b`, com o kernel, o initrd e o
+dtb da própria imagem: [`instalacao/testa_rasp4_qemu.py`](instalacao/testa_rasp4_qemu.py). O
+emulador não tem USB, rede, Wi-Fi nem GPU, e é lento: ~15 min até o fim do boot. A imagem
+original rodou nele lado a lado, como referência. O que se viu na nova:
+
+* raiz `ro,noatime` e `/boot/firmware` `ro` (o `touch` dá "Read-only file system"); `/home` na
+  `mmcblk1p3`, gravável, com `data=journal`; `/tmp`, `/var/tmp` e `/var/log` em tmpfs; os binds
+  da `/var/lib/systemd/timesync` e da `/var/lib/vnstat` funcionando (o `clock` foi atualizado);
+* chegou ao fim do boot (aos 15 min só sobravam as tarefas do próprio teste; a original ainda
+  esperava o snapd e o cloud-init); `ssh`, `cbr-firewall`, `systemd-timesyncd`, `user@1000` (o
+  systemd do `rasp`, com o `cbr-logrotate.timer`) e `var-log-esqueleto` ativos;
+* `systemctl --failed`: só o `rpi-eeprom-update`, que falha igual na original (o emulador não tem o
+  EEPROM). Na primeira rodada falhou também o `vnstat` (banco na raiz): daí o bind dele;
+* só dois avisos de "Read-only" no journal, os dois inofensivos: o `systemd-random-seed` (não
+  consegue apagar um xattr) e o `multipathd` (quer criar `/etc/multipath`; o `cmdline.txt` já
+  tem `multipath=off`). O `multipathd.socket` falha ao abrir, na original também;
+* os drivers de câmera, ISP e codec do Pi travam o udev no QEMU, na original também. No teste eles
+  ficam bloqueados pela linha do kernel (`module_blacklist=`), só no emulador;
+* o `cbr-rasp` e o `cbr-zenoh` não são habilitados na imagem (são iniciados à mão, com
+  `systemctl --user start`) e precisam do hardware: não foram testados.
+
+O bind do `vnstat` e o mask do `systemd-tmpfiles-clean.timer` entraram no script depois da
+primeira conversão e foram aplicados à mão na imagem pronta (mesmo resultado do script atual, com
+o comentário do `fstab` sem acento).
+
+Ainda não testado: o boot num **Raspberry Pi 4 de verdade** (rede, Wi-Fi, USB, câmeras, os
+serviços do robô e a hora depois de desligar).

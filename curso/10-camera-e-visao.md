@@ -121,6 +121,50 @@ Falta você:
 
 Para ver o que a câmera do robô está vendo: `exemplos/camera/01-streamingVLC` (abre no navegador).
 
+### Quanto tempo a IA leva no brick
+
+A mesma rede pode ir para o brick em dois formatos, os dois gerados no PC a partir do `best.pt`:
+
+```bash
+yolo export model=best.pt format=onnx imgsz=320    # best.onnx         -> OpenCV DNN
+yolo export model=best.pt format=ncnn imgsz=320    # best_ncnn_model/  -> NCNN
+```
+
+Medido num brick em 17/11/2026 (YOLOv8n de 320, fotos 320 × 240 da câmera do robô, sem cooler):
+
+| formato | quadros por segundo | tempo por foto |
+|---|---|---|
+| ONNX (OpenCV DNN) | 4,4 | ~228 ms |
+| **NCNN, 4 núcleos** | **7,6** | **~131 ms** |
+| NCNN, 3 núcleos | 6,7 | ~150 ms |
+
+* O NCNN é **~1,7 vez mais rápido** e acha **as mesmas bolas** que o ONNX.
+* Com 3 núcleos sobra um para o resto do programa (sensores, motores) e o tempo fica mais estável.
+* Quase todo o tempo é a rede. Preparar a foto e o NMS somam ~6 ms: não adianta otimizar isso.
+* Rede rodando sem parar **esquenta**: o brick sem cooler passou de 90 °C em alguns minutos.
+  Veja a temperatura com `cat /sys/class/thermal/thermal_zone0/temp` (em milésimos de grau).
+* Para medir com a **sua** rede e as **suas** fotos, sem câmera: `exemplos/camera/08-medeVelocidadeIA`.
+
+Para trocar o ONNX pelo NCNN num programa, muda só o carregamento e a chamada da rede. A saída tem o
+mesmo formato `[1, 6, 2100]`, e o resto do código fica igual:
+
+```python
+import ncnn
+net = ncnn.Net()
+net.opt.num_threads = 3
+net.load_param("best_ncnn_model/model.ncnn.param")
+net.load_model("best_ncnn_model/model.ncnn.bin")
+
+# no lugar de  net.setInput(blob); saida = net.forward()
+with net.create_extractor() as ex:
+    ex.input("in0", ncnn.Mat(blob[0]))
+    _, out = ex.extract("out0")
+saida = np.array(out)[None]
+```
+
+Lembre do 10.2: a ~4 quadros por segundo, o robô anda entre uma foto e a resposta. Com o NCNN o
+atraso cai, mas não some: continue confirmando em mais de um quadro.
+
 ## 10.6 Outra câmera: seguir a linha com OpenCV
 
 Em vez do sensor de linha, o robô pode seguir a linha com uma **câmera de linha**: embaixo do robô,

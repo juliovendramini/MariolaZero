@@ -39,10 +39,10 @@ para a direita:
 | LEDs | 12 | fita de 10 LEDs RGB |
 | DEBUG/PWM | 11 (PB3) | TX do debug do ATmega **ou** PWM da ventoinha **ou** buzzer |
 
-* Servos comuns, ventoinha e buzzer usam o mesmo timer do ATmega: o primeiro que for usado fica com
-  ele até o brick reiniciar e os outros dois param de funcionar. Depois do primeiro `set_ventoinha`
-  ou do primeiro som do buzzer, a coluna DEBUG/PWM deixa de ser o debug. Detalhes em
-  [Motores](Motores.md).
+* Ventoinha e buzzer usam este pino e o mesmo timer do ATmega (Timer2): o primeiro que for usado
+  fica com eles até o brick reiniciar e o outro para de funcionar. Depois do primeiro
+  `set_ventoinha` ou do primeiro som do buzzer, a coluna DEBUG/PWM deixa de ser o debug. Os servos
+  usam o Timer3 (firmware de 15/11/2026) e funcionam junto. Detalhes em [Motores](Motores.md).
 * O buzzer padrão liga com o pino em **LOW** (dá para trocar para HIGH; fica salvo na EEPROM).
 * Este DEBUG é o do **ATmega**. O terminal serial do **Banana Pi** (Linux) é outra porta, de 3 pinos,
   na lateral do brick ao lado da mini HDMI (GND no pino mais externo, 115200 bps).

@@ -247,26 +247,26 @@ porta volta a ser servo.
 
 ---
 
-## Servos, ventoinha e buzzer: um de cada vez (Timer2)
+## Ventoinha ou buzzer: um de cada vez (Timer2 e pino 11)
 
-Os servos comuns, a ventoinha e o buzzer usam o mesmo timer do ATmega (Timer2). Desde o firmware
-de 26/10/2026, **o primeiro que for usado fica com o Timer2 até o brick reiniciar** e o firmware
-ignora os comandos dos outros dois:
+A ventoinha e o buzzer ficam no mesmo pino (11, coluna DEBUG/PWM) e usam o mesmo timer do ATmega
+(Timer2). **O primeiro que for usado fica com eles até o brick reiniciar** e o firmware ignora os
+comandos do outro:
 
 | primeiro uso | conta como uso | depois disso |
 |---|---|---|
-| servos | um `ENVIA_SERVOS` com algum ângulo de 0 a 180 (servos desativados, > 180, não contam) | ventoinha e buzzer recusados |
-| ventoinha | o primeiro `set_ventoinha` | servos e buzzer recusados |
-| buzzer | o primeiro som ou tom (parar o buzzer e configurar o nível não contam) | servos e ventoinha recusados |
+| ventoinha | o primeiro `set_ventoinha` | buzzer recusado |
+| buzzer | o primeiro som ou tom (parar o buzzer e configurar o nível não contam) | ventoinha recusada |
 
-- Ventoinha ou buzzer primeiro: o firmware desliga **todos os servos** e o serial de debug do
-  ATmega (o pino 11 é o TX do debug).
-- O `setup()` do firmware ainda liga os servos 1 a 4 ao ligar (pulso de centro), mas isso não conta
-  como uso: o Timer2 começa livre.
-- A lib acompanha o que ela mesma usou (`servos_ativos`, `ventoinha_ativa`, `buzzer_ativo`) e lança
-  exceção antes de mandar o comando. O estado de verdade fica no firmware (vale também para um
-  programa anterior que rodou desde o último reinício): as respostas do buzzer trazem o modo do
-  Timer2 e a lib avisa quem está com ele.
+- Os dois desligam o serial de debug do ATmega (o pino 11 é o TX do debug).
+- **Servos comuns funcionam junto com qualquer um dos dois** desde o firmware de 15/11/2026: a lib
+  de servos do firmware passou para o Timer3 (16 bits, resolução de 0,5 µs; antes eram 16 µs, ~1,5°
+  por passo). No firmware de 26/10/2026 os servos também entravam na regra (o primeiro dos três
+  ficava com o Timer2) e as respostas podiam trazer o modo `1` (servos); no novo, nunca.
+- A lib acompanha o que ela mesma usou (`ventoinha_ativa`, `buzzer_ativo`) e lança exceção antes de
+  mandar o comando. O estado de verdade fica no firmware (vale também para um programa anterior que
+  rodou desde o último reinício): as respostas do buzzer trazem o modo do Timer2 e a lib avisa quem
+  está com ele.
 
 ## Ventoinha
 
@@ -274,8 +274,8 @@ ignora os comandos dos outros dois:
 Liga a ventoinha na coluna **DEBUG/PWM** do header amarelo (a 6ª, pino 11 do ATmega) com potência
 de 0 a 100 (%). `desliga_ventoinha()` = `set_ventoinha(0)`.
 
-- Segue a regra do Timer2 acima: lança exceção se os servos ou o buzzer já foram usados; depois do
-  primeiro `set_ventoinha`, `move_servo` e o buzzer lançam exceção.
+- Segue a regra acima: lança exceção se o buzzer já foi usado; depois do primeiro `set_ventoinha`,
+  o buzzer lança exceção. Os servos continuam funcionando.
 - O timeout de 5 s **não** desliga a ventoinha. A classe desliga no `__del__`.
 
 ## Buzzer
@@ -342,8 +342,11 @@ entre as repetições; os sons de sinalização não. As varreduras andam em pas
 ### Protocolo (para quem emula o firmware)
 
 Pacote de 10 bytes como os outros comandos (os bytes que sobram são ignorados). Todos respondem
-**3 bytes**: `[comando, status, modo do Timer2]`, com modo `0` livre, `1` servos, `2` ventoinha,
-`3` buzzer (o modo já atualizado por este comando).
+**3 bytes**: `[comando, status, modo do Timer2]`, com modo `0` livre, `2` ventoinha, `3` buzzer
+(o modo já atualizado por este comando). O modo `1` (servos) só existia no firmware de 26/10/2026.
+
+Desde o firmware de 15/11/2026, `ENVIA_SERVOS` (0xFD) não reserva mais nada: os servos funcionam
+com o Timer2 livre, com a ventoinha ou com o buzzer.
 
 | comando | bytes enviados | status na resposta |
 |---|---|---|

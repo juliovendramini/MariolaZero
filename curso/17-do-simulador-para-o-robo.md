@@ -64,7 +64,8 @@ no robô e no simulador. Ajuste `motor_padrao.rpm_livre`, `motor_padrao.forca_ma
 | Leituras malucas de vez em quando | cabo frouxo, mau contato no conector, ruído do motor |
 | Programa trava às vezes | exceção não tratada (veja `~/logs/*_erro.log`); `OSError` de I2C |
 | O robô funciona pelo `ssh` e não pelo menu | caminho relativo de arquivo, `print` sem flush (módulo 2) |
-| Câmera lenta | modelo pesado: use ONNX/NCNN, imagem menor (320×240) |
+| Câmera lenta | modelo pesado: use ONNX/NCNN, imagem menor (320×240). No brick, YOLOv8n de 320 faz ~4,4 fps em ONNX e ~7,6 em NCNN (módulo 10.5) |
+| Brick muito quente com a IA ligada | a rede usa os 4 núcleos sem parar: use NCNN com 3 núcleos, pause a rede fora da área de resgate |
 
 ## 17.6 Robustez
 

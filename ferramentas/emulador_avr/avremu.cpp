@@ -104,6 +104,46 @@ struct Timer {
     }
 };
 static Timer t0, t1, t2;
+
+// Timer3 do 328PB (16 bits), usado pela lib Servo do firmware desde 15/11/2026. Só o modo normal e as
+// interrupções (COMPA, COMPB, estouro); as saídas OC3x não (a lib mexe nos pinos pela ISR). Calculado por
+// eventos: guarda a contagem num começo de tick ('base') e agenda a próxima comparação, em vez de contar
+// tick a tick (com prescaler 8 seria um evento a cada 8 ciclos). Os bytes altos passam pelo TEMP, como no chip.
+struct Timer16 {
+    u8 tccra, tccrb, tifr, timsk, temp;
+    u16 ocra, ocrb, cnt;
+    u32 presc; u64 base, prox;
+    void avanca(u64 ate) {
+        if (!presc) { base = ate; return; }
+        u64 k = (ate - base) / presc; base += k * presc; cnt = (u16)(cnt + k);
+    }
+    u16 tcnt() { avanca(cyc); return cnt; }
+    void agenda() {                // a flag sobe no tick em que a contagem sai do valor do OCR (como no Timer)
+        if (!presc) { prox = NUNCA; return; }
+        u32 a = (u16)(ocra + 1 - cnt), b = (u16)(ocrb + 1 - cnt), o = (u16)(0 - cnt);
+        if (!a) a = 65536; if (!b) b = 65536; if (!o) o = 65536;
+        u32 m = a < b ? a : b; if (o < m) m = o;
+        prox = base + (u64)m * presc;
+        if (prox < prox_evt) prox_evt = prox;
+    }
+    void evento() {
+        avanca(prox);
+        if (cnt == (u16)(ocra + 1)) tifr |= 2;
+        if (cnt == (u16)(ocrb + 1)) tifr |= 4;
+        if (cnt == 0) tifr |= 1;
+        agenda();
+    }
+    void escreve_tccrb(u8 v) {
+        static const u32 p[8] = {0, 1, 8, 64, 256, 1024, 0, 0};
+        avanca(cyc);
+        tccrb = v;
+        u32 novo = p[v & 7];
+        if (novo != presc) { presc = novo; base = cyc; }
+        agenda();
+    }
+    void escreve(u16 &reg, u8 baixo) { avanca(cyc); reg = baixo | (temp << 8); agenda(); }
+};
+static Timer16 t3;
 static u8 eifr, eimsk, eicra, ucsra, ucsrb;
 static u8 ext_nivel[4], ext_dirige[4];   // portas B, C, D, E: nível posto de fora e quais pinos são dirigidos
 static u8 eeprom[1024]; static u64 ee_fim; static bool eempe;
@@ -245,6 +285,13 @@ static u8 mega_rd(u16 a) {
         case 0x6F: return t1.timsk;
         case 0xB0: return t2.tccra; case 0xB1: return t2.tccrb; case 0xB2: return t2.tcnt;
         case 0xB3: return t2.ocra_buf; case 0xB4: return t2.ocrb_buf; case 0x70: return t2.timsk;
+        case 0x38: return t3.tifr; case 0x71: return t3.timsk;
+        case 0x90: return t3.tccra; case 0x91: return t3.tccrb; case 0x92: return 0;
+        case 0x94: { u16 v = t3.tcnt(); t3.temp = v >> 8; return v & 0xFF; }
+        case 0x95: case 0x97: return t3.temp;
+        case 0x96: t3.temp = 0; return 0;                           // ICR3 (não usado)
+        case 0x98: return t3.ocra & 0xFF; case 0x99: return t3.ocra >> 8;
+        case 0x9A: return t3.ocrb & 0xFF; case 0x9B: return t3.ocrb >> 8;
         case 0xC0: return (rx_n ? 0x80 : 0) | (txc ? 0x40 : 0) | (tx_cheio ? 0 : 0x20) | (ucsra & 3);
         case 0xC1: return ucsrb;
         case 0xC6: { irq_sujo = true; return serial_le(); }
@@ -279,6 +326,13 @@ static void mega_wr(u16 a, u8 v) {
         case 0xB2: t2.tcnt = v; t2.bloqueia = true; return;
         case 0xB3: t2.escreve_ocr(false, v); return; case 0xB4: t2.escreve_ocr(true, v); return;
         case 0x70: t2.timsk = v; return;
+        case 0x38: t3.tifr &= ~v; return; case 0x71: t3.timsk = v; return;
+        case 0x90: t3.tccra = v; return;                            // só o modo normal é emulado
+        case 0x91: t3.escreve_tccrb(v); return;
+        case 0x95: case 0x97: case 0x99: case 0x9B: t3.temp = v; return;
+        case 0x94: t3.escreve(t3.cnt, v); return;
+        case 0x96: return;
+        case 0x98: t3.escreve(t3.ocra, v); return; case 0x9A: t3.escreve(t3.ocrb, v); return;
         case 0xC0: if (v & 0x40) txc = false; ucsra = v & 3; goto baud;
         case 0xC1: ucsrb = v; return;
         case 0xC4: case 0xC5: mem[a] = v;
@@ -482,6 +536,7 @@ static void eventos() {
         while (t0.prox <= cyc) { t0.tick(); t0.prox += t0.presc; }
         while (t1.prox <= cyc) { t1.tick(); t1.prox += t1.presc; }
         while (t2.prox <= cyc) { t2.tick(); t2.prox += t2.presc; }
+        while (t3.prox <= cyc) t3.evento();
         if (ee_fim <= cyc) ee_fim = NUNCA;
     } else {
         while (tca_prox <= cyc) { tca_tick(); tca_prox += tca_presc; }
@@ -503,6 +558,7 @@ static void eventos() {
     u64 p = fis_prox;
     if (tipo == 0) {
         if (t0.prox < p) p = t0.prox; if (t1.prox < p) p = t1.prox; if (t2.prox < p) p = t2.prox;
+        if (t3.prox < p) p = t3.prox;
         if (ee_fim < p) p = ee_fim;
     } else {
         if (tca_prox < p) p = tca_prox; if (tcd_prox < p) p = tcd_prox;
@@ -527,6 +583,8 @@ static int mega_irq() {
     if ((ucsrb & 0x80) && rx_n) return 18;
     if ((ucsrb & 0x20) && !tx_cheio) return 19;
     if ((ucsrb & 0x40) && txc) { txc = false; return 20; }
+    f = t3.tifr & t3.timsk;
+    if (f & 2) { t3.tifr &= ~2; return 33; } if (f & 4) { t3.tifr &= ~4; return 34; } if (f & 1) { t3.tifr &= ~1; return 35; }
     return 0;
 }
 static int tiny_irq() {                                // as flags não são limpas sozinhas no AVRxt
@@ -797,6 +855,7 @@ EXP void emu_inicia(int t) {
         F_CPU = 16e6; fis_ciclos = 256; ram_ini = 0x100; sp = 0x8FF; pcmask = 0x3FFF; bitc = 64; n_mot = 4;
         memset(&t0, 0, sizeof t0); memset(&t1, 0, sizeof t1); memset(&t2, 0, sizeof t2);
         t0.id = 0; t1.id = 1; t2.id = 2; t0.prox = t1.prox = t2.prox = NUNCA;
+        memset(&t3, 0, sizeof t3); t3.prox = NUNCA;
         eifr = eimsk = eicra = ucsra = ucsrb = 0; ee_fim = NUNCA; eempe = false;
         memset(ext_nivel, 0, 4); memset(ext_dirige, 0, 4);
     } else {
@@ -874,6 +933,10 @@ EXP u32 emu_timer(int qual, int campo) {
     Timer &t = qual == 0 ? t0 : (qual == 1 ? t1 : t2);
     switch (campo) { case 0: return t.tcnt; case 1: return t.ocra; case 2: return t.ocrb; case 3: return t.ocra_buf; case 4: return t.ocrb_buf;
                      case 5: return t.oca; case 6: return t.ocb; case 7: return t.tccra; case 8: return t.tccrb; default: return t.presc; }
+}
+EXP u32 emu_timer3(int campo) {
+    switch (campo) { case 0: return t3.tcnt(); case 1: return t3.ocra; case 2: return t3.ocrb; case 3: return t3.tccrb;
+                     case 4: return t3.timsk; default: return t3.presc; }
 }
 EXP void emu_polaridade(int m, int motor_inv, int enc_inv) { mot[m].inv_m = motor_inv; mot[m].inv_e = enc_inv; }
 EXP void emu_falha(int m, int falha, double k_re) { mot[m].falha = falha; mot[m].k_re = k_re; }

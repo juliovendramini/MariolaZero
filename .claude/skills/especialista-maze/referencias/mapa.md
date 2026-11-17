@@ -48,11 +48,14 @@ sensores em geral: `.claude/skills/especialista-mariola/referencias/mapa.md`.
 
 ## O robô da equipe Maze 2026
 
-* `simuladorMaze/robo_maze2026.json`: ligado como no código da equipe (branch `adaptacao-claude` de
-  05/11/2026). Tabela da ligação em `simuladorMaze/README.md` "Robô da equipe Maze 2026": motores (Mariola
-  canal 1 invertido e 2; placas id 72 à esquerda e 5 invertida à direita no `SERIAL2` a 250000),
-  giroscópio no `SERIAL4` diminuindo para a direita, Pro1616 no `SERIAL6`, 5 VL53 (`I2C1`, `I2C3`, `I2C6`,
-  `I2C7`, `I2C8`), para-choque P1/P8, 440 contagens por volta no Mariola (880 na placa).
+* `simuladorMaze/robo_maze2026.json`: ligado como no código da equipe (branch `adaptacao-claude`, portas
+  de 16/11/2026, commit `a707453`). Tabela da ligação em `simuladorMaze/README.md` "Robô da equipe Maze
+  2026": motores (Mariola canal 1 invertido e 2; placas id 8 à esquerda e 16 invertida à direita no
+  `SERIAL1` a 250000), giroscópio no `SERIAL4` diminuindo para a direita, Pro1616 no `SERIAL5`, 5 VL53
+  (borda esq `I2C2`, meio esq `I2C1`, borda dir `I2C7`, meio dir `I2C8`, frente `I2C6`), para-choque
+  P1/P8, 440 contagens por volta no Mariola (880 na placa). Até 16/11 eram as placas 72/5 no `SERIAL2`,
+  a cor no `SERIAL6` e os VL53 em `I2C1/3/6/7/8`: código antigo da equipe dá "Sensor não encontrado"
+  ou não acha as placas com o json de agora.
 * Rodar o programa da equipe: `python simulador.py --robo robo_maze2026.json --programa CAMINHO/main.py`
   (pasta `simuladorMaze`). Sem câmera USB o `main.py` da equipe cai na primeira procura de vítima: no
   simulador é preciso trocar a detecção de vítimas por um falso (ou usar `DeteccaoVitimas`).

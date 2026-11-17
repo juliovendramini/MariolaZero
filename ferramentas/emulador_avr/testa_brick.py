@@ -268,6 +268,107 @@ def servo_detach(e):
     return {'vezes com pino de servo preso em HIGH (de 40)': presos}
 
 
+def _pulsos(tr, bit):
+    """(largura média em us, período médio em ms, quantos pulsos) do pino de servo 'bit' da porta C"""
+    v = (tr[:, 9].astype(int) >> bit) & 1
+    t = tr[:, 0]
+    sobe = t[1:][(v[1:] == 1) & (v[:-1] == 0)]
+    desce = t[1:][(v[1:] == 0) & (v[:-1] == 1)]
+    larg = []
+    for s in sobe:
+        d = desce[desce > s]
+        if len(d):
+            larg.append(d[0] - s)
+    largura = sum(larg) / len(larg) * 1e6 if larg else 0.0
+    periodo = float((sobe[-1] - sobe[0]) / (len(sobe) - 1) * 1e3) if len(sobe) > 1 else 0.0
+    return largura, periodo, len(sobe)
+
+
+def servo_pulso(e):
+    """servos em 0, 60, 120 e 180 graus (o esperado é 544, 1163, 1781 e 2400 us; traço a cada 16 us);
+    depois um tom no buzzer: no firmware antigo ele é recusado (servos e buzzer no Timer2), no novo toca junto"""
+    angulos = (0, 60, 120, 180)
+    e.comando(bytes([ENVIA_SERVOS, *angulos, 0, 0, 0, 0, 0]), 1)
+    e.roda(0.1)
+    e.passos_traco(1)
+    e.roda(0.2)
+    e.passos_traco(16)
+    tr = e.traco()
+    tr = tr[tr[:, 0] > e.t - 0.2]
+    saida = {}
+    for b, ang in enumerate(angulos):
+        saida['servo %d em %d graus: pulso (us)' % (b + 1, ang)] = _pulsos(tr, b)[0]
+    saida['período dos servos (ms)'] = _pulsos(tr, 0)[1]
+    r = e.comando(bytes([0xEF, 0x03, 0xE8, 0x07, 0xD0, 0, 0, 0, 0, 0]), 3)   # 1000 Hz por 2 s
+    saida['buzzer aceito'] = bool(len(r) == 3 and r[1] == 1)
+    e.roda(0.05)
+    e.passos_traco(1)
+    e.roda(0.2)
+    e.passos_traco(16)
+    tr = e.traco()
+    tr = tr[tr[:, 0] > e.t - 0.2]
+    larg, _, n = _pulsos(tr, 3)
+    saida['com o buzzer: pulsos do servo 4 em 0,2 s'] = n
+    saida['com o buzzer: pulso do servo 4 (us)'] = larg
+    trocas, ant = 0, None
+    for _ in range(200):                     # pino 11 (PB3) lido a cada 100 us durante 20 ms
+        e.roda(0.0001)
+        n11 = dll.emu_pino(PB, 3)
+        trocas += ant is not None and n11 != ant
+        ant = n11
+    saida['com o buzzer: trocas do pino 11 em 20 ms (1 kHz = ~40)'] = trocas
+    return saida
+
+
+def _larguras(tr, bit):
+    v = (tr[:, 9].astype(int) >> bit) & 1
+    t = tr[:, 0]
+    sobe = t[1:][(v[1:] == 1) & (v[:-1] == 0)]
+    desce = t[1:][(v[1:] == 0) & (v[:-1] == 1)]
+    larg = []
+    for s in sobe:
+        d = desce[desce > s]
+        if len(d):
+            larg.append((d[0] - s) * 1e6)
+    return larg
+
+
+def servo_leds(e):
+    """servos parados em 0, 60, 120 e 180 graus enquanto o programa atualiza a fita de LEDs sem parar
+    (um LED_RGB_ALL a cada ~3 ms por 1 s): o envio dos LEDs desliga as interrupções por ~400 us"""
+    angulos = (0, 60, 120, 180)
+    e.comando(bytes([ENVIA_SERVOS, *angulos, 0, 0, 0, 0, 0]), 1)
+    e.roda(0.1)
+    e.passos_traco(1)
+    fim = e.t + 1.0
+    i = 0
+    ok = 0
+    while e.t < fim:
+        ok += e.comando(bytes([0xF6, i & 0xFF, 40, 200, 0, 0, 0, 0, 0, 0]), 1) == b'\xf6'
+        i += 7
+        e.roda(0.002)
+    e.passos_traco(16)
+    tr = e.traco()
+    tr = tr[tr[:, 0] > fim - 1.0]
+    saida = {}
+    pior = 0.0
+    esticados = 0
+    total = 0
+    for b in range(4):
+        larg = _larguras(tr, b)
+        if not larg:
+            continue
+        base = sorted(larg)[len(larg) // 2]        # a mediana é o pulso normal
+        pior = max(pior, max(abs(x - base) for x in larg))
+        esticados += sum(1 for x in larg if abs(x - base) > 40)
+        total += len(larg)
+    saida['comandos de LED respondidos em 1 s'] = ok
+    saida['pulsos medidos (4 servos)'] = total
+    saida['pulsos com mais de 40 us de erro'] = esticados
+    saida['pior erro de um pulso (us)'] = pior
+    return saida
+
+
 def timeout_parado(e):
     """programa termina com o robô parado (andou para frente, parou, mandou parar no fim): o que acontece
     5 s depois, no timeout, e quando o programa seguinte começa (10 fases, pior caso; BREAK e HOLD)"""
@@ -319,7 +420,7 @@ def timeout_fases(e):
 
 
 CENARIOS = [partida, parada, inversao, potencia, motor3, modo_4x4, hold_programa_novo, hold_depois_do_break,
-            programa_morto, timeout_fases, timeout_parado, regressao, servo_detach]
+            programa_morto, timeout_fases, timeout_parado, regressao, servo_detach, servo_pulso, servo_leds]
 
 if __name__ == '__main__':
     so = sys.argv[1:]

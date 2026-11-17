@@ -33,6 +33,7 @@ Caminhos a partir da raiz do repositório (a pasta em que o especialista roda).
 | cronômetro | `curso/referencia/cronometro.md` | | `libs/cronometro.py` |
 | LEDs, buzzer, outras | `curso/referencia/extras.md` | | `exemplos/07-leds`, `exemplos/13-buzzer` |
 | câmera e visão (OpenCV) | | `10-camera-e-visao.md` | `exemplos/camera/` |
+| rede de vítimas (YOLO) no brick: ONNX x NCNN, fps, temperatura | `documentação/RedeVitimas.md` | 10.5 ("Quanto tempo a IA leva no brick") | `exemplos/camera/03-posicionamentoDeteccaoONNX`, `...NCNN`, `08-medeVelocidadeIA` (mede sem câmera). Medido em 17/11/2026: ONNX 4,4 fps, NCNN 7,6 fps (4 núcleos), 6,7 (3) |
 | índice das referências | `curso/referencia/README.md` | | |
 
 Exemplos prontos, um por assunto: `exemplos/01-olamundo` a `exemplos/13-buzzer` e `exemplos/camera/`.

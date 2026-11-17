@@ -7,7 +7,9 @@ numa placa, este emulador roda o `.hex` compilado, instrução por instrução:
 * **ATmega328PB** (`placaBrickVendra`, o brick) e **ATtiny1616** (`placaControleMotor`, a placa
   de motor externa);
 * periféricos: só os que os dois firmwares usam, seguindo o datasheet. No 328PB: Timer0/1/2 com
-  PWM e o OCR com buffer, serial, EEPROM, INT0/INT1. No 1616: TCA0 dividido, TCD0 (o `millis()`
+  PWM e o OCR com buffer, Timer3 de 16 bits (só o modo normal e as interrupções COMPA/COMPB/estouro,
+  sem as saídas OC3x: é o que a lib Servo usa desde 15/11/2026; calculado por eventos, não tick a
+  tick), serial, EEPROM, INT0/INT1. No 1616: TCA0 dividido, TCD0 (o `millis()`
   do megaTinyCore), serial de um fio com eco, interrupção de pino, watchdog e causa do reset;
 * nos pinos: ponte H + motor DC com redução + encoder em quadratura, com os números do
   `simuladorLine/robo_4x4.json` (130 rpm, 17 pulsos, redução 34, tau 0,06 s).
@@ -72,5 +74,9 @@ tr = e.traco()                           # t, tensão nas 4 pontes, posição e 
 * **`micros()` do megaTinyCore:** o TCD0 guarda a contagem no comando `SCAPTUREA`, não na leitura.
   Lendo na hora, o `micros()` anda para trás perto do estouro e o `delay()` encurta.
 * **AVRxt:** as flags de interrupção não se limpam sozinhas e o `RETI` não mexe no bit I.
-* O timer de 16 bits do 328PB é tratado como de 8 (o firmware usa Fast PWM de 8 bits) e o PWM de
-  fase correta como rápido (só aparece antes do `setup()`).
+* O Timer1 (16 bits) é tratado como de 8 (o firmware usa Fast PWM de 8 bits) e o PWM de fase
+  correta como rápido (só aparece antes do `setup()`). O Timer3 é de 16 bits de verdade, com o TEMP
+  dos bytes altos.
+* Servos: o traço guarda os pinos PC0-PC3 (servos 1 a 4) na coluna `pinos`; o cenário `servo_pulso`
+  mede a largura e o período dos pulsos (resolução do traço: 16 µs) e confere se o buzzer toca junto;
+  `servo_leds` atualiza a fita de LEDs sem parar e conta os pulsos esticados (espasmos) pelo `cli()`.

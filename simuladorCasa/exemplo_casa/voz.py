@@ -195,6 +195,53 @@ def rouco(a, taxa, saturacao, sopro, aspereza, semente=7):
     return (a / (float(np.max(np.abs(a))) + 1e-9) * 0.9).astype(np.float32)
 
 
+# Os parâmetros do estúdio de voz (ferramentas/estudio_voz.py, 17/11/2026): o Julio mexe numa página até
+# achar a voz e o que ele guarda vem neste formato. Os da síntese (motor, voz, tom, velocidade, nfe,
+# semente) são usados por quem fala; os outros, pela receita() abaixo.
+RECEITA_NEUTRA = {
+    'motor': 'piper', 'voz': 'pt_BR-cadu-medium', 'nfe': 16, 'semente': 2026,
+    'tom': 0.0,             # semitons (12 = uma oitava acima); muda o tom sem mudar a velocidade
+    'velocidade': 1.0,      # 1 = normal
+    'tremido_hz': 0.0, 'tremido_st': 0.0,           # vibrato: quantas vezes por segundo e quanto (semitons)
+    'saturacao': 1.0, 'sopro': 0.0, 'aspereza': 0.0,  # rouco()
+    'anel_hz': 0.0, 'anel_forca': 0.0,               # zumbido (modulação em anel)
+    'eco_ms': 0.0, 'eco_forca': 0.0,                 # eco curto (tubo de metal)
+    'grave_hz': 0.0, 'agudo_hz': 0.0,                # corta abaixo de / acima de (0 = não corta): "rádio"
+    'degrau_hz': 0.0, 'bits': 16,                    # som de brinquedo eletrônico (0 e 16 = desligados)
+    'volume': 0.9,
+}
+
+
+def receita(a, taxa, p):
+    """Os efeitos do estúdio de voz sobre a fala pronta (o tom e a velocidade já vêm da síntese)."""
+    p = {**RECEITA_NEUTRA, **(p or {})}
+    a = np.asarray(a, np.float32)
+    if len(a) == 0:
+        return a
+    if p['tremido_hz'] > 0 and p['tremido_st'] > 0:
+        # atraso que vai e volta: lido mais depressa = mais agudo, mais devagar = mais grave
+        r = 2.0 ** (p['tremido_st'] / 12.0) - 1.0
+        d = r * taxa / (np.pi * p['tremido_hz'])
+        n = np.arange(len(a), dtype=np.float64)
+        atraso = d * (1.0 - np.cos(2 * np.pi * p['tremido_hz'] * n / taxa)) / 2.0
+        a = np.interp(n - atraso, n, a, left=0.0).astype(np.float32)
+    if p['saturacao'] > 1 or p['sopro'] or p['aspereza']:
+        a = rouco(a, taxa, p['saturacao'], p['sopro'], p['aspereza'])
+    if (p['anel_hz'] and p['anel_forca']) or (p['eco_ms'] and p['eco_forca']):
+        a = aplica_efeito(a, taxa, p['anel_hz'], p['anel_forca'], p['eco_ms'], p['eco_forca'], 0)
+    if p['grave_hz'] > 0 or 0 < p['agudo_hz'] < taxa / 2:
+        a = _faixa(a, taxa, p['grave_hz'], p['agudo_hz'] if p['agudo_hz'] > 0 else taxa)
+    if 0 < p['degrau_hz'] < taxa:
+        passo = max(1, int(round(taxa / p['degrau_hz'])))
+        a = np.repeat(a[::passo], passo)[:len(a)]
+    pico = float(np.max(np.abs(a))) + 1e-9
+    a = a / pico
+    if p['bits'] < 16:
+        q = 2.0 ** (max(2, int(p['bits'])) - 1)
+        a = np.round(a * q) / q
+    return (np.clip(a, -1, 1) * float(p['volume'])).astype(np.float32)
+
+
 # As vozes do robô. VOZ_ROBO escolhe (padrão: VOZ_ROBO_PADRAO).
 #   'edge'   voz neural da Microsoft pelo edge-tts (pip install edge-tts; precisa de internet), com o tom,
 #            a velocidade, a rouquidão (rouco()) e o metal (aplica_efeito()) por cima

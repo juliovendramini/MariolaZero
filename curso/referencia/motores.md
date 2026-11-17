@@ -273,10 +273,9 @@ Liga a ventoinha com potência de 0 a 100 (%). Ela vai na coluna **DEBUG/PWM** d
   bps): dá para ver as mensagens do firmware com um conversor USB-serial. Depois, vira PWM até o
   brick reiniciar.
 
-* **Cuidado 1:** servos comuns, ventoinha e buzzer usam o mesmo timer do ATmega: **o primeiro que
-  for usado fica com ele até o brick reiniciar** (veja "Um de cada vez", mais abaixo).
-  Depois de `set_ventoinha`, `move_servo` e o buzzer dão erro. Os
-  [servos inteligentes](placaControleServo.md) não são afetados.
+* **Cuidado 1:** ventoinha e buzzer usam o mesmo pino e o mesmo timer do ATmega: **o primeiro que
+  for usado fica com eles até o brick reiniciar** (veja "Um de cada vez", mais abaixo). Depois de
+  `set_ventoinha`, o buzzer dá erro. Os servos continuam funcionando.
 * **Cuidado 2:** o timeout de 5 s **não** desliga a ventoinha. A lib desliga quando o objeto
   `Motores` é destruído (fim normal do programa), mas se o programa travar ela continua girando.
 
@@ -318,18 +317,18 @@ motores.velocidade_motores(50, 50)
   prata; depurar sem olhar para a tela.
 * **Cuidado:** o timeout de 5 s sem comando para o buzzer. Exemplo completo em `exemplos/13-buzzer/`.
 
-## Um de cada vez: servos, ventoinha e buzzer
+## Um de cada vez: ventoinha ou buzzer
 
-Os servos comuns, a ventoinha e o buzzer dividem o mesmo timer do ATmega. O primeiro que o
-programa usar fica com ele **até o brick reiniciar**, e os outros dois dão erro:
+A ventoinha e o buzzer ficam na mesma coluna (DEBUG/PWM) e dividem o mesmo timer do ATmega. O
+primeiro que o programa usar fica com eles **até o brick reiniciar**, e o outro dá erro:
 
-* servos: o primeiro `move_servo` (com ângulo de 0 a 180) que chega na placa;
 * ventoinha: o primeiro `set_ventoinha`;
 * buzzer: o primeiro `toca_som` ou `toca_tom` (`para_buzzer` e `set_nivel_buzzer` não contam).
 
-Vale também entre programas: se o programa anterior usou o buzzer, o seguinte não consegue usar
-servos até reiniciar o brick. Precisa de garra e de som no mesmo robô? Use os
-[servos inteligentes](placaControleServo.md), que não usam esse timer.
+Vale também entre programas: se o programa anterior usou o buzzer, o seguinte não consegue ligar a
+ventoinha até reiniciar o brick. Os **servos comuns funcionam junto** com qualquer um dos dois
+(firmware do Mariola de 15/11/2026 ou mais novo; no de 26/10/2026, os servos também entravam nessa
+disputa).
 
 ## Erros comuns
 
@@ -347,5 +346,6 @@ servos até reiniciar o brick. Precisa de garra e de som no mesmo robô? Use os
 Emulado byte a byte (PID a 40 Hz, encoder ×2, timeout de 5 s, LEDs). Os motores e LEDs ligados em
 cada canal estão no `robo*.json` (`motores`, `leds`). A fita da porta 4 responde como no robô, mas
 não aparece na tela do simulador. O buzzer também responde como no robô: cada som dura o tempo
-certo (`buzzer_tocando()`, `espera_buzzer()` e `esperar=True` funcionam), vale a regra do Timer2
-(servos, ventoinha e buzzer, um de cada vez) e o timeout de 5 s, mas o som não toca no PC.
+certo (`buzzer_tocando()`, `espera_buzzer()` e `esperar=True` funcionam), vale o timeout de 5 s,
+mas o som não toca no PC. Por enquanto o simulador ainda imita o firmware de 26/10/2026: lá, servos,
+ventoinha e buzzer são um de cada vez.

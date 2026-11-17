@@ -60,8 +60,10 @@ Cada item: sintoma → causa → o que fazer (e onde ler mais). Confira no códi
   equipe que usa `libs.portas` troca só o `from portas import Portas` por `from libs.portas import Portas`.
 * **Motores continuam girando depois de um erro** → falta `try/finally` parando os motores (curso 3). Com
   `Motores(False)` nada muda até `atualiza_motores()` (curso 4).
-* **Servos comuns, ventoinha e buzzer brigando** → os três dividem o Timer2 do ATmega: desde o firmware de
-  26/10/2026 o primeiro que for usado fica com ele até reiniciar (`documentação/Motores.md`).
+* **Ventoinha e buzzer brigando** → os dois dividem o pino 11 e o Timer2 do ATmega: o primeiro que for usado
+  fica com eles até reiniciar (`documentação/Motores.md`). Desde o firmware de 15/11/2026 os servos comuns
+  usam o Timer3 e funcionam junto; no de 26/10/2026 os servos também entravam na disputa (servo parado depois
+  de tocar o buzzer = firmware antigo: atualizar).
 
 ## Menu, envio e Linux do brick
 

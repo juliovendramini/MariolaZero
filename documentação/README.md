@@ -33,6 +33,9 @@ Este diretório contém a documentação completa de todas as classes disponíve
 - **[Motores](Motores.md)** - Controle de motores e servos
 - **[Giroscopio](Giroscopio.md)** - Leitura de orientação e movimento
 
+### 📷 Câmera e IA
+- **[Rede de vítimas](RedeVitimas.md)** - YOLO no brick: ONNX x NCNN, fps medido, temperatura, como medir e como trocar
+
 ---
 
 ## 🚀 Como Usar

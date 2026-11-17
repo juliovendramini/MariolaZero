@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estúdio de voz</title>
+<style>
+:root {
+  --fundo: #f4f3ef; --cartao: #ffffff; --texto: #1d1d1b; --fraco: #6b6a64; --linha: #dedcd3;
+  --cor: #c2410c; --cor-texto: #ffffff; --cor-suave: #fde7da; --ok: #15803d; --erro: #b91c1c;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fundo: #161614; --cartao: #22221f; --texto: #ecebe6; --fraco: #9d9b93; --linha: #3a3934;
+    --cor: #fb923c; --cor-texto: #1a1206; --cor-suave: #3b2415; --ok: #4ade80; --erro: #f87171;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fundo); color: var(--texto);
+  font: 15px/1.4 system-ui, "Segoe UI", sans-serif; }
+header { padding: 18px 16px 8px; max-width: 1500px; margin: 0 auto; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+header p { margin: 0 0 12px; color: var(--fraco); }
+.topo { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.topo textarea { flex: 1 1 420px; min-height: 58px; resize: vertical; font: inherit; padding: 8px 10px;
+  border: 1px solid var(--linha); border-radius: 8px; background: var(--cartao); color: var(--texto); }
+.acoes-topo { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+#estado-julio { font-size: 13px; color: var(--fraco); width: 100%; margin-top: 6px; }
+main { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px;
+  padding: 10px 16px 30px; max-width: 1500px; margin: 0 auto; }
+.cartao { background: var(--cartao); border: 1px solid var(--linha); border-radius: 12px; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.cartao.tocando { border-color: var(--cor); box-shadow: 0 0 0 2px var(--cor-suave); }
+.titulo { display: flex; gap: 8px; align-items: center; }
+.titulo b { background: var(--cor); color: var(--cor-texto); border-radius: 50%; width: 24px; height: 24px;
+  display: grid; place-items: center; font-size: 13px; flex: none; }
+.titulo input { flex: 1; font: 600 15px system-ui, sans-serif; border: 0; border-bottom: 1px dashed var(--linha);
+  background: transparent; color: var(--texto); padding: 2px 0; min-width: 0; }
+select, input[type=number] { font: inherit; padding: 4px 6px; border: 1px solid var(--linha); border-radius: 6px;
+  background: var(--cartao); color: var(--texto); }
+.motor { display: flex; flex-wrap: wrap; gap: 6px; }
+.motor select { flex: 1 1 140px; min-width: 0; }
+.f5 { display: flex; gap: 6px; align-items: center; font-size: 13px; flex-wrap: wrap; }
+.f5 input[type=number] { width: 80px; }
+fieldset { border: 0; border-top: 1px solid var(--linha); margin: 2px 0 0; padding: 6px 0 0; }
+legend { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--fraco); padding: 0 6px 0 0; }
+.ctl { display: grid; grid-template-columns: 92px 1fr 52px; gap: 6px; align-items: center; font-size: 13px; }
+.ctl span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.ctl.desligado span:last-child { color: var(--fraco); }
+input[type=range] { width: 100%; accent-color: var(--cor); }
+button { font: inherit; border: 1px solid var(--linha); background: var(--cartao); color: var(--texto);
+  border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+button:hover { border-color: var(--cor); }
+button.principal { background: var(--cor); color: var(--cor-texto); border-color: var(--cor); font-weight: 600; }
+.botoes { display: flex; flex-wrap: wrap; gap: 6px; }
+audio { width: 100%; height: 36px; }
+.info { font-size: 12px; color: var(--fraco); min-height: 16px; }
+.info.erro { color: var(--erro); }
+.info.ok { color: var(--ok); }
+details { font-size: 12px; }
+pre { white-space: pre-wrap; word-break: break-all; background: var(--fundo); padding: 6px; border-radius: 6px;
+  margin: 4px 0 0; font-size: 11px; }
+label.check { display: flex; gap: 6px; align-items: center; font-size: 14px; }
+@media (max-width: 520px) { .ctl { grid-template-columns: 80px 1fr 46px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Estúdio de voz do Bombertinho</h1>
+  <p>Mexa nos botões de cada voz: ela fala de novo sozinha. Quando uma ficar boa, aperte <b>Guardar</b>
+  (o Claude lê o que você guardou) ou <b>Copiar</b> e cole na conversa. Tudo é gerado neste PC, sem internet.</p>
+  <div class="topo">
+    <textarea id="texto" aria-label="Texto que as vozes falam"></textarea>
+    <div class="acoes-topo">
+      <button class="principal" id="todas">▶ Falar as 4</button>
+      <label class="check"><input type="checkbox" id="ao-mexer" checked> falar ao mexer</label>
+      <button id="texto-padrao" title="Volta o texto de exemplo">Texto de exemplo</button>
+    </div>
+  </div>
+  <div id="estado-julio"></div>
+</header>
+<main id="cartoes"></main>
+
+<script>
+const TEXTO_PADRAO = 'Oi, eu sou o Bombertinho! Achei uma meia no chão da sala. Pode deixar comigo, vou guardar na caixa rapidinho. Ué, quem deixou isso aqui?';
+const RECEITA30 = { saturacao: 2.0, sopro: 0.12, aspereza: 0.15, anel_hz: 60, anel_forca: 0.25, eco_ms: 5, eco_forca: 0.45 };
+const INICIAIS = [
+  { nome: 'Cadu desenho (a de hoje)', motor: 'piper', voz: 'pt_BR-cadu-medium', tom: 5.8 },
+  { nome: 'Cadu + receita 30', motor: 'piper', voz: 'pt_BR-cadu-medium', tom: 3.9, velocidade: 1.08, ...RECEITA30 },
+  { nome: 'Dora fina + receita 30', motor: 'kokoro', voz: 'pf_dora', tom: 2.1, velocidade: 1.08, ...RECEITA30 },
+  { nome: 'Sua voz fina + receita 30', motor: 'f5', voz: 'robo_curta', nfe: 16, tom: 3.9, ...RECEITA30 },
+];
+// [chave, nome, mín, máx, passo, unidade, desligado em]
+const GRUPOS = [
+  ['Voz', [['tom', 'Tom', -6, 12, 0.1, ' st'], ['velocidade', 'Velocidade', 0.6, 1.6, 0.02, 'x'],
+           ['volume', 'Volume', 0.1, 1, 0.05, '']]],
+  ['Tremido', [['tremido_hz', 'Vezes/s', 0, 12, 0.5, ' Hz', 0], ['tremido_st', 'Quanto', 0, 2, 0.05, ' st', 0]]],
+  ['Rouquidão', [['saturacao', 'Áspera', 1, 6, 0.1, '', 1], ['sopro', 'Sopro', 0, 0.5, 0.01, '', 0],
+                 ['aspereza', 'Arranhado', 0, 0.6, 0.01, '', 0]]],
+  ['Metal', [['anel_hz', 'Zumbido', 0, 300, 5, ' Hz', 0], ['anel_forca', 'Força', 0, 1, 0.05, '', 0],
+             ['eco_ms', 'Eco (tubo)', 0, 30, 1, ' ms', 0], ['eco_forca', 'Força do eco', 0, 0.9, 0.05, '', 0]]],
+  ['Rádio', [['grave_hz', 'Corta grave', 0, 1500, 50, ' Hz', 0], ['agudo_hz', 'Corta agudo', 0, 12000, 250, ' Hz', 0]]],
+  ['Brinquedo', [['degrau_hz', 'Degrau', 0, 16000, 250, ' Hz', 0], ['bits', 'Bits', 3, 16, 1, '', 16]]],
+];
+let NEUTRA = {}, ESTADO = {}, cartoes = [];
+const $ = (s, e = document) => e.querySelector(s);
+
+function guardaLocal() {
+  try { localStorage.setItem('estudio_voz', JSON.stringify({ texto: $('#texto').value, cartoes: cartoes.map(c => c.p),
+    aoMexer: $('#ao-mexer').checked })); } catch (e) {}
+}
+function leLocal() { try { return JSON.parse(localStorage.getItem('estudio_voz') || 'null'); } catch (e) { return null; } }
+
+function opcoesVoz() {
+  const o = [];
+  (ESTADO.piper || []).forEach(v => o.push(['piper|' + v, v.replace('pt_BR-', '').replace('-medium', '') + ' (Piper)']));
+  (ESTADO.kokoro || []).forEach(v => o.push(['kokoro|' + v, v.slice(3) + ' (Kokoro)']));
+  o.push(['f5|', 'Sua voz (F5)']);
+  return o;
+}
+
+function fmt(v, passo, un) {
+  const casas = passo >= 1 ? 0 : (String(passo).split('.')[1] || '').length;
+  return Number(v).toFixed(casas).replace('.', ',') + un;
+}
+
+function montaCartao(i, p) {
+  const c = { i, p: { ...NEUTRA, ...p }, el: document.createElement('section'), url: null };
+  c.el.className = 'cartao';
+  c.el.innerHTML = `
+    <div class="titulo"><b>${i + 1}</b><input class="nome" aria-label="Nome desta voz"></div>
+    <div class="motor"><select class="voz" aria-label="Voz"></select></div>
+    <div class="f5">referência <select class="ref"></select> passos <select class="nfe">
+      ${[8, 12, 16, 24, 32].map(n => `<option>${n}</option>`).join('')}</select>
+      semente <input type="number" class="semente"> <button class="dado" title="Outro sorteio">🎲</button></div>
+    <div class="ctls"></div>
+    <audio controls></audio>
+    <div class="info"></div>
+    <div class="botoes">
+      <button class="principal falar">▶ Falar</button>
+      <button class="guardar">Guardar</button>
+      <button class="copiar">Copiar</button>
+      <select class="para" aria-label="Copiar estes botões para outra voz"><option value="">copiar para…</option>
+        ${[0, 1, 2, 3].filter(j => j !== i).map(j => `<option value="${j}">voz ${j + 1}</option>`).join('')}</select>
+      <button class="volta" title="Volta esta voz ao começo">↺</button>
+    </div>
+    <details><summary>parâmetros</summary><pre></pre></details>`;
+  const ctls = $('.ctls', c.el);
+  GRUPOS.forEach(([nome, itens]) => {
+    const fs = document.createElement('fieldset');
+    fs.innerHTML = `<legend>${nome}</legend>`;
+    itens.forEach(([k, rot, mn, mx, passo, un, desl]) => {
+      const d = document.createElement('label');
+      d.className = 'ctl';
+      d.innerHTML = `<span>${rot}</span><input type="range" min="${mn}" max="${mx}" step="${passo}" data-k="${k}"><span></span>`;
+      const r = $('input', d), val = d.lastElementChild;
+      const mostra = () => {
+        const v = Number(r.value);
+        const off = desl !== undefined && v === desl;
+        d.classList.toggle('desligado', off);
+        val.textContent = off ? 'desl.' : fmt(v, passo, un);
+        if (k === 'tom') val.title = '× ' + Math.pow(2, v / 12).toFixed(2).replace('.', ',');
+      };
+      r.addEventListener('input', () => { c.p[k] = Number(r.value); mostra(); mostraJson(c); });
+      r.addEventListener('change', () => mexeu(c));
+      c[k] = { r, mostra };
+      fs.appendChild(d);
+    });
+    ctls.appendChild(fs);
+  });
+  $('.nome', c.el).addEventListener('change', e => { c.p.nome = e.target.value; mostraJson(c); guardaLocal(); });
+  $('.voz', c.el).addEventListener('change', e => {
+    const [m, v] = e.target.value.split('|');
+    c.p.motor = m; c.p.voz = m === 'f5' ? (c.p.voz && (ESTADO.julio_refs || []).includes(c.p.voz) ? c.p.voz : 'robo_curta') : v;
+    poeValores(c); mexeu(c);
+  });
+  $('.ref', c.el).addEventListener('change', e => { c.p.voz = e.target.value; mexeu(c); });
+  $('.nfe', c.el).addEventListener('change', e => { c.p.nfe = Number(e.target.value); mexeu(c); });
+  $('.semente', c.el).addEventListener('change', e => { c.p.semente = Number(e.target.value) || 0; mexeu(c); });
+  $('.dado', c.el).addEventListener('click', () => { c.p.semente = Math.floor(Math.random() * 100000); poeValores(c); mexeu(c); });
+  $('.falar', c.el).addEventListener('click', () => fala(c));
+  $('.guardar', c.el).addEventListener('click', () => guarda(c));
+  $('.copiar', c.el).addEventListener('click', () => copia(c));
+  $('.volta', c.el).addEventListener('click', () => { c.p = { ...NEUTRA, ...INICIAIS[i] }; poeValores(c); mexeu(c); });
+  $('.para', c.el).addEventListener('change', e => {
+    const j = e.target.value; e.target.value = '';
+    if (j === '') return;
+    const d = cartoes[j];
+    d.p = { ...c.p, nome: c.p.nome + ' (cópia)' }; poeValores(d); guardaLocal(); fala(d);
+  });
+  $('audio', c.el).addEventListener('play', () => {
+    cartoes.forEach(o => { if (o !== c) { $('audio', o.el).pause(); o.el.classList.remove('tocando'); } });
+    c.el.classList.add('tocando');
+  });
+  $('audio', c.el).addEventListener('ended', () => c.el.classList.remove('tocando'));
+  $('audio', c.el).addEventListener('pause', () => c.el.classList.remove('tocando'));
+  poeValores(c);
+  return c;
+}
+
+function poeValores(c) {
+  const p = c.p;
+  $('.nome', c.el).value = p.nome || '';
+  const sel = $('.voz', c.el);
+  sel.innerHTML = opcoesVoz().map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
+  sel.value = p.motor === 'f5' ? 'f5|' : p.motor + '|' + p.voz;
+  const ehF5 = p.motor === 'f5';
+  $('.f5', c.el).style.display = ehF5 ? '' : 'none';
+  const refs = ESTADO.julio_refs && ESTADO.julio_refs.length ? ESTADO.julio_refs : [p.voz];
+  $('.ref', c.el).innerHTML = refs.map(r => `<option>${r}</option>`).join('');
+  if (ehF5) $('.ref', c.el).value = p.voz;
+  $('.nfe', c.el).value = String(p.nfe);
+  $('.semente', c.el).value = p.semente;
+  GRUPOS.forEach(([, itens]) => itens.forEach(([k]) => { c[k].r.value = p[k]; c[k].mostra(); }));
+  mostraJson(c);
+}
+
+function parametros(c) {
+  const p = { ...c.p }; delete p.nome;
+  if (p.motor !== 'f5') { delete p.nfe; delete p.semente; }
+  return p;
+}
+function mostraJson(c) { $('pre', c.el).textContent = JSON.stringify(parametros(c), null, 1); }
+
+function info(c, txt, tipo = '') { const e = $('.info', c.el); e.textContent = txt; e.className = 'info ' + tipo; }
+
+let timers = {};
+function mexeu(c) {
+  guardaLocal(); mostraJson(c);
+  if (!$('#ao-mexer').checked) return;
+  clearTimeout(timers[c.i]);
+  timers[c.i] = setTimeout(() => fala(c), 150);
+}
+
+async function gera(c) {
+  info(c, c.p.motor === 'f5' ? 'gerando com a sua voz…' : 'gerando…');
+  const r = await fetch('/gera', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ texto: $('#texto').value, parametros: parametros(c) }) });
+  if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.erro || r.statusText); }
+  const tempo = r.headers.get('X-Tempo'), aviso = r.headers.get('X-Aviso');
+  const b = await r.blob();
+  if (c.url) URL.revokeObjectURL(c.url);
+  c.url = URL.createObjectURL(b);
+  $('audio', c.el).src = c.url;
+  const tmp = document.createElement('textarea'); tmp.innerHTML = aviso || '';
+  info(c, `gerada em ${String(tempo).replace('.', ',')} s` + (aviso ? ' · ' + tmp.value : ''), aviso ? 'erro' : '');
+}
+
+let geracao = 0;
+async function fala(c) {
+  const minha = ++geracao;
+  try { await gera(c); if (minha === geracao) await $('audio', c.el).play().catch(() => {}); }
+  catch (e) { info(c, e.message, 'erro'); }
+}
+
+$('#todas').addEventListener('click', async () => {
+  const minha = ++geracao;
+  for (const c of cartoes) {
+    try { await gera(c); } catch (e) { info(c, e.message, 'erro'); continue; }
+    if (minha !== geracao) return;
+    const a = $('audio', c.el);
+    await new Promise(ok => { a.onended = ok; a.play().catch(ok); });
+    a.onended = null;
+    if (minha !== geracao) return;
+  }
+});
+
+async function guarda(c) {
+  const nota = prompt('Quer escrever alguma coisa sobre esta voz? (pode deixar em branco)', '');
+  if (nota === null) return;
+  try {
+    info(c, 'guardando…');
+    const r = await fetch('/guarda', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome: c.p.nome || `voz ${c.i + 1}`, nota, texto: $('#texto').value, parametros: parametros(c) }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.erro);
+    info(c, `guardada (nº ${d.n}, ${d.wav}). É só dizer ao Claude: "usa a ${d.n}".`, 'ok');
+  } catch (e) { info(c, e.message, 'erro'); }
+}
+
+async function copia(c) {
+  const t = JSON.stringify({ nome: c.p.nome, ...parametros(c) });
+  try { await navigator.clipboard.writeText(t); info(c, 'copiado: cole na conversa com o Claude', 'ok'); }
+  catch (e) {
+    const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); info(c, 'copiado: cole na conversa com o Claude', 'ok'); }
+    catch (e2) { info(c, 'não deu para copiar: abra "parâmetros" e copie de lá', 'erro'); }
+    ta.remove();
+  }
+}
+
+async function atualizaEstado() {
+  try { ESTADO = await (await fetch('/estado')).json(); } catch (e) { return; }
+  const e = $('#estado-julio');
+  const antes = e.dataset.j;
+  e.dataset.j = ESTADO.julio;
+  e.textContent = { pronto: 'Sua voz (F5): pronta.', carregando: 'Sua voz (F5): carregando… (de 10 s a 3 min; as outras já funcionam)',
+    sem: 'Sua voz (F5): desligada. ' + (ESTADO.julio_erro || ''), erro: 'Sua voz (F5) deu erro: ' + ESTADO.julio_erro }[ESTADO.julio] || '';
+  if (antes && antes !== ESTADO.julio) cartoes.forEach(poeValores);
+  if (ESTADO.julio === 'carregando') setTimeout(atualizaEstado, 3000);
+}
+
+(async function () {
+  ESTADO = await (await fetch('/estado')).json();
+  NEUTRA = ESTADO.neutra;
+  const salvo = leLocal();
+  $('#texto').value = (salvo && salvo.texto) || TEXTO_PADRAO;
+  if (salvo) $('#ao-mexer').checked = salvo.aoMexer !== false;
+  const lugar = $('#cartoes');
+  INICIAIS.forEach((ini, i) => {
+    const c = montaCartao(i, (salvo && salvo.cartoes && salvo.cartoes[i]) || ini);
+    cartoes.push(c); lugar.appendChild(c.el);
+  });
+  $('#texto').addEventListener('change', guardaLocal);
+  $('#ao-mexer').addEventListener('change', guardaLocal);
+  $('#texto-padrao').addEventListener('click', () => { $('#texto').value = TEXTO_PADRAO; guardaLocal(); });
+  atualizaEstado();
+})();
+</script>
+</body>
+</html>

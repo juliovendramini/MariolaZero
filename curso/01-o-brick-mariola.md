@@ -49,8 +49,8 @@ O arquivo `documentação/Conectores.pdf` tem a foto de cada conector com a pina
 para a direita: **SERVOS 1, 2, 3, 4**, **LEDs** e **DEBUG/PWM**. Os LEDs RGB do Mariola já vêm
 ligados na coluna LEDs. A DEBUG/PWM é uma coisa de cada vez: enquanto a ventoinha e o buzzer não
 são usados, é o debug do ATmega; depois do primeiro `set_ventoinha` (ou do primeiro som do buzzer),
-vira a ventoinha (ou o buzzer) até o brick reiniciar. Servos, ventoinha e buzzer dividem o mesmo
-timer: só o primeiro que for usado funciona (veja a [referência](referencia/motores.md)). Não
+vira a ventoinha (ou o buzzer) até o brick reiniciar: só o primeiro dos dois que for usado funciona
+(veja a [referência](referencia/motores.md)). Os servos funcionam junto com qualquer um deles. Não
 confunda com a porta de debug do Banana Pi, que fica na lateral (abaixo).
 
 ### A lateral do brick

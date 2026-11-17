@@ -1,20 +1,20 @@
 {
   "nome": "Robo da Maze",
-  "_fonte": "robo.py, sensores.py e constantes.py da equipe Maze (IzadoraVB/maze2026, ramo adaptacao-claude, commit 75a33d1 de 14/11/2026). Se a equipe mudar a ligacao, mude aqui.",
+  "_fonte": "robo.py, sensores.py e constantes.py da equipe Maze (IzadoraVB/maze2026, ramo adaptacao-claude, portas do commit a707453 de 16/11/2026, cores do acb24cb). Ate 16/11: placas 72/5 no SERIAL2, sensor de linha no SERIAL6, VL53 frente I2C8, meio esq I2C3, borda esq I2C1, meio dir I2C7, borda dir I2C6. Se a equipe mudar a ligacao, mude aqui.",
   "brick": {
     "motores_encoder": [1, 2],
     "_motores": "motores traseiros no brick: 1 invertido (esquerdo), 2 normal (direito)",
     "motores_sem_encoder": [],
     "timer2": "livre",
-    "_timer2": "a equipe nao usa buzzer, ventoinha nem servo comum. O teste do buzzer fica de fora: ele prenderia o Timer2 ate reiniciar o brick, e o dispenser de kits ainda pode ser um servo comum",
+    "_timer2": "a equipe nao usa buzzer nem ventoinha. O dispenser de kits sao servos comuns do brick (constantes SERVO_* do constantes.py, servo 2 no procura_motores()). O teste do buzzer fica de fora: no firmware de 26/10 ele prenderia o Timer2 ate reiniciar o brick e os servos parariam",
     "fita_porta4": false,
     "servos_comuns": []
   },
   "barramento": {
-    "porta": "SERIAL2",
+    "porta": "SERIAL1",
     "placas_motor": [
-      {"id": 72, "nome": "frente esq"},
-      {"id": 5, "nome": "frente dir"}
+      {"id": 8, "nome": "frente esq"},
+      {"id": 16, "nome": "frente dir"}
     ],
     "servos": []
   },
@@ -22,14 +22,14 @@
   "giroscopio_direita": "diminui",
   "_giroscopio_direita": "o girar_graus() do robo.py faz angulo_alvo - graus para girar a direita",
   "sensores_linha": [
-    {"porta": "SERIAL6", "nome": "chao"}
+    {"porta": "SERIAL5", "nome": "chao"}
   ],
   "vl53": [
-    {"porta": "I2C8", "nome": "frente"},
-    {"porta": "I2C3", "nome": "meio esq"},
-    {"porta": "I2C1", "nome": "borda esq"},
-    {"porta": "I2C7", "nome": "meio dir"},
-    {"porta": "I2C6", "nome": "borda dir"}
+    {"porta": "I2C6", "nome": "frente"},
+    {"porta": "I2C1", "nome": "meio esq"},
+    {"porta": "I2C2", "nome": "borda esq"},
+    {"porta": "I2C8", "nome": "meio dir"},
+    {"porta": "I2C7", "nome": "borda dir"}
   ],
   "tcs": [],
   "pinos": [
@@ -38,12 +38,13 @@
   ],
   "pinos_nao_mexer": [],
   "cameras": ["/dev/video_usb3"],
+  "_cameras": "o camera.py da equipe (16/11) abre /dev/video1 mas ajusta o /dev/video_usb3 pelo v4l2-ctl; aqui fica o nome fixo da porta USB",
   "maze": {
     "_maze": "testes proprios da Maze (testes/maze.py): paredes no ladrilho, cores do piso com as faixas da equipe e andar/girar. Os numeros sao os do constantes.py e do sensores.py da equipe.",
     "brick_invertidos": [1],
-    "placa_esq": 72,
-    "placa_dir": 5,
-    "placas_invertidas": [5],
+    "placa_esq": 8,
+    "placa_dir": 16,
+    "placas_invertidas": [16],
     "velocidade": 25,
     "velocidade_giro_min": 14,
     "velocidade_giro_max": 45,
@@ -62,11 +63,11 @@
     "_tcs_chao": "o TCS do meio do sensor de linha (le_rgbc(2))",
     "faixas_cor": [
       {"cor": "preto", "r": [0, 15], "g": [0, 15], "b": [0, 15]},
-      {"cor": "vermelho", "r": [100, 125], "g": [15, 35], "b": [15, 35]},
-      {"cor": "azul", "r": [10, 30], "g": [35, 60], "b": [100, 127]},
-      {"cor": "prata", "r": [180, 200], "g": [185, 210], "b": [90, 210]},
+      {"cor": "vermelho", "domina": "r", "fator": 1.5},
+      {"cor": "azul", "domina": "b", "fator": 1.5},
+      {"cor": "prata", "r": [235, 255], "g": [235, 255], "b": [235, 255]},
       {"cor": "branco", "r": [100, 140], "g": [100, 140], "b": [100, 140]}
     ],
-    "_faixas_cor": "SensorChao.cor() do sensores.py, na mesma ordem (a primeira que bate ganha). Fora de todas, o codigo da equipe devolve branco."
+    "_faixas_cor": "SensorChao.cor() do sensores.py (16/11), na mesma ordem (a primeira que bate ganha): vermelho e azul pela proporcao (domina = canal pelo menos fator vezes cada um dos outros), os outros por faixas [min, max]. Fora de todas, o codigo da equipe devolve branco."
   }
 }
