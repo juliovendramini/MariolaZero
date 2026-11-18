@@ -2,3 +2,6 @@
 # (com CRLF, o "\" de continuacao das regras do udev para de funcionar)
 *.sh text eol=lf
 *.rules text eol=lf
+# os do Windows (le_cartao.bat/.ps1): CRLF
+*.bat text eol=crlf
+*.ps1 text eol=crlf

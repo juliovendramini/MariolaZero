@@ -65,7 +65,7 @@ libs e do envio estão em `.claude/skills/especialista-mariola/referencias/probl
   uma leitura ou espere uma medida nova.
 * **Leitura travando ou com lixo usando thread** → o I2C só pode ser usado por uma thread (curso 7.3).
 * **Sensor deslocado da borda do robô** → desconte a distância do sensor até a lateral (no robô da equipe,
-  desde 17/11/2026, 30 mm no meio esquerdo e 10 mm na borda direita; até 17/11 eram 13 mm na borda
+  desde 17/11/2026, 25 mm no meio esquerdo e 20 mm na borda direita; até 17/11 eram 13 mm na borda
   esquerda e 37 mm no meio direito).
 
 ## Pisos

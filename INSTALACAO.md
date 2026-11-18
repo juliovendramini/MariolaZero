@@ -213,7 +213,9 @@ Kernel e sistema são independentes no Armbian: dá para trocar só o kernel e m
 5. **Overlays** em `/boot/armbianEnv.txt` (linha completa):
    ```
    overlays=bananapi-m4-pi-5-6-i2c0 bananapi-m4-pi-7-8-i2c1 bananapi-m4-sdio-wifi-bt gpu uart2-ph bananapi-m4-zero-fpc24-eth bananapi-m4-pi-13-14-uart4 bananapi-m4-ph-2-3-uart5 bananapi-m4-zero-usb0-host pwm1-pi11 cpu-opp-1512-speed0
+   user_overlays=sun50i-h616-bananapi-m4-uart3-uart4-pi-funcao
    ```
+   (o `user_overlays` é a correção da UART4, explicada logo abaixo da tabela)
 
    | Overlay | Função | Origem |
    |---|---|---|
@@ -238,6 +240,28 @@ Kernel e sistema são independentes no Armbian: dá para trocar só o kernel e m
 
    O `cpu-opp-1512-speed0` é **opcional** (overclock): o brick conferido **não** usa, e roda a
    1416 MHz.
+
+   **Correção obrigatória da UART4 (SERIAL4, `/dev/ttyS4`)** (achado em 17/11/2026): o DTB do
+   6.18 (42, 43 e o nosso 44, todos iguais) vem com `function = "uart2"` nos grupos
+   `uart4-pi-pins` (PI13/PI14) e `uart3-pi-pins` (PI9/PI10). O `dmesg` mostra
+   `unsupported function uart2 on pin PI13` e `there is not valid maps for state default`: a
+   `/dev/ttyS4` aparece, mas os pinos ficam sem a função e nada sai nem entra. O DTB customizado
+   do 6.6 tinha `"uart4"`, por isso a SERIAL4 funcionava antes da troca de kernel. A correção é o
+   overlay de usuário
+   [`sun50i-h616-bananapi-m4-uart3-uart4-pi-funcao.dtso`](instalacao/overlays/sun50i-h616-bananapi-m4-uart3-uart4-pi-funcao.dtso)
+   (o `boot.cmd` aplica os `user_overlays` depois dos `overlays`):
+   ```bash
+   ~/remonta.sh
+   N=sun50i-h616-bananapi-m4-uart3-uart4-pi-funcao
+   sudo dtc -@ -I dts -O dtb -o /boot/overlay-user/$N.dtbo ~/$N.dtso
+   echo "user_overlays=$N" | sudo tee -a /boot/armbianEnv.txt
+   sudo reboot
+   ```
+   Depois do boot, `dmesg | grep PI13` não mostra nada e
+   `sudo grep -E "PI1[34] " /sys/kernel/debug/pinctrl/300b000.pinctrl/pinmux-pins` mostra os dois
+   pinos com `function uart4`. Se um dia o Armbian corrigir o `.dtsi`, o overlay continua inofensivo.
+   Testado num brick em 17/11/2026 com um sensor de cor/reflexão V2 na SERIAL4: antes, só zeros;
+   depois, leituras normais.
 6. **Reinicie** com o cabo serial ligado (115200) na primeira vez.
 7. **Confira:**
    ```bash
@@ -1027,7 +1051,31 @@ O cartão de reserva (16 GB) tem três partições:
 |---|---|---|
 | `p1` | 6,3 GB | clone da raiz da eMMC (mesmo UUID): o brick dá boot por ele |
 | `p2` | 1 GB | clone da `/home` da eMMC (mesmo UUID) |
-| `p3` | 7,6 GB | ext4 com **um arquivo**: a imagem crua da eMMC inteira, `backupMariolaZeroAAAA-MM-DD.img` (7.818.182.656 bytes = a `mmcblk2` toda: tabela de partições, U-Boot e as duas partições). A atual é a de **28/10/2026** (kernel 6.18.42, ajustes do apêndice C, menu novo, `~/firmware_mariola`, regra das câmeras corrigida) |
+| `p3` | 7,6 GB | ext4 com **um arquivo**: a imagem crua da eMMC inteira, `backupMariolaZeroAAAA-MM-DD.img` (7.818.182.656 bytes = a `mmcblk2` toda: tabela de partições, U-Boot e as duas partições). A atual é a de **17/11/2026** (a de 28/10 + a correção da UART4 da seção 5, com a `/home` limpa: sem os projetos de teste, os autotestes, as cópias dos `exemplos/` e o cache do pip; o menu é igual ao do repositório). Cópia no PC do Julio: `D:\backupMariolaZero2026-11-17.img` |
+
+**O cartão de reserva atual lê errado num trecho da `p3`** (achado em 18/11/2026): ao ler a imagem de
+17/11 várias vezes, 8 KB (os blocos 11038 e 11039 da `p2` dentro da imagem, ~784 bytes por bloco)
+vieram diferentes a cada leitura, sem erro no `dmesg`. Ali os blocos estão livres, então a imagem
+funciona, mas o md5 da imagem inteira muda a cada leitura no brick. A cópia do PC foi conferida
+pedaço por pedaço (64 MB) contra três leituras e ficou com a versão que mais se repetiu (md5
+`b97b26f8`, no `.md5` ao lado). Troque o cartão ou teste-o (h2testw/f3) antes de confiar nele.
+Com esse cartão, o `--verifica` do `instalacao_emmc.sh` pode acusar diferença sem ela existir (o
+`cmp` lê a imagem de novo). No PC (18/11, `le_cartao.bat`), duas leituras do cartão inteiro
+diferiram em outros lugares, ambos na `p1` e em blocos livres do ext4 (um grupo nunca usado e
+32 KB que vieram diferentes nas 8 leituras); o trecho da `p3` que o brick lia errado veio igual. O
+defeito muda de lugar: o cartão foi aposentado. O clone dele (`D:\cartaoReserva-2026-11-18.img`,
+1ª leitura, md5 `870ba231`) serve: a imagem dentro da `p3` dele tem o md5 `b97b26f8`. Ele ocupa
+15.980.298.240 bytes (a `p3` vai até o fim): o cartão novo não pode ser menor (cartões de "16 GB"
+de outras marcas às vezes são).
+
+**Clonar o cartão de reserva no Windows:** [`instalacao/le_cartao.bat`](instalacao/le_cartao.bat)
+(pede administrador; o trabalho fica no `le_cartao.ps1`). Sem argumento, lista os cartões (só discos
+USB/SD de 1 a 128 GB, nunca o do sistema), pede o número, lê o cartão **duas vezes**, grava a
+primeira leitura em `D:\cartaoReserva-AAAA-MM-DD.img` (+ `.md5`) e compara as duas em pedaços de
+16 MB, dizendo onde o cartão lê diferente. Grave o `.img` no cartão novo (do mesmo tamanho ou
+maior) pelo USBImager e confira com `le_cartao.bat confere D:\cartaoReserva-AAAA-MM-DD.img`
+(caminho completo, sem espaços). O clone tem os mesmos UUIDs: não use os dois cartões no mesmo
+brick. Testado com um arquivo no papel do cartão (18/11/2026), ainda não num cartão de verdade.
 
 A `p3` comporta **uma** imagem só: para gravar uma nova, apague a antiga antes. Ela só cabe usando
 a reserva de 5% do ext4 para o root (o `dd` com `sudo` usa; um `df` como usuário comum mostra

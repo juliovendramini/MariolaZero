@@ -1,5 +1,5 @@
 {
-  "_comentario": "Robô da equipe Maze 2026 (repositório maze2026, branch adaptacao-claude; montado no commit fa547c3 de 05/11/2026, ligação atualizada pelo a707453 de 16/11/2026 e pelo 9df9aae de 17/11/2026: para-choques P2/P7, descontos dos VL53 e contagens), montado a partir do robo.json. A ligação é a que a equipe pôs no robô real (robo.py e sensores.py): de 05/11 a 16/11 era outra (placas 72/5 no SERIAL2, cor no SERIAL6, outras portas dos VL53) e até 05/11 a do defs.py de 29/10. Unidades: mm, graus, kg. Robô: x para frente, y para a esquerda, ângulos anti-horários (0 = frente, 90 = esquerda). O que não está no código da equipe ficou igual ao robo.json e continua estimado.",
+  "_comentario": "Robô da equipe Maze 2026 (repositório maze2026, branch adaptacao-claude; montado no commit fa547c3 de 05/11/2026, ligação atualizada pelo a707453 de 16/11/2026, pelo 9df9aae de 17/11/2026 (para-choques P2/P7, descontos dos VL53 e contagens) e pelo f7135a9 de 17/11/2026 (giroscópio no SERIAL2, descontos 25/20)), montado a partir do robo.json. A ligação é a que a equipe pôs no robô real (robo.py e sensores.py): de 05/11 a 16/11 era outra (placas 72/5 no SERIAL2, cor no SERIAL6, outras portas dos VL53) e até 05/11 a do defs.py de 29/10. Unidades: mm, graus, kg. Robô: x para frente, y para a esquerda, ângulos anti-horários (0 = frente, 90 = esquerda). O que não está no código da equipe ficou igual ao robo.json e continua estimado.",
   "nome": "Maze 2026 (código da equipe)",
 
   "geometria": {
@@ -44,16 +44,17 @@
   "portas_serial": {
     "SERIAL0": "mariola",
     "SERIAL1": "barramento_motores",
-    "SERIAL4": "giroscopio",
+    "SERIAL2": "giroscopio",
     "SERIAL5": "cor_reflexao_v2"
   },
+  "_portas_serial": "giroscópio no SERIAL2 (conversor USB atrás do hub) desde o commit f7135a9 de 17/11/2026; antes no SERIAL4 (UART ttyS4).",
   "latencia_serial_ms": 1.0,
 
-  "_vl53": "5 VL53L0X (sensores.py da equipe, 16/11/2026, commit a707453). 'meio' no meio da lateral, 'borda' perto da frente (confirmado pelo Julio em 29/10/2026; x e y A MEDIR); a frente no meio do para-choque (estimado). Desde 17/11 (commit 9df9aae) o código desconta 30 mm do meio esquerdo (I2C1, com o nome DESCONTO_BORDA_ESQ) e 10 mm da borda direita (I2C7, com o nome DESCONTO_MEIO_DIR): aqui esses dois ficam esse tanto para dentro, para lerem a mais o mesmo que no robô. De 16/11 a 17/11 eram 13 mm da borda esquerda (I2C2) e 37 mm do meio direito (I2C8). De 05/11 a 16/11 as portas eram borda esq I2C1, meio esq I2C3, borda dir I2C6, meio dir I2C7 e frente I2C8 (os descontos ficaram com os mesmos sensores); antes de 05/11, 4 laterais.",
+  "_vl53": "5 VL53L0X (sensores.py da equipe, 16/11/2026, commit a707453). 'meio' no meio da lateral, 'borda' perto da frente (confirmado pelo Julio em 29/10/2026; x e y A MEDIR); a frente no meio do para-choque (estimado). Desde 17/11 (commit f7135a9, 21:24) o código desconta 25 mm do meio esquerdo (I2C1, com o nome DESCONTO_BORDA_ESQ) e 20 mm da borda direita (I2C7, com o nome DESCONTO_MEIO_DIR): aqui esses dois ficam esse tanto para dentro, para lerem a mais o mesmo que no robô. No 9df9aae (18:58) eram 30 e 10. De 16/11 a 17/11 eram 13 mm da borda esquerda (I2C2) e 37 mm do meio direito (I2C8). De 05/11 a 16/11 as portas eram borda esq I2C1, meio esq I2C3, borda dir I2C6, meio dir I2C7 e frente I2C8 (os descontos ficaram com os mesmos sensores); antes de 05/11, 4 laterais.",
   "vl53": [
     {"nome": "borda_esq", "mux": "I2C2", "x": 70, "y":  85, "angulo":  90},
-    {"nome": "meio_esq",  "mux": "I2C1", "x":  0, "y":  55, "angulo":  90},
-    {"nome": "borda_dir", "mux": "I2C7", "x": 70, "y": -75, "angulo": -90},
+    {"nome": "meio_esq",  "mux": "I2C1", "x":  0, "y":  60, "angulo":  90},
+    {"nome": "borda_dir", "mux": "I2C7", "x": 70, "y": -65, "angulo": -90},
     {"nome": "meio_dir",  "mux": "I2C8", "x":  0, "y": -85, "angulo": -90},
     {"nome": "frente",    "mux": "I2C6", "x": 90, "y":   0, "angulo":   0}
   ],
@@ -112,7 +113,7 @@
   },
   "led_vitima": "mariola_rgb",
 
-  "_cameras": "A equipe usa duas câmeras USB (desde 17/11, /dev/video_usb1 à esquerda e /dev/video_usb2 à direita; antes, uma no /dev/video_usb3) e OpenCV, que não funcionam no simulador. As câmeras daqui só servem ao módulo deteccaoVitimas do simulador (o código da equipe não usa). Os kits saem por dois servos comuns do Mariola (1 = frente/lados, 2 = portinha), que o firmware emulado aceita.",
+  "_cameras": "A equipe usa duas câmeras USB (desde o f7135a9 de 17/11, /dev/video_usb2 à esquerda e /dev/video_usb3 à direita; no 9df9aae, usb1 e usb2; antes, uma no /dev/video_usb3) e OpenCV, que não funcionam no simulador. As câmeras daqui só servem ao módulo deteccaoVitimas do simulador (o código da equipe não usa). Os kits saem por dois servos comuns do Mariola (1 = frente/lados, 2 = portinha), que o firmware emulado aceita.",
   "cameras": [
     {"nome": "esquerda", "x": 0, "y":  60, "angulo":  90, "fov": 70, "alcance_mm": 230},
     {"nome": "direita",  "x": 0, "y": -60, "angulo": -90, "fov": 70, "alcance_mm": 230}

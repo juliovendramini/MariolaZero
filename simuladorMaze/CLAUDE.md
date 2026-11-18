@@ -138,12 +138,12 @@ depois chama `tem_branco()`; com OpenCV, procura os `.png` em `/home/banana/maze
   contrário, como o `defs.py` antigo), Pro1616 no `SERIAL6`, VL53 borda esq `I2C1`, meio esq `I2C3`,
   borda dir `I2C6`, meio dir `I2C7`, frente `I2C8`;
 * motores: Mariola canal 1 invertido;
-* giroscópio no `SERIAL4`, **diminuindo para a direita** (`z_horario_positivo: false`; "o giroscópio
-  diminui ao girar à direita", medido pela equipe);
-* 5 VL53: desde 17/11 (commit `9df9aae`, json atualizado no mesmo dia a pedido do Julio) o meio esq
-  fica 30 mm para dentro e a borda dir 10 mm (o código desconta esses dois, com os nomes trocados:
-  `DESCONTO_BORDA_ESQ` no meio esquerdo, `DESCONTO_MEIO_DIR` na borda direita); de 16/11 a 17/11 eram
-  a borda esq (13 mm) e o meio dir (37 mm). A frente tem posição estimada. Até 05/11 eram 4;
+* giroscópio no `SERIAL2` desde o `f7135a9` (17/11, 21:24; antes `SERIAL4`), **diminuindo para a
+  direita** (`z_horario_positivo: false`; "o giroscópio diminui ao girar à direita", medido pela equipe);
+* 5 VL53: desde 17/11 (json atualizado no mesmo dia a pedido do Julio) o meio esq fica 25 mm para
+  dentro e a borda dir 20 mm (`f7135a9`; no `9df9aae` eram 30 e 10). O código desconta esses dois, com
+  os nomes trocados: `DESCONTO_BORDA_ESQ` no meio esquerdo, `DESCONTO_MEIO_DIR` na borda direita. De
+  16/11 a 17/11 eram a borda esq (13 mm) e o meio dir (37 mm). A frente tem posição estimada. Até 05/11 eram 4;
 * para-choque P2 (esq) / P7 (dir) desde 17/11 (`9df9aae`); antes P1/P8.
 
 Contagens: 400 por volta no Mariola e 800 na placa desde 17/11/2026 (`CONTAGENS_POR_MM = 100 / 55`

@@ -1,0 +1,43 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "sinovoip,bpi-m4-zero", "allwinner,sun50i-h616", "allwinner,sun50i-h618";
+
+	/*
+	 * Corrige a funcao dos pinos da UART3 (PI9/PI10) e da UART4 (PI13/PI14).
+	 * O sun50i-h616.dtsi do kernel 6.18 do Armbian vem com function = "uart2"
+	 * nesses dois grupos (copia do uart2-pi-pins). O driver recusa
+	 * ("unsupported function uart2 on pin PI13"), a UART4 sobe sem pinos e a
+	 * /dev/ttyS4 (SERIAL4) existe mas nao transmite nem recebe nada.
+	 * O DTB customizado do kernel 6.6 tinha "uart4", por isso funcionava.
+	 * Aplicar depois do bananapi-m4-pi-13-14-uart4 (que so liga o no).
+	 */
+	fragment@0 {
+		target = <&uart4_pi_pins>;
+		__overlay__ {
+			function = "uart4";
+		};
+	};
+
+	fragment@1 {
+		target = <&uart4_pi_rts_cts_pins>;
+		__overlay__ {
+			function = "uart4";
+		};
+	};
+
+	fragment@2 {
+		target = <&uart3_pi_pins>;
+		__overlay__ {
+			function = "uart3";
+		};
+	};
+
+	fragment@3 {
+		target = <&uart3_pi_rts_cts_pins>;
+		__overlay__ {
+			function = "uart3";
+		};
+	};
+};

@@ -18,7 +18,8 @@
     ],
     "servos": []
   },
-  "giroscopio": "SERIAL4",
+  "giroscopio": "SERIAL2",
+  "_giroscopio": "SERIAL2 desde o commit f7135a9 (17/11/2026); antes SERIAL4",
   "giroscopio_direita": "diminui",
   "_giroscopio_direita": "o girar_graus() do robo.py faz angulo_alvo - graus para girar a direita",
   "sensores_linha": [
@@ -38,8 +39,8 @@
   ],
   "_pinos": "para-choques P2/P7 desde o commit 9df9aae (17/11/2026); antes P1/P8",
   "pinos_nao_mexer": [],
-  "cameras": ["/dev/video_usb1", "/dev/video_usb2"],
-  "_cameras": "camera.py da equipe (17/11, commit 9df9aae): esquerda /dev/video_usb1, direita /dev/video_usb2. Antes, uma no /dev/video_usb3",
+  "cameras": ["/dev/video_usb2", "/dev/video_usb3"],
+  "_cameras": "camera.py da equipe (17/11, commit f7135a9): esquerda /dev/video_usb2, direita /dev/video_usb3 (no 9df9aae, usb1 e usb2). Antes, uma no /dev/video_usb3",
   "maze": {
     "_maze": "testes proprios da Maze (testes/maze.py): paredes no ladrilho, cores do piso com as faixas da equipe e andar/girar. Os numeros sao os do constantes.py e do sensores.py da equipe.",
     "brick_invertidos": [1],
@@ -58,8 +59,8 @@
       {"lado": "esquerda", "meio": "meio esq", "borda": "borda esq"},
       {"lado": "direita", "meio": "meio dir", "borda": "borda dir"}
     ],
-    "descontos": {"meio esq": 30, "borda dir": 10},
-    "_descontos": "sensores.py (17/11, commit 9df9aae): o que a equipe tira de cada VL53 (mm). Os nomes das constantes no código são DESCONTO_BORDA_ESQ e DESCONTO_MEIO_DIR, mas são tirados do meio esquerdo e da borda direita. Até 17/11: borda esq 13, meio dir 37",
+    "descontos": {"meio esq": 25, "borda dir": 20},
+    "_descontos": "sensores.py e constantes.py (17/11, commit f7135a9; no 9df9aae eram 30 e 10): o que a equipe tira de cada VL53 (mm). Os nomes das constantes no código são DESCONTO_BORDA_ESQ e DESCONTO_MEIO_DIR, mas são tirados do meio esquerdo e da borda direita. Até 17/11: borda esq 13, meio dir 37",
     "tcs_chao": 2,
     "_tcs_chao": "o TCS do meio do sensor de linha (le_rgbc(2))",
     "faixas_cor": [

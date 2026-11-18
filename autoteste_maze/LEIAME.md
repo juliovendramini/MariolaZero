@@ -18,13 +18,13 @@ ramo `adaptacao-claude`; portas do commit `a707453` e cores do `acb24cb`, de 16/
   `constantes.py`, ainda em teste), por isso o teste do buzzer fica de fora (`"timer2": "livre"`): no
   firmware de 26/10 ele prenderia o Timer2 até reiniciar o brick e os servos parariam;
 * barramento no **SERIAL1**: placas de motor 8 (frente esq) e 16 (frente dir, invertida);
-* giroscópio no **SERIAL4** (o Z diminui girando para a direita);
+* giroscópio no **SERIAL2** desde 17/11 (antes SERIAL4; o Z diminui girando para a direita);
 * sensor de linha/cor (Pro1616) no **SERIAL5**: o TCS do meio lê a cor do chão;
 * 5 VL53: frente I2C6, meio esq I2C1, borda esq I2C2, meio dir I2C8, borda dir I2C7;
 * para-choques no P2 (esquerdo) e P7 (direito) desde 17/11 (antes P1 e P8);
-* descontos dos VL53: 30 mm no meio esquerdo e 10 mm na borda direita desde 17/11 (antes 13 mm na borda
+* descontos dos VL53: 25 mm no meio esquerdo e 20 mm na borda direita desde 17/11 (antes 13 mm na borda
   esquerda e 37 mm no meio direito);
-* câmeras `/dev/video_usb1` (esquerda) e `/dev/video_usb2` (direita) desde 17/11 (antes uma no `/dev/video_usb3`).
+* câmeras `/dev/video_usb2` (esquerda) e `/dev/video_usb3` (direita) desde 17/11 (antes uma no `/dev/video_usb3`).
 
 Até 16/11 a ligação era outra: placas 72 e 5 no SERIAL2, sensor de linha no SERIAL6 e VL53 frente I2C8,
 meio esq I2C3, borda esq I2C1, meio dir I2C7, borda dir I2C6.

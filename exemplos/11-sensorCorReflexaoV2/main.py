@@ -6,7 +6,7 @@ from time import sleep
 from portas import Portas
 from sensorCorReflexao import CorReflexao
 
-SensorCorReflexao = CorReflexao(Portas.SERIAL1)
+SensorCorReflexao = CorReflexao(Portas.SERIAL3)
 #Declaração das bibliotecas que serão usadas
 #SensorCorReflexao.calibra_branco()
 #SensorCorReflexao.calibra_preto()
