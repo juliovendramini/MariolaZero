@@ -265,8 +265,10 @@ O servo anda a 300°/s (0,3 s de ponta a ponta). Como o simulador trata:
   braço em cima, o cubo passa por cima do feixe do VL53 e do TCS da frente, que então veem a
   plataforma.
 
-**Atenção (firmware de 26/10):** com os servos ligados, o Timer2 do Mariola fica com eles e o buzzer
-não toca. Para avisar o cubo branco, use os LEDs.
+**Atenção:** no firmware de 26/10 (o que os robôs ainda têm), com os servos ligados o Timer2 do Mariola
+fica com eles e o buzzer não toca. Para avisar o cubo branco, use os LEDs. O simulador imita o firmware de
+15/11, em que os servos estão no Timer3 e o buzzer toca junto: aqui funciona, no robô só com o firmware
+novo gravado.
 
 ### Rodas mecanum
 

@@ -18,8 +18,11 @@ TIMEOUT_PLACA = 5.0          # TIMEOUT_COMUNICACAO
 WATCHDOG_PLACA = 12.0        # 10 s sem comunicação + watchdog de 2 s -> placa reinicia
 NUM_LEDS = 10                # LEDStrip numLeds
 
-# Timer2 do Mariola (firmware de 26/10/2026): servos, ventoinha e buzzer dividem o timer, e o primeiro
-# que for usado fica com ele até o brick reiniciar (aqui, até a rodada nova); os outros são ignorados
+# Timer2 do Mariola (firmware de 15/11/2026): ventoinha e buzzer dividem o timer e o pino 11, e o primeiro
+# que for usado fica com ele até o brick reiniciar (aqui, até a rodada nova); o outro é ignorado. Os servos
+# usam o Timer3 e funcionam junto com qualquer um dos dois. (No firmware de 26/10 os servos também entravam
+# na disputa: o valor 1, TIMER2_SERVOS, não aparece mais nas respostas.) A reserva do Timer2 desliga só o
+# servo 6, que é o próprio pino 11 (o simulador só tem os servos 1 a 4).
 TIMER2_LIVRE, TIMER2_SERVOS, TIMER2_VENTOINHA, TIMER2_BUZZER = 0, 1, 2, 3
 BUZZER_RECUSADO, BUZZER_OK, BUZZER_SOM_INVALIDO = 0, 1, 2
 
@@ -92,7 +95,7 @@ class FirmwareMariola:
         if cmd == 0xFD:                                      # ENVIA_SERVOS
             servos = {}
             for i in range(1, 5):
-                if f[i] <= 180 and self._reserva_timer2(TIMER2_SERVOS):
+                if f[i] <= 180:                              # Timer3: não depende do Timer2
                     servos[str(i)] = f[i]
                     if i == 4:                               # ativaPorta4ComoServo
                         self.leds_porta4 = None
@@ -189,11 +192,10 @@ class FirmwareMariola:
             self.ocupado_ate = t + 30.0
             return (b'\xF3', 0.0002)
         if cmd == 0xF2:                                      # ATIVA_VENTOINHA
-            if self.modo_timer2 == TIMER2_LIVRE:             # configuraTimer2PWMVentoinha: desliga os servos
+            if self.modo_timer2 == TIMER2_LIVRE:             # configuraTimer2PWMVentoinha (servos 1-4 seguem)
                 self._reserva_timer2(TIMER2_VENTOINHA)
-                self.w.servos = {str(i): 200 for i in range(1, 5)}
                 self.ventoinha = 0
-            if self.modo_timer2 == TIMER2_VENTOINHA:         # ignora se o Timer2 é dos servos ou do buzzer
+            if self.modo_timer2 == TIMER2_VENTOINHA:         # ignora se o Timer2 é do buzzer
                 self.ventoinha = f[1]                        # o timeout de 5 s não desliga a ventoinha
             return (b'\xF2', 0.0002)                         # responde mesmo quando ignora
         return None
@@ -205,9 +207,8 @@ class FirmwareMariola:
         return self.modo_timer2 == modo
 
     def _reserva_buzzer(self):
-        if self.modo_timer2 == TIMER2_LIVRE:                 # reservaBuzzer: desliga todos os servos
+        if self.modo_timer2 == TIMER2_LIVRE:                 # reservaBuzzer (os servos 1-4 seguem no Timer3)
             self._reserva_timer2(TIMER2_BUZZER)
-            self.w.servos = {str(i): 200 for i in range(1, 5)}
         return self.modo_timer2 == TIMER2_BUZZER
 
     def buzzer_tocando(self, t):
@@ -264,7 +265,7 @@ class FirmwareMariola:
             self.w.leds = [(0, 0, 0)] * NUM_LEDS       # sem comando os LEDs também apagam
             if self.leds_porta4 is not None:
                 self.leds_porta4 = [(0, 0, 0)] * NUM_LEDS
-            self.w.servos = {str(i): 200 for i in range(1, 5)}   # detach (o Timer2 continua reservado)
+            self.w.servos = {str(i): 200 for i in range(1, 5)}   # detach (o Timer2 continua com quem tinha)
             if self.modo_timer2 == TIMER2_BUZZER:      # melodia repetindo não fica tocando sozinha
                 self._para_buzzer()
 

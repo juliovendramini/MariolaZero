@@ -158,8 +158,9 @@ branco → acende os LEDs e não pega (+50). Rode depois de mexer em `sim/` ou `
 * Cubo branco: identificação pela borda de subida do sinal (LED aceso ou buzzer começando), um cubo
   por aviso (o mais perto, à frente, até 20 cm da frente do robô). Antes valia para todos os cubos
   perto e um aviso só identificou dois (o E1 fica a 195 mm do A3).
-* Com servos, o Timer2 do Mariola é deles: o buzzer não toca (firmware de 26/10). O exemplo avisa com
-  os LEDs.
+* Firmware de 26/10 (o que os robôs ainda têm): com servos, o Timer2 do Mariola é deles e o buzzer não
+  toca. O exemplo avisa com os LEDs. Desde 17/11 o simulador imita o firmware de 15/11 (servos no
+  Timer3): o buzzer toca junto com os servos aqui, mas no robô só depois de gravar o firmware novo.
 
 ## Bombertinho (`robo_bombertinho.json`, 31/10/2026)
 

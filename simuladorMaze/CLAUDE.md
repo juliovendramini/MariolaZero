@@ -232,13 +232,16 @@ regravado a partir de uma cópia antiga. O `robo.json` certo tem os 6 sensores e
   o servo 4), servo 4 com ângulo ≤ 180 (e o Timer2 dos servos) volta a porta para servo. Emulado nos
   dois simuladores (`FirmwareMariola.leds_porta4`, só o estado: não é desenhado), e `fake_hw` aceita
   de 0xEC a 0xFD.
-* Mariola, Timer2 (firmware de 26/10/2026; especificação em `documentação/Motores.md`): servos,
-  ventoinha (0xF2) e buzzer (0xEC-0xEF) dividem o timer e **o primeiro uso fica com ele até
-  reiniciar** (`FirmwareMariola.modo_timer2`: 0 livre, 1 servos, 2 ventoinha, 3 buzzer; reinicia na
-  rodada nova). Conta como uso: `ENVIA_SERVOS` com algum ângulo ≤ 180, o primeiro 0xF2, o primeiro
-  som/tom (parar e 0xEC não contam). Ventoinha ou buzzer primeiro desligam os servos. O dono errado é
-  ignorado: 0xF2 responde 0xF2 igual, 0xFD responde 0xFD igual, o buzzer responde status 0. O timeout
-  de 5 s solta os servos e para o buzzer, não a ventoinha.
+* Mariola, Timer2 (firmware de **15/11/2026** desde 17/11 nos 4 simuladores; especificação em
+  `documentação/Motores.md`): ventoinha (0xF2) e buzzer (0xEC-0xEF) dividem o timer e o pino 11, e
+  **o primeiro uso fica com ele até reiniciar** (`FirmwareMariola.modo_timer2`: 0 livre, 2 ventoinha,
+  3 buzzer; reinicia na rodada nova). Conta como uso: o primeiro 0xF2, o primeiro som/tom (parar e
+  0xEC não contam). Os servos usam o **Timer3** e funcionam junto com qualquer um dos dois (só o servo
+  6, no pino 11, para; o simulador só tem os servos 1 a 4). O dono errado é ignorado: 0xF2 responde
+  0xF2 igual, o buzzer responde status 0. O timeout de 5 s solta os servos e para o buzzer, não a
+  ventoinha. Até 17/11 o simulador imitava o firmware de 26/10 (servos também na disputa, modo 1,
+  ventoinha ou buzzer desligando os servos), que é o que os robôs ainda têm até o Julio gravar o novo.
+  O `libs_mariola/motores.py` dos 4 simuladores é o `libs/motores.py` com a regra nova.
 * Mariola, buzzer: respostas de 3 bytes `[comando, status, modo do Timer2]`. O som não toca no PC: o
   simulador só guarda até quando ele toca (`buzzer_fim`, tempo simulado), com a duração calculada como
   o `buzzerGeraSegmento` do firmware (velocidade, varreduras em passos de 10 ms, 250 ms entre as
