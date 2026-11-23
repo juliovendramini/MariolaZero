@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "tutor",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["tutor/servidor.py", "--sem-navegador"],
+      "port": 8780
+    }
+  ]
+}

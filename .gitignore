@@ -4,3 +4,6 @@ debs/
 # marcas do envia.sh (data do último envio para cada robô)
 .ultimo_envio_*
 .envio_em_andamento
+# arquivos temporarios do envia.ps1
+upload_lista.txt
+upload_temp.tar.gz

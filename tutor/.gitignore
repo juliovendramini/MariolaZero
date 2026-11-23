@@ -1,0 +1,10 @@
+testes/registros/
+testes/resultados/
+conversas/
+__pycache__/
+# a chave da API embaralhada (ferramentas/faz_chave.py): o repositório é público
+chave_tutor.dll
+# o que os alunos fazem na página (servidor.py)
+trabalhos/
+# Monaco e Jedi (18 MB): ficam só no PC do Julio e vão no zip dos alunos (LEIAME.md)
+terceiros/

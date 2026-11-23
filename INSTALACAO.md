@@ -1061,12 +1061,21 @@ pedaço por pedaço (64 MB) contra três leituras e ficou com a versão que mais
 `b97b26f8`, no `.md5` ao lado). Troque o cartão ou teste-o (h2testw/f3) antes de confiar nele.
 Com esse cartão, o `--verifica` do `instalacao_emmc.sh` pode acusar diferença sem ela existir (o
 `cmp` lê a imagem de novo). No PC (18/11, `le_cartao.bat`), duas leituras do cartão inteiro
-diferiram em outros lugares, ambos na `p1` e em blocos livres do ext4 (um grupo nunca usado e
-32 KB que vieram diferentes nas 8 leituras); o trecho da `p3` que o brick lia errado veio igual. O
+diferiram em outros dois pedaços de 16 MB, ambos na `p1`: no de 6.176 MB, 32 KB de blocos livres
+vieram diferentes nas 8 leituras; o de 4.592 MB tem 447 blocos em uso, de 157 arquivos (pacotes
+werkzeug/wheel/namex do `/meu_venv`, logs, dpkg), todos idênticos aos da raiz da imagem da eMMC e
+com o `RECORD`/CRC certos (a diferença estava em blocos livres); o trecho da `p3` que o brick lia
+errado veio igual. O
 defeito muda de lugar: o cartão foi aposentado. O clone dele (`D:\cartaoReserva-2026-11-18.img`,
 1ª leitura, md5 `870ba231`) serve: a imagem dentro da `p3` dele tem o md5 `b97b26f8`. Ele ocupa
 15.980.298.240 bytes (a `p3` vai até o fim): o cartão novo não pode ser menor (cartões de "16 GB"
-de outras marcas às vezes são).
+de outras marcas às vezes são). **Grave pelo Etcher e confira com o `le_cartao.bat confere`:** num
+cartão novo (lacrado, do mesmo modelo), o **USBImager 1.0.10** gravou o clone e verificou sem erro,
+mas o cartão leu depois diferente em 220 pedaços de 16 MB, sempre igual nas releituras: em todos
+eles o arquivo tem **zeros** e o cartão tinha 8 KB a cada 16 KB com dados de outras partes da imagem
+(50 a 70 MB adiante). O mesmo cartão gravado pelo Etcher (verificou sem erro) e tirado **sem
+ejetar** leu certo em 951 pedaços e com 18 MB de zeros no meio da imagem da `p3` (pedaços 740-741).
+Ejete o cartão ("Remover hardware com segurança") antes de tirar.
 
 **Clonar o cartão de reserva no Windows:** [`instalacao/le_cartao.bat`](instalacao/le_cartao.bat)
 (pede administrador; o trabalho fica no `le_cartao.ps1`). Sem argumento, lista os cartões (só discos

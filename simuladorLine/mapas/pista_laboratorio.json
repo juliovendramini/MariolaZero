@@ -1,0 +1,544 @@
+{
+ "formato": "simuladorLine/1",
+ "regra": "RoboCupJunior Rescue Line 2026",
+ "nome": "pista_laboratorio",
+ "_comentario": "Pista do laboratório do Ifes Colatina, montada a partir de 6 fotos do Julio (18/11/2026; esta pasta é a foto do tabuleiro grande, as outras estão em fotos_mapa/lab_a..lab_f). As linhas da pista são fita em tabuleiros grandes, fora da grade de 30 cm: aqui cada trecho virou o ladrilho oficial mais parecido, numa grade esquemática (a ordem e as ligações são as da pista; as distâncias não). Escala medida pelo ladrilho do círculo (30 cm): o tabuleiro grande tem ~1,0 x 1,8 m, a rampa em S ~0,9 x 1,5 m. Suposto: largada no tabuleiro do zigue-zague, indo para o norte (a foto não mostra onde é); a rampa em S com 12° (chute; o topo, plano na pista, aqui está inclinado junto); a rampa curta até a plataforma com 20°; a peça que desce da plataforma (dobradiças no meio, uma gangorra) virou rampa de descida; o 'E' na saída da área ficou só com um dos dentes. Medir no campo: altura da rampa em S e da plataforma.",
+ "largura": 14,
+ "altura": 8,
+ "inicio": [
+  0,
+  4,
+  0
+ ],
+ "inicio_dir": "N",
+ "tempo": 480.0,
+ "ladrilhos": [
+  {
+   "x": 1,
+   "y": 0,
+   "z": 0,
+   "tipo": "tile-16_2",
+   "rot": 90,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 12
+   }
+  },
+  {
+   "x": 2,
+   "y": 0,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 12
+   }
+  },
+  {
+   "x": 3,
+   "y": 0,
+   "z": 0,
+   "tipo": "tile-12",
+   "rot": 0,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 12
+   }
+  },
+  {
+   "x": 0,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-16_2",
+   "rot": 180
+  },
+  {
+   "x": 1,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-12",
+   "rot": 270,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 12
+   }
+  },
+  {
+   "x": 2,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-13",
+   "rot": 0,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 12
+   }
+  },
+  {
+   "x": 3,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-12",
+   "rot": 90,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 12
+   }
+  },
+  {
+   "x": 5,
+   "y": 1,
+   "z": 0,
+   "tipo": "tile-55",
+   "rot": 0
+  },
+  {
+   "x": 0,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-18",
+   "rot": 90
+  },
+  {
+   "x": 1,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-15",
+   "rot": 90,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 12
+   }
+  },
+  {
+   "x": 2,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-41",
+   "rot": 180,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 12
+   }
+  },
+  {
+   "x": 3,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-12",
+   "rot": 0,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 12
+   }
+  },
+  {
+   "x": 5,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-30",
+   "rot": 90
+  },
+  {
+   "x": 6,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0
+  },
+  {
+   "x": 7,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-73",
+   "rot": 90
+  },
+  {
+   "x": 10,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-21",
+   "rot": 270
+  },
+  {
+   "x": 11,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0
+  },
+  {
+   "x": 12,
+   "y": 2,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0,
+   "rampa": {
+    "sobe": "L",
+    "graus": 20
+   }
+  },
+  {
+   "x": 0,
+   "y": 3,
+   "z": 0,
+   "tipo": "tile-20",
+   "rot": 90
+  },
+  {
+   "x": 1,
+   "y": 3,
+   "z": 0,
+   "tipo": "tile-12",
+   "rot": 180,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 12
+   }
+  },
+  {
+   "x": 2,
+   "y": 3,
+   "z": 0,
+   "tipo": "tile-12",
+   "rot": 90,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 12
+   }
+  },
+  {
+   "x": 3,
+   "y": 3,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 90,
+   "lombadas": [
+    {
+     "u": 150,
+     "v": 150,
+     "ang": 0,
+     "comp": 200
+    }
+   ],
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 12
+   }
+  },
+  {
+   "x": 5,
+   "y": 3,
+   "z": 0,
+   "tipo": "tile-31",
+   "rot": 0
+  },
+  {
+   "x": 6,
+   "y": 3,
+   "z": 0,
+   "tipo": "tile-41",
+   "rot": 180,
+   "obstaculos": [
+    {
+     "larg": 150,
+     "comp": 65,
+     "altura": 95,
+     "ang": 0,
+     "fixo": false,
+     "massa_kg": 2.0,
+     "u": 150,
+     "v": 70
+    }
+   ]
+  },
+  {
+   "x": 7,
+   "y": 3,
+   "z": 0,
+   "tipo": "tile-21",
+   "rot": 90
+  },
+  {
+   "x": 10,
+   "y": 3,
+   "z": 0,
+   "tipo": "tile-41",
+   "rot": 270
+  },
+  {
+   "x": 0,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 90
+  },
+  {
+   "x": 3,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 90,
+   "inclinacao": {
+    "sobe": "N",
+    "graus": 12
+   }
+  },
+  {
+   "x": 5,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-21",
+   "rot": 270
+  },
+  {
+   "x": 6,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-16",
+   "rot": 0
+  },
+  {
+   "x": 7,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-21",
+   "rot": 0
+  },
+  {
+   "x": 13,
+   "y": 4,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 90,
+   "rampa": {
+    "sobe": "N",
+    "graus": 20
+   }
+  },
+  {
+   "x": 0,
+   "y": 5,
+   "z": 0,
+   "tipo": "tile-11",
+   "rot": 90
+  },
+  {
+   "x": 1,
+   "y": 5,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0
+  },
+  {
+   "x": 2,
+   "y": 5,
+   "z": 0,
+   "tipo": "tile-41",
+   "rot": 0
+  },
+  {
+   "x": 3,
+   "y": 5,
+   "z": 0,
+   "tipo": "tile-30",
+   "rot": 0
+  },
+  {
+   "x": 4,
+   "y": 5,
+   "z": 0,
+   "tipo": "tile-41",
+   "rot": 180
+  },
+  {
+   "x": 5,
+   "y": 5,
+   "z": 0,
+   "tipo": "tile-15",
+   "rot": 270
+  },
+  {
+   "x": 6,
+   "y": 5,
+   "z": 0,
+   "tipo": "tile-21",
+   "rot": 270
+  },
+  {
+   "x": 7,
+   "y": 5,
+   "z": 0,
+   "tipo": "tile-35",
+   "rot": 0
+  },
+  {
+   "x": 8,
+   "y": 5,
+   "z": 0,
+   "tipo": "tile-11",
+   "rot": 0
+  },
+  {
+   "x": 13,
+   "y": 5,
+   "z": 0,
+   "tipo": "chegada",
+   "rot": 180
+  },
+  {
+   "x": 0,
+   "y": 6,
+   "z": 0,
+   "tipo": "tile-35",
+   "rot": 0
+  },
+  {
+   "x": 3,
+   "y": 6,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 90
+  },
+  {
+   "x": 4,
+   "y": 6,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 90
+  },
+  {
+   "x": 5,
+   "y": 6,
+   "z": 0,
+   "tipo": "tile-21",
+   "rot": 180
+  },
+  {
+   "x": 6,
+   "y": 6,
+   "z": 0,
+   "tipo": "tile-30",
+   "rot": 270
+  },
+  {
+   "x": 7,
+   "y": 6,
+   "z": 0,
+   "tipo": "tile-41",
+   "rot": 270,
+   "lombadas": [
+    {
+     "u": 150,
+     "v": 90,
+     "ang": 0,
+     "comp": 200
+    }
+   ]
+  },
+  {
+   "x": 0,
+   "y": 7,
+   "z": 0,
+   "tipo": "tile-21",
+   "rot": 180
+  },
+  {
+   "x": 1,
+   "y": 7,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0,
+   "lombadas": [
+    {
+     "u": 150,
+     "v": 150,
+     "ang": 90,
+     "comp": 220
+    }
+   ]
+  },
+  {
+   "x": 2,
+   "y": 7,
+   "z": 0,
+   "tipo": "tile-35",
+   "rot": 0
+  },
+  {
+   "x": 3,
+   "y": 7,
+   "z": 0,
+   "tipo": "tile-15",
+   "rot": 0
+  },
+  {
+   "x": 4,
+   "y": 7,
+   "z": 0,
+   "tipo": "tile-41",
+   "rot": 0
+  },
+  {
+   "x": 5,
+   "y": 7,
+   "z": 0,
+   "tipo": "tile-0",
+   "rot": 0,
+   "lombadas": [
+    {
+     "u": 150,
+     "v": 150,
+     "ang": 50,
+     "comp": 220
+    }
+   ]
+  },
+  {
+   "x": 6,
+   "y": 7,
+   "z": 0,
+   "tipo": "tile-41",
+   "rot": 0
+  },
+  {
+   "x": 7,
+   "y": 7,
+   "z": 0,
+   "tipo": "tile-21",
+   "rot": 90
+  },
+  {
+   "x": 13,
+   "y": 2,
+   "z": 1,
+   "tipo": "tile-30",
+   "rot": 180
+  },
+  {
+   "x": 13,
+   "y": 3,
+   "z": 1,
+   "tipo": "tile-19",
+   "rot": 0
+  }
+ ],
+ "zona_resgate": {
+  "x": 9,
+  "y": 4,
+  "larg": 4,
+  "alt": 3,
+  "entrada": {
+   "lado": "O",
+   "i": 1
+  },
+  "saida": {
+   "lado": "N",
+   "i": 1
+  },
+  "verde": "SO",
+  "vermelho": "NE",
+  "detritos": 40
+ }
+}

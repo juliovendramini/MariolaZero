@@ -149,6 +149,9 @@ def roda(job):
     trabalho = None if job['programa'].lower().endswith('.ino') else pasta_rodada(job['programa'])
     if trabalho:
         cmd += ['--pasta-trabalho', trabalho]
+    if job.get('registros'):
+        arq_reg = os.path.join(job['registros'], f'{job["rotulo"]}_s{job["semente"]}.jsonl'.replace(os.sep, '_'))
+        cmd += ['--registro', arq_reg]
     t0 = time.time()
     env = dict(os.environ, PYTHONIOENCODING='utf-8')
     try:
@@ -177,6 +180,8 @@ def roda(job):
         pass
     r.update({'i': job['i'], 'semente': job['semente'], 'mapa': os.path.relpath(job['mapa'], RAIZ),
               'log': os.path.relpath(log, RAIZ), 'real_s': round(time.time() - t0, 1)})
+    if job.get('registros') and os.path.exists(arq_reg):
+        r['registro'] = arq_reg
     return r
 
 
@@ -286,6 +291,8 @@ def main():
     ap.add_argument('--paralelo', type=int, default=None)
     ap.add_argument('--velocidade', type=float, default=None)
     ap.add_argument('--aluno', default='')
+    ap.add_argument('--registros', default=None,
+                    help='pasta onde gravar o registro da volta de cada rodada (.jsonl, para o tutor/resumo.py)')
     a = ap.parse_args()
 
     if a.lista:
@@ -360,8 +367,13 @@ def main():
           f'tempo máx.: {tempo:.0f} s   em paralelo: {paralelo}\n')
     print(cabecalho())
 
+    registros = None
+    if a.registros:
+        registros = os.path.abspath(a.registros)
+        os.makedirs(registros, exist_ok=True)
     jobs = [{'i': i, 'rotulo': rotulo, 'semente': s, 'mapa': mp, 'robo': robo, 'programa': programa,
-             'tempo': tempo, 'velocidade': velocidade} for i, (s, mp) in enumerate(zip(sementes, mapas))]
+             'tempo': tempo, 'velocidade': velocidade, 'registros': registros}
+            for i, (s, mp) in enumerate(zip(sementes, mapas))]
     t0 = time.time()
     resultados = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=paralelo) as ex:

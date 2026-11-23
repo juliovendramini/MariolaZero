@@ -5,9 +5,9 @@
 #   le_cartao.bat confere ARQUIVO.img    le o cartao e compara com o arquivo (ex.: depois de
 #                                        gravar o cartao novo no USBImager). Caminho completo,
 #                                        sem espacos (a janela de administrador abre em System32)
-#   le_cartao.bat rele 386               le esse pedaco de 16 MB 7 vezes e grava cada leitura
-#                                        em D:\cartaoReserva-relido-...\ (cartao instavel; um so pedaco:
-#                                        o cmd trata a virgula como espaco)
+#   le_cartao.bat rele 386+387           le esses pedacos de 16 MB 7 vezes e grava cada leitura
+#                                        em D:\cartaoReserva-relido-...\ (cartao instavel; separe com +:
+#                                        o cmd come virgula e aspas)
 #
 # As duas leituras sao comparadas em pedacos de 16 MB, para dizer ONDE o cartao le diferente.
 # Feito em 18/11/2026 para o cartao de reserva do Mariola (secao 17 do INSTALACAO.md).
@@ -130,8 +130,8 @@ function MostraDiferencas($lista) {
 # ---------- rele: le alguns pedacos de 16 MB varias vezes ----------
 # (para achar, bloco a bloco, onde um cartao instavel le diferente; o Claude compara os arquivos)
 if ($Modo -eq 'rele') {
-    $lista = @($Arquivo -split '[ ,;]+' | Where-Object { $_ } | ForEach-Object { [int]$_ })
-    if ($lista.Count -eq 0) { Sai 'diga o pedaco: le_cartao.bat rele 386' }
+    $lista = @($Arquivo -split '[ ,;+]+' | Where-Object { $_ } | ForEach-Object { [int]$_ })
+    if ($lista.Count -eq 0) { Sai 'diga os pedacos: le_cartao.bat rele 386+387' }
     $VEZES = 7
     $pasta = Join-Path $Destino ('cartaoReserva-relido-{0}' -f (Get-Date -Format 'yyyy-MM-dd_HHmm'))
     New-Item -ItemType Directory -Force -Path $pasta | Out-Null

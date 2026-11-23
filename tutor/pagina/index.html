@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robô Tutor</title>
+<link rel="stylesheet" href="/pagina/pagina.css">
+</head>
+<body>
+<header>
+  <div class="marca">Robô Tutor</div>
+  <label class="escolha">Desafio
+    <select id="desafio"></select>
+  </label>
+  <div id="salvo" class="salvo"></div>
+</header>
+
+<main>
+  <section class="esquerda">
+    <div id="cartao" class="cartao">
+      <div class="nivel" id="d_nivel"></div>
+      <h1 id="d_titulo"></h1>
+      <p id="d_descricao"></p>
+      <p class="meta"><b>Meta:</b> <span id="d_meta"></span></p>
+    </div>
+    <div class="editor_caixa">
+      <div class="editor_barra"><span id="arquivo">main.py</span><span id="sintaxe" class="sintaxe"></span></div>
+      <div id="editor"></div>
+    </div>
+    <div class="acoes">
+      <button id="rodar" class="principal" title="Ctrl+Enter">Rodar</button>
+      <button id="ver" title="Abre a janela do simulador com esta mesma rodada">Ver a volta</button>
+      <span id="status" class="status"></span>
+    </div>
+    <div id="placar" class="placar vazio">Rode o programa para ver o placar do juiz.</div>
+  </section>
+
+  <section class="direita">
+    <div class="conversa_titulo">Conversa com o tutor</div>
+    <div id="conversa" class="conversa"></div>
+    <form id="form" class="pergunta">
+      <textarea id="texto" rows="2" placeholder="Pergunte ao tutor (Enter envia, Shift+Enter quebra a linha)"></textarea>
+      <button id="enviar" type="submit">Enviar</button>
+    </form>
+  </section>
+</main>
+
+<script>window.MonacoEnvironment = { getWorkerUrl: () => '/monaco/vs/base/worker/workerMain.js' };</script>
+<script src="/monaco/vs/loader.js"></script>
+<script src="/pagina/pagina.js"></script>
+</body>
+</html>

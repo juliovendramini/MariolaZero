@@ -1,0 +1,209 @@
+[
+ {
+  "nome": "00_certo",
+  "desafio": "L01",
+  "robo": "robo_esteira.json",
+  "esperado": [],
+  "defeito": "nenhum: o seguidor PD do curso",
+  "programa": "estragados/00_certo/main.py"
+ },
+ {
+  "nome": "01_kp_alto",
+  "desafio": "L01",
+  "robo": "robo_esteira.json",
+  "esperado": [
+   "ziguezague"
+  ],
+  "defeito": "KP alto demais e sem KD: o robô corrige demais e ziguezagueia (com KP 6 e KD 5 a esteira ainda anda lisa)",
+  "programa": "estragados/01_kp_alto/main.py"
+ },
+ {
+  "nome": "02_kp_baixo",
+  "desafio": "L01",
+  "robo": "robo_esteira.json",
+  "esperado": [
+   "perde_linha"
+  ],
+  "defeito": "KP baixo demais: não vira o bastante nas curvas",
+  "programa": "estragados/02_kp_baixo/main.py"
+ },
+ {
+  "nome": "03_correcao_trocada",
+  "desafio": "L01",
+  "robo": "robo_esteira.json",
+  "esperado": [
+   "correcao_ao_contrario"
+  ],
+  "defeito": "sinal da correção trocado: vira para o lado contrário da linha",
+  "programa": "estragados/03_correcao_trocada/main.py"
+ },
+ {
+  "nome": "04_rapido",
+  "desafio": "L01",
+  "robo": "robo_esteira.json",
+  "esperado": [
+   "rapido_demais",
+   "perde_linha"
+  ],
+  "defeito": "velocidade alta demais para as curvas de 90°",
+  "programa": "estragados/04_rapido/main.py"
+ },
+ {
+  "nome": "05_perdeu_segue_reto",
+  "desafio": "L01",
+  "robo": "robo_esteira.json",
+  "esperado": [
+   "perdeu_seguiu_reto"
+  ],
+  "defeito": "quando perde a linha, continua reto",
+  "programa": "estragados/05_perdeu_segue_reto/main.py"
+ },
+ {
+  "nome": "06_perdeu_gira_errado",
+  "desafio": "L01",
+  "robo": "robo_esteira.json",
+  "esperado": [
+   "perdeu_girou_errado"
+  ],
+  "defeito": "quando perde a linha, gira para o lado contrário de onde ela foi vista",
+  "programa": "estragados/06_perdeu_gira_errado/main.py"
+ },
+ {
+  "nome": "07_ultimo_lado_fixo",
+  "desafio": "L01",
+  "robo": "robo_esteira.json",
+  "esperado": [
+   "perdeu_girou_errado"
+  ],
+  "defeito": "não guarda o lado em que viu a linha: quando perde, gira sempre para a esquerda",
+  "programa": "estragados/07_ultimo_lado_fixo/main.py"
+ },
+ {
+  "nome": "08_laco_lento",
+  "desafio": "L01",
+  "robo": "robo_esteira.json",
+  "esperado": [
+   "laco_lento"
+  ],
+  "defeito": "pausa de 0,3 s no laço: lê o sensor poucas vezes por segundo",
+  "programa": "estragados/08_laco_lento/main.py"
+ },
+ {
+  "nome": "09_le_uma_vez",
+  "desafio": "L01",
+  "robo": "robo_esteira.json",
+  "esperado": [
+   "sensor_parado"
+  ],
+  "defeito": "lê o sensor uma vez só, antes do laço",
+  "programa": "estragados/09_le_uma_vez/main.py"
+ },
+ {
+  "nome": "10_erro_digitacao",
+  "desafio": "L01",
+  "robo": "robo_esteira.json",
+  "esperado": [
+   "erro_programa"
+  ],
+  "defeito": "erro de digitação (corecao): NameError",
+  "programa": "estragados/10_erro_digitacao/main.py"
+ },
+ {
+  "nome": "11_sem_inverter_motor",
+  "desafio": "L01",
+  "robo": "robo_esteira.json",
+  "esperado": [
+   "gira_no_lugar"
+  ],
+  "defeito": "esqueceu de inverter o motor 2: o robô gira no lugar",
+  "programa": "estragados/11_sem_inverter_motor/main.py"
+ },
+ {
+  "nome": "12_lento",
+  "desafio": "L01",
+  "robo": "robo_esteira.json",
+  "esperado": [
+   "lento"
+  ],
+  "defeito": "velocidade baixa demais: não chega a tempo",
+  "programa": "estragados/12_lento/main.py"
+ },
+ {
+  "nome": "13_nao_para_chegada",
+  "desafio": "L01",
+  "robo": "robo_esteira.json",
+  "esperado": [
+   "passou_da_chegada"
+  ],
+  "defeito": "não procura a fita vermelha: passa da chegada",
+  "programa": "estragados/13_nao_para_chegada/main.py"
+ },
+ {
+  "nome": "14_programa_curto",
+  "desafio": "L01",
+  "robo": "robo_esteira.json",
+  "esperado": [
+   "programa_terminou"
+  ],
+  "defeito": "o laço só dura 12 s",
+  "programa": "estragados/14_programa_curto/main.py"
+ },
+ {
+  "nome": "15_pesos_invertidos",
+  "desafio": "L01",
+  "robo": "robo_esteira.json",
+  "esperado": [
+   "correcao_ao_contrario"
+  ],
+  "defeito": "peso do branco no lugar do preto: a \"posição da linha\" sai do lado contrário e o robô vira para longe dela",
+  "programa": "estragados/15_pesos_invertidos/main.py"
+ },
+ {
+  "nome": "16_kd_negativo",
+  "desafio": "L01",
+  "robo": "robo_esteira.json",
+  "esperado": [
+   "ziguezague"
+  ],
+  "defeito": "KD com o sinal trocado: o derivativo aumenta o zigue-zague (com -8 a esteira ainda anda lisa)",
+  "programa": "estragados/16_kd_negativo/main.py"
+ },
+ {
+  "nome": "17_verde_trocado",
+  "desafio": "L04",
+  "robo": "robo_4x4.json",
+  "esperado": [
+   "intersecao_verde"
+  ],
+  "defeito": "troca o verde da esquerda pelo da direita: vira para o lado errado na interseção",
+  "programa": "estragados/17_verde_trocado/main.py"
+ },
+ {
+  "nome": "18_gap_desiste",
+  "desafio": "L05",
+  "robo": "robo_4x4.json",
+  "esperado": [
+   "gap"
+  ],
+  "defeito": "no gap só anda 3 cm antes de desistir e procurar a linha girando",
+  "programa": "estragados/18_gap_desiste/main.py"
+ },
+ {
+  "nome": "19_sem_obstaculo",
+  "desafio": "L05",
+  "robo": "robo_4x4.json",
+  "esperado": [
+   "obstaculo"
+  ],
+  "defeito": "não desvia do obstáculo (nem olha o VL53 nem o para-choque)",
+  "programa": "estragados/19_sem_obstaculo/main.py"
+ },
+ {
+  "nome": "20_exemplo_certo_L05",
+  "desafio": "L05",
+  "robo": "robo_4x4.json",
+  "esperado": [],
+  "defeito": "nenhum: o programa de exemplo, no L05",
+  "programa": "estragados/20_exemplo_certo_L05/main.py"
+ }
+]

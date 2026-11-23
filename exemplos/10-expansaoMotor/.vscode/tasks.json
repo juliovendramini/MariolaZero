@@ -4,8 +4,8 @@
         {
             "label": "Enviar projeto",
             "type": "shell",
-            "command": "powershell",
-            "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/envia.ps1"],
+            "command": "cmd.exe",
+            "args": ["/c", "${workspaceFolder}/envia.bat"],
             "linux": {
                 "command": "bash",
                 "args": ["${workspaceFolder}/envia.sh"]

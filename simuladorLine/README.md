@@ -91,7 +91,9 @@ Opções: `--semente N` (ruído dos sensores; padrão 1, `-1` sorteia a cada rod
 `--semente-bolinhas N` (as vítimas em lugares sorteados por N, mesmo num mapa com as vítimas fixas: é o
 número que o botão **Jogar bolinhas** mostra), `--lop botao|reiniciar`,
 `--tempo 480`, `--tempo-real` (modo antigo do relógio, veja abaixo), `--resultado arq.json` (sem
-janela: grava o placar em JSON).
+janela: grava o placar em JSON), `--registro arq.jsonl` (sem janela: grava a cada 50 ms o que o robô
+fez e o que o programa leu e mandou, para o robô tutor; formato em `sim/registro.py`; no
+`avalia.py`, `--registros PASTA` grava um por rodada).
 
 **`input()` como pausa.** No robô, rodando pelo terminal ssh, um `input('pare')` segura o programa até
 alguém apertar Enter. No simulador funciona igual:

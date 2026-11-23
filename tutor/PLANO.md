@@ -4,7 +4,15 @@ Ideia do Julio: usar o robô para ensinar programação. O aluno recebe um desaf
 desafios da OBR), programa em blocos ou em Python, roda, e o próprio robô conversa com ele sobre o
 código: o que deu errado, onde, e uma pista do caminho, sem entregar a resposta.
 
-Nada disto está feito. Este arquivo é o plano para começar.
+Feito até agora (18/11/2026): a **fase 0**, o registro da volta no simulador da Line e o
+`tutor/resumo.py`, com 21 casos de teste (21 de 21 certos); e a **fase 1**, o `tutor/tutor.py` pelo
+terminal com o Claude Haiku: 19 de 21 casos no teste automático (meta: 17), US$ 0,0017 por resposta.
+O Julio leu as conversas e aprovou o tom em 19/11 ("qualquer coisa a gente ajusta" depois).
+Em 19/11, a primeira versão da **fase 2**: `tutor/servidor.py` + `tutor/pagina/` (Monaco e Jedi em
+`tutor/terceiros/`), roda no PC do aluno, com a chave embaralhada numa DLL (decisões dele: local para
+o aluno poder usar em casa; a chave atual por enquanto). Falta ele fazer de aluno do L01 ao L03 e o
+pacote para o PC do aluno. Os **blocos ficaram para depois** (decisão dele, 19/11). Como usar e o que se
+aprendeu: [LEIAME.md](LEIAME.md). O resto é plano; a próxima é a fase 2 (a página).
 
 ## Decisões já tomadas
 

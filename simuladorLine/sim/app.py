@@ -44,6 +44,7 @@ class Simulacao:
         # programa. O avalia.py (e o lote.py) dá uma cópia por rodada: em paralelo, as rodadas
         # dividiam o checkpoint e uma às vezes morria gravando o arquivo.
         self.pasta_trabalho = None
+        self.registro = None          # sim/registro.py (--registro): o que o robô fez na rodada
         self.servidor = Servidor(self, porta)
         self._t_ref = 0.0
         self._real_ref = time.perf_counter()
@@ -185,6 +186,8 @@ class Simulacao:
                     w.passo(dt)
                     if not self.em_lop:
                         self.juiz.atualiza(dt)
+                    if self.registro is not None:
+                        self.registro.amostra()
                 n += 1
                 if self._lop_ate is not None:
                     break                       # LoP com reinício: relógio parou aqui
@@ -266,6 +269,8 @@ class Simulacao:
 
     def _log(self, s):
         self.saida.append(s)
+        if self.registro is not None and not s.startswith(('----', '[simulador]', '(apagado ')):
+            self.registro.saida(s)
         try:
             print('[robô] ' + s, flush=True)
         except Exception:
@@ -362,6 +367,8 @@ class Simulacao:
         with self.mundo.lock:
             self.juiz.iniciar()
             self.mundo.giro_reset_z()
+            if self.registro is not None:
+                self.registro.inicio()
         self.iniciar_programa()
 
     def _fim(self, motivo):

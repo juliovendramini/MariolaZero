@@ -54,6 +54,9 @@ def main():
     ap.add_argument('--pasta-trabalho', default=None,
                     help='pasta em que o programa roda e onde ficam os arquivos da rodada, como o checkpoint '
                          '(padrão: a pasta do programa; o avalia.py e o lote.py usam uma cópia por rodada)')
+    ap.add_argument('--registro', default=None,
+                    help='(sem janela) grava neste arquivo .jsonl, a cada 50 ms, o que o robô fez e o que '
+                         'o programa leu e mandou (sim/registro.py; quem lê é o tutor/resumo.py)')
     ap.add_argument('--editor', action='store_true', help='abre direto no editor de mapas')
     a = ap.parse_args()
 
@@ -84,7 +87,7 @@ def main():
         sim.jogar_bolinhas(a.semente_bolinhas)
 
     if a.sem_janela:
-        roda_sem_janela(sim, a.tempo, a.resultado)
+        roda_sem_janela(sim, a.tempo, a.resultado, a.registro)
     else:
         from sim.gui import Interface
         ui = Interface(sim, os.path.join(RAIZ, 'mapas'), RAIZ)
@@ -93,8 +96,11 @@ def main():
         ui.rodar()
 
 
-def roda_sem_janela(sim, tempo, arq_resultado=None):
+def roda_sem_janela(sim, tempo, arq_resultado=None, arq_registro=None):
     sim.enter_automatico = True          # ninguém para apertar Enter: o input() do programa segue na hora
+    if arq_registro:
+        from sim.registro import Registro
+        sim.registro = Registro(sim)
     sim.nova_rodada()
     sim.iniciar_rodada()
     j = sim.juiz
@@ -126,6 +132,10 @@ def roda_sem_janela(sim, tempo, arq_resultado=None):
         }
         with open(arq_resultado, 'w', encoding='utf-8') as f:
             json.dump(res, f, ensure_ascii=False, indent=1)
+    if arq_registro:
+        sim.registro.grava(arq_registro, {
+            'motivo': motivo, 'total': total, 'lop': info.get('LoP', 0), 'chegou': j.fim == 'robô parou na chegada',
+            'tempo': round(j.tempo, 2), 'passo': j.idx, 'passos': max(0, j.n - 1)})
     print('\n================ RESULTADO ================')
     for (t, txt, p) in j.eventos:
         print(f'{int(t // 60)}:{t % 60:05.2f}  {p:+4d}  {txt}' if p else f'{int(t // 60)}:{t % 60:05.2f}        {txt}')

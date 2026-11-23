@@ -204,3 +204,19 @@ duas metades baterem.
   diagonal): foi por causa delas que o simulador ganhou a lombada solta `{u, v, ang, comp}`.
 * Validação: o caminho do juiz fechou com 43 passos; o exemplo da Line roda nele (70 pontos, 18 LoPs:
   não foi feito para essa pista).
+
+## Lições da pista do laboratório (18/11/2026)
+
+`mapas/pista_laboratorio.json`, de 6 fotos em `fotos_mapa/lab_a` a `lab_f` (a `descricao.json` está na
+`lab_d`, a foto do tabuleiro grande).
+* A pista era fita em tabuleiros grandes, fora da grade de 30 cm (linhas a 10-15 cm umas das outras).
+  Não dá para calibrar e casar ladrilho por ladrilho: o mapa ficou **esquemático** (cada trecho no
+  ladrilho oficial mais parecido, mesma ordem e mesmas ligações, distâncias aproximadas).
+* A escala saiu de um ladrilho oficial solto em cima do tabuleiro (o do círculo, 30 cm) e foi conferida
+  pela largura da fita na vista de cima (19 mm).
+* Com várias fotos, primeiro descubra a orientação de cada uma (onde ficam a área, a chegada, os
+  triângulos) e escolha um norte comum; depois junte as peças.
+* Quem decide o caminho é o **lado do verde**: confira cada um de perto com `recorta` (na foto geral,
+  dois pareciam estar do lado errado). Becos com 2 verdes (`tile-16_2`) explicam os trechos que acabam
+  no meio do nada; laço com verde que manda seguir é desvio.
+* O canto centrado é o `tile-21` (o `tile-3` tem a linha encostada na borda).

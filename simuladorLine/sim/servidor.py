@@ -63,6 +63,14 @@ class Servidor:
 
     # ------------------------------------------------------------------ operações
     def trata(self, r):
+        resp = self._trata(r)
+        reg = getattr(self.sim, 'registro', None)
+        if reg is not None:                  # registro da volta (sim/registro.py): só anota
+            with self.sim.mundo.lock:
+                reg.pedido(r.get('op'), r, resp)
+        return resp
+
+    def _trata(self, r):
         op = r['op']
         sim = self.sim
         w = sim.mundo

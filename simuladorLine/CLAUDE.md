@@ -26,6 +26,7 @@ O programa roda em processo separado (`rodar.py`; para `.ino`, `rodar_pacoca.py`
 | `sim/app.py`, `sim/gui.py`, `sim/painel_brick.py` | janela, painéis, tela OLED e teclado (tecla O) |
 | `sim/camera_linha.py`, `fake_hw/camera.py` | câmera de linha: geometria e imagem (compartilhado), `cv2.VideoCapture` falso (tecla C mostra) |
 | `avalia.py` | várias sementes sem janela, desafios L01-L13 (`desafios/desafios.json`), relatório em `resultados/` |
+| `sim/registro.py` | registro da volta (`--registro arq.jsonl`; no `avalia.py`, `--registros PASTA`), 18/11/2026, para o robô tutor (`../tutor/`): a cada 50 ms a pose, o chão de verdade debaixo dos IR/TCS, o que o programa leu e mandou. **Só lê** o estado (nada de ruído a mais): o teste de referência deu o mesmo 295/71,5 s com e sem registro. Ganchos: `Servidor.trata` → `pedido()`, laço da física → `amostra()`, `_log` → `saida()` |
 | `ferramentas/` | `pista_surpresa.py`, `gera_desafios.py`, `gera_mapas.py`, `importa_ladrilhos.py`, `monta_portatil.py`, `foto_mapa.py` + `MAPA_DA_FOTO.md` (mapa a partir de foto), `ladrilho_proprio.py` + `LADRILHO_PROPRIO.md` (ladrilho próprio de foto ou desenho) |
 | `fotos_mapa/` | trabalho do `foto_mapa.py`, uma pasta por foto (`foto.jpg`, `projeto.json`, `descricao.json`; os `.png` o git ignora; fica fora do zip portátil); `ladrilho_exemplo_foto/foto.jpg` = a foto do ladrilho próprio de exemplo |
 | `ladrilhos_proprios/` | ladrilhos próprios: `proprios.json` (blocos e peças) + `NOME.png` (1 mm/px); `_conferir/` o git ignora |
@@ -310,6 +311,12 @@ posições de todas em `mapa.zona['vitimas']` (u, v a partir do `retangulo_zona(
   retificada como lombadas soltas, cruzadas e em diagonal, duas atravessadas no gap). O caminho do
   juiz fecha (43 passos). O exemplo faz 70 pontos com 18 LoPs nele (não foi feito para esta pista).
   Referências depois da mudança: 295 (73,2 s) e Paçoca 160, iguais.
+* `mapas/pista_laboratorio.json` (18/11/2026): pista do laboratório do Ifes, de 6 fotos (`fotos_mapa/lab_a`
+  a `lab_f`; a `descricao.json` está na `lab_d`). É esquemático: as linhas eram fita em tabuleiros grandes,
+  fora da grade, então ficaram a mesma ordem e as mesmas ligações, mas as distâncias não. 14 x 8. Largada
+  suposta no zigue-zague, indo para o norte. A rampa em S está inclinada a 12° (chute). A plataforma tem
+  rampa de 20° e descida (na pista, uma gangorra). A bateria é obstáculo. O caminho do juiz tem 53 passos.
+  O exemplo faz 130 com 6 LoPs (não foi feito para ela).
 * **Mapa a partir de foto (06/11/2026):** o método virou ferramenta: `ferramentas/foto_mapa.py`
   (novo, recorta, calibra, vista, ponto, casa, ladrilho, catalogo, candidatos, inclinacao, monta,
   confere, compara) e o roteiro `ferramentas/MAPA_DA_FOTO.md` (fotos, coordenadas, passo a passo,

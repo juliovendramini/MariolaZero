@@ -37,7 +37,7 @@ meuSeguidor/
 ├── sensorCorReflexao.py    ← a V2! (exemplos/11-sensorCorReflexaoV2/)
 ├── giroscopio.py
 ├── simdebug.py             ← de simuladorLine/robo_real/ (no robô não faz nada)
-├── envia.bat  ou envia.ps1 ← manda a pasta para o robô (no Linux: envia.sh)
+├── envia.bat + envia.ps1   ← manda a pasta para o robô (no Linux: envia.sh)
 └── executa.sh              ← (opcional) roda pelo terminal
 ```
 
@@ -175,25 +175,31 @@ rede (2.4).
 
 ## 2.4 Mandando o programa
 
-### Com o `envia.bat` (simples)
-Copie `exemplos/01-olamundo/envia.bat` para a pasta do projeto e **troque o IP** na linha
-`set IP=...`. Rodando ele (duplo clique ou `.\envia.bat` no terminal do VS Code):
+### No Windows: `envia.bat` (+ `envia.ps1`)
+Copie o `envia.bat` **e** o `envia.ps1` de `exemplos/01-olamundo/` para a pasta do projeto e
+**troque o IP** na linha `set IP=...` do `envia.bat` (o IP fica só nele). Rode o `envia.bat`
+(duplo clique, `.\envia.bat` no terminal do VS Code, F5 ou Ctrl+Shift+B):
+```
+.\envia.bat                  manda só o que mudou desde o último envio
+.\envia.bat tudo             manda a pasta inteira
+.\envia.bat 192.168.2.151    outro robô, sem mexer no arquivo
+```
+* Quem faz o envio é o `envia.ps1`: manda a pasta **com as subpastas** (menos `__pycache__`,
+  `.vscode` e `.git`) para `~/<nome-da-pasta>` no robô, num pacote só, e cria a pasta lá se ela
+  ainda não existir.
+* Guarda o que mandou num arquivo `.ultimo_envio_<IP>` na pasta: da próxima vez só vai o que é
+  novo ou mudou. Passadas 3 horas, ou para um IP novo, manda tudo de novo.
+* No fim encerra o `main.py` que estiver rodando no robô.
+* Sem a chave SSH, pede a senha **uma vez** por envio.
 
-1. copia **tudo** da pasta para `~/<nome-da-pasta>` no robô (`scp -r`);
-2. encerra o `main.py` que estiver rodando (`killall main.py`).
+**O jeito antigo (`scp`).** No começo do `envia.bat` há a linha `set MODO=ps1`. Com
+`set MODO=scp` ele copia a pasta **inteira** toda vez (`scp -r`) e encerra o programa com
+`killall main.py`, sem usar o `envia.ps1`. Ele também cai nesse modo sozinho quando o Windows não
+deixa o PowerShell rodar o `envia.ps1` (alguns PCs de laboratório) ou quando a pasta não tem
+`envia.ps1`. No modo `scp` a pasta precisa já existir no robô:
+`ssh banana@IP "mkdir -p ~/meuSeguidor"`.
 
 O nome da pasta no robô é o mesmo da pasta no PC.
-
-### Com o `envia.ps1` (mais rápido)
-`exemplos/10-expansaoMotor/envia.ps1` manda **só os arquivos que mudaram** desde o último envio
-(guarda as datas no arquivo `.manifest`), empacotando vários num `.tar.gz`. Troque o `$IP` no
-começo. Rode com:
-```powershell
-powershell -ExecutionPolicy Bypass -File envia.ps1
-```
-* Na **primeira vez**, crie a pasta no robô: `ssh banana@IP "mkdir -p ~/meuSeguidor"`.
-* Ele manda só os arquivos da pasta (não as subpastas).
-* No fim ele encerra **qualquer** `python3` rodando no robô.
 
 ### No Linux (ou macOS): `envia.sh`
 Todo exemplo tem um `envia.sh`. Copie para a pasta do projeto e **troque o IP** na linha `IP=...`
