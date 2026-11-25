@@ -145,7 +145,8 @@ Ligações (portas, canais do mux, servos, sentido dos motores, encoder) e cores
   traseira **direita**, canal 2 = traseira esquerda (invertido no programa); placas 8 (dianteira
   esquerda) e 51 (dianteira direita, invertida) no `SERIAL2`; 75 contagens do Mariola por cm.
 * 4 VL53L0X, um para cada lado, em alturas diferentes (frente 24 mm, trás 34, esquerda 19, direita
-  44): frente `I2C4`, trás `I2C7`, esquerda `I2C2`, direita `I2C5`. **Leem 60 mm a mais** que a
+  44): frente `I2C5`, trás `I2C7`, esquerda `I2C2`, direita `I2C4` (código da equipe de 24/11; até
+  02/11 a frente e a direita estavam trocadas). **Leem 60 mm a mais** que a
   distância real (`vl53_params.offset_mm`, deduzido do código da equipe: A MEDIR).
 * TCS34725: um baixo na frente (`I2C3`, 31 mm à direita do centro: vê a plataforma, não um cubo
   centrado) e um na parede de trás de cada cabeça de garra, olhando para dentro (frente `I2C8`,
@@ -223,8 +224,8 @@ O que isso pede do Bombertinho (`exemplo_bombertinho/empilha.py` faz tudo):
 |---|---|
 | `x`, `y`, `angulo` | eixo do servo de subir no robô e para onde a garra aponta |
 | `barra_mm`, `altura_eixo_mm`, `base_cubo_mm` | geometria do paralelogramo (do desenho) |
-| `angulo_horizontal`, `sentido_sobe` | ângulo do servo com as barras na horizontal (90, **A DEFINIR**) e se aumentar levanta (sim: a equipe usa 20 embaixo e 170-180 em cima, barras de pé) |
-| `angulo_fechada`, `sentido_abre`, `curso_max_mm` | servo de abrir: 0 = fechada, 180 = aberta (código da equipe) = 37,7 mm (conferir se a cremalheira anda isso) |
+| `angulo_horizontal`, `sentido_sobe` | ângulo do servo com as barras na horizontal (99 na frente, 80 na esquerda, **deduzidos** dos ângulos da equipe de 24/11: 58 / 35 para pegar, 90 para soltar na plataforma, 180 de pé) e se aumentar levanta (sim) |
+| `angulo_fechada`, `sentido_abre`, `curso_max_mm` | servo de abrir: fechada em 120 (frente) / 115 (esquerda), aberta em 180 (código da equipe de 24/11) = ~12,6 / 13,6 mm de cremalheira (conferir) |
 | `mm_por_grau` | 0,2094 (engrenagem de 24 dentes, módulo 1) |
 
 ## Os robôs provisórios (`robo_garra.json`, o padrão, e `robo_mecanum.json`)
@@ -306,7 +307,9 @@ meça com a trena).
   está longe o bastante para entrar no cone.
 * **TCS34725** (`tcs_i2c`, lib `tcs34725.py`): leem a cor da face do que estiver à frente deles (cubo,
   plataforma), com a luz caindo com a distância, como na Line. As refletâncias de cada cor
-  (`REFLETANCIA` em `sim/fisica.py`) são estimadas. O `classifica_cor()` do `exemplo_aluno/robo.py`
+  (`REFLETANCIA` em `sim/fisica.py`) são estimadas. O robo.json pode trocar a tabela para todos
+  (`refletancia`) ou só para um sensor (`refletancia` dentro dele em `tcs_i2c`: no Bombertinho cada TCS
+  tem o branco de referência dele). O `classifica_cor()` do `exemplo_aluno/robo.py`
   separa as cores pela proporção entre os canais; no robô, ajuste os limites com os cubos de verdade.
 * **Giroscópio**: Z em graus, acumulando, positivo no sentido horário, com deriva e ruído.
 
@@ -348,16 +351,19 @@ a P1: entrega em 25 s (+100).
 ## O exemplo do Bombertinho (`exemplo_bombertinho/main.py`, com o `robo_bombertinho.json`)
 
 O mesmo caminho do exemplo acima, com a garra da frente: sai com ela alta (base do cubo a 54 mm, a
-parede de trás passa 9 mm acima dos cubos) e aberta, segue a rua até o VL53 da frente marcar 34 mm do
-cubo, desce até 10 mm e lê a cor com o TCS da cabeça. Branco: acende os LEDs (+50) e sobe. Outra cor:
-fecha (a comporta puxa o cubo ~18 mm até a parede), sobe, volta, dá meia-volta, para a 20 mm da
-plataforma (o cubo passa por cima dela) e procura a cor com o TCS baixo da frente. Entrega o azul em
-30 s (+100); com o A3 amarelo, procura para um lado, volta e entrega na P4; com o A3 branco, +50.
+parede de trás passa 9 mm acima dos cubos) e aberta, segue a rua até o VL53 da frente marcar 45 mm do
+cubo, desce até a base a 34 mm (a comporta passa por cima do cubo, a parede de trás fica abaixo do topo
+dele), avança 28 mm (a parede empurra o cubo para o lugar), desce até 10 mm e lê a cor com o TCS da
+cabeça. Branco: acende os LEDs (+50) e sobe. Outra cor: fecha, sobe, volta, dá meia-volta, para a 20 mm
+da plataforma (o cubo passa por cima dela) e procura a cor com o TCS baixo da frente. Entrega o azul em
+31 s (+100); com o A3 amarelo, procura para um lado, volta e entrega na P4; com o A3 branco, +50.
 
-A distância de 34 mm tem pouca folga: de ~29 a ~38 mm a garra desce certo; mais perto a parede de trás
-bate em cima do cubo, mais longe a comporta. Soltou o cubo, sobe a garra (base a 105 mm) e só então
+Por que entrar empurrando (como a equipe faz): a comporta abre só 12 mm, e descer direto por cima do
+cubo pede o robô parado numa faixa de ~5 mm (mais perto a parede de trás bate em cima do cubo, mais
+longe a comporta), menos do que o VL53 varia. Soltou o cubo, sobe a garra (base a 105 mm) e só então
 recua. O `exemplo_bombertinho/robo.py` converte a altura (mm) e
-a abertura (mm) em ângulo dos servos com as constantes do robo.json, desconta os 60 mm a mais dos VL53,
+a abertura (mm) em ângulo dos servos com as constantes de cada garra (as do robo.json), desconta os
+60 mm a mais dos VL53, divide cada TCS pelo branco dele (como a lib da equipe),
 inverte a ordem dos IR do sensor de linha e carrega as cores da lona de `cores_lona.json`
 (o papel do `aprende_cor()` no campo).
 
@@ -374,14 +380,16 @@ andando de lado para o sensor de linha ficar em cima dela, e chega na frente do 
   da frente a 29 mm da plataforma deixa o centro do cubo no meio da largura dela.
 * **Em cima, garra da esquerda**: o robô traz o cubo na garra da frente, larga no chão da área verde
   (a regra deixa ajustar o cubo lá por até 30 s), gira 90° para a direita, acerta a distância pelo
-  VL53 da esquerda e pega com a garra da esquerda (comporta toda aberta, 37 mm: o "V" fica longe do
-  cubo). Gira até a esquerda ficar para as plataformas, anda até −40 ou +40 mm, sobe o cubo até a base
-  a 108 mm e chega de lado até o VL53 da esquerda marcar 26 mm. Solta, sobe até 128 mm (a comporta
-  passa do topo do cubo, a 150) e sai de lado.
-* Os ajustes ao longo da plataforma são feitos longe dela; depois de soltar, sempre sobe a garra antes
-  de recuar.
+  VL53 da esquerda e pega com a garra da esquerda (comporta toda aberta, 13 mm). Gira até a esquerda
+  ficar para as plataformas, anda até −40 ou +40 mm, sobe o cubo até a base a 113 mm e chega de lado
+  até o VL53 da esquerda marcar 21 mm. Solta (cai 13 mm) e desliza 70 mm ao longo da plataforma, para
+  fora: com a base a 113 os braços do "V" já passam por cima do cubo de cima (topo a 150), e subir a
+  cabeça traria a comporta 34 mm para perto do robô, mais que os 13 mm que ela abre (puxaria o cubo).
+  Só então sai de lado.
+* Os ajustes ao longo da plataforma são feitos longe dela; depois de soltar embaixo, sempre sobe a
+  garra antes de recuar.
 
-Resultado: 500 pontos, partida completa em 3:16.85. Na competição a plataforma muda de lugar: ache a da
+Resultado: 500 pontos, partida completa em 3:24.80. Na competição a plataforma muda de lugar: ache a da
 cor (`procura_plataforma` do `main.py`) enquanto ela está vazia e guarde quanto o robô andou de lado.
 `EFICIENCIA_LATERAL`, os VL53 e o ângulo das barras na horizontal estão **A DEFINIR** no robô.
 

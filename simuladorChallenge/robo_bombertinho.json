@@ -84,7 +84,7 @@
  "vl53": [
   {
    "nome": "frente",
-   "mux": "I2C4",
+   "mux": "I2C5",
    "x": 90.7,
    "y": -11.4,
    "angulo": 0,
@@ -108,7 +108,7 @@
   },
   {
    "nome": "direita",
-   "mux": "I2C5",
+   "mux": "I2C4",
    "x": 4.2,
    "y": -48.8,
    "angulo": -90,
@@ -134,7 +134,39 @@
    "angulo": 0,
    "altura": 31.3,
    "ganho": 1.15,
-   "ambiente": 0.0
+   "ambiente": 0.0,
+   "refletancia": {
+    "amarelo": [
+     0.7553,
+     0.666,
+     0.2983
+    ],
+    "vermelho": [
+     0.4042,
+     0.1873,
+     0.1457
+    ],
+    "marrom": [
+     0.191,
+     0.1945,
+     0.1754
+    ],
+    "verde": [
+     0.2588,
+     0.5407,
+     0.3337
+    ],
+    "azul": [
+     0.2119,
+     0.476,
+     0.7057
+    ],
+    "preto": [
+     0.0983,
+     0.1229,
+     0.1101
+    ]
+   }
   },
   {
    "nome": "garra_frente",
@@ -144,8 +176,45 @@
    "v": 0,
    "angulo": 0,
    "altura": 34,
-   "ganho": 0.95,
-   "ambiente": 0.0
+   "ganho": 2.517,
+   "ambiente": 0.0,
+   "refletancia": {
+    "branco": [
+     0.6723,
+     0.7936,
+     0.5062
+    ],
+    "amarelo": [
+     0.5382,
+     0.6242,
+     0.1509
+    ],
+    "marrom": [
+     0.1491,
+     0.1624,
+     0.0939
+    ],
+    "verde": [
+     0.1581,
+     0.3353,
+     0.1696
+    ],
+    "vermelho": [
+     0.3369,
+     0.1061,
+     0.124
+    ],
+    "azul": [
+     0.0938,
+     0.254,
+     0.3099
+    ],
+    "preto": [
+     0.0217,
+     0.0353,
+     0.0181
+    ]
+   }
   },
   {
    "nome": "garra_esquerda",
@@ -155,8 +224,45 @@
    "v": 0,
    "angulo": 0,
    "altura": 34,
-   "ganho": 0.95,
-   "ambiente": 0.0
+   "ganho": 2.099,
+   "ambiente": 0.0,
+   "refletancia": {
+    "branco": [
+     0.4885,
+     0.7936,
+     0.7124
+    ],
+    "amarelo": [
+     0.391,
+     0.6242,
+     0.2124
+    ],
+    "marrom": [
+     0.1084,
+     0.1624,
+     0.1321
+    ],
+    "verde": [
+     0.1149,
+     0.3353,
+     0.2387
+    ],
+    "vermelho": [
+     0.2448,
+     0.1061,
+     0.1746
+    ],
+    "azul": [
+     0.0682,
+     0.254,
+     0.4361
+    ],
+    "preto": [
+     0.0158,
+     0.0353,
+     0.0255
+    ]
+   }
   }
  ],
  "_garras": "Duas garras iguais de paralelogramo (sim/garra.py, GarraParalela), uma na frente e uma na esquerda. x, y = eixo do servo de subir (furo de baixo do suporte verde); angulo = para onde a garra aponta. barra_mm = distância entre os furos das barras (a da frente é mais curta porque a base é retangular). altura_eixo_mm = altura do eixo do servo; base_cubo_mm = base do cubo preso em relação ao furo de baixo da cabeça (com as barras na horizontal o cubo fica a 66 - 12 = 54 mm do chão, acima da plataforma de 50). Servo de subir: angulo_horizontal = ângulo do servo com as barras na horizontal, sentido_sobe = +1 se aumentar o ângulo levanta a garra (A DEFINIR os dois). A barra desce até a parede de trás da cabeça encostar no chão. Servo de abrir: engrenagem de 24 dentes módulo 1 (raio 12 mm) na cremalheira, 0,2094 mm por grau; angulo_fechada = ângulo do servo com a comporta fechada (50 mm entre a comporta e a parede de trás), sentido_abre = +1 se aumentar o ângulo abre, curso_max_mm = quanto a comporta abre no máximo (A DEFINIR os três; 25 = o rasgo da peça no desenho). Pega o cubo fechando a comporta com a base do cubo a até altura_max_pegar_mm do chão. Servos do Mariola (portas SERVO1..4, lib motores.py: move_servo + atualiza_servos; A DEFINIR quem é quem). ATENÇÃO: com os servos ligados o Timer2 do Mariola fica com eles e o buzzer não toca (avise o cubo branco com os LEDs). Com o código da equipe: a mão abre até 180° = 37,7 mm (curso_max_mm 37,7: conferir se a cremalheira anda isso); o tronco vai de 20 (embaixo: a parede de trás encosta no chão) a 180 (barras de pé).",
@@ -171,11 +277,11 @@
    "altura_eixo_mm": 66.0,
    "base_cubo_mm": -12.0,
    "servo_sobe": 3,
-   "angulo_horizontal": 90,
+   "angulo_horizontal": 99,
    "sentido_sobe": 1,
    "angulo_barra_max": 90,
    "servo_abre": 4,
-   "angulo_fechada": 0,
+   "angulo_fechada": 120,
    "sentido_abre": 1,
    "mm_por_grau": 0.2094,
    "curso_max_mm": 37.7,
@@ -193,11 +299,11 @@
    "altura_eixo_mm": 66.0,
    "base_cubo_mm": -12.0,
    "servo_sobe": 2,
-   "angulo_horizontal": 90,
+   "angulo_horizontal": 80,
    "sentido_sobe": 1,
    "angulo_barra_max": 90,
    "servo_abre": 1,
-   "angulo_fechada": 0,
+   "angulo_fechada": 115,
    "sentido_abre": 1,
    "mm_por_grau": 0.2094,
    "curso_max_mm": 37.7,
@@ -448,5 +554,6 @@
    0.2,
    0.22
   ]
- }
+ },
+ "_ajuste_20261124": "Ajusta o simuladorChallenge/robo_bombertinho.json ao código de 24/11/2026 (codigo_20261124/), que o Julio\ndiz funcionar no robô:\n\n    python gera_robo_20261124.py\n\n(a primeira vez guarda o de antes em robo_bombertinho_antes_20261124.json, nesta pasta; rodar de novo dá o\nmesmo resultado)\n\n* VL53: frente no I2C5 e direita no I2C4 (defs.py; no código de 02/11 era o contrário).\n* Mão (comporta): fechada em 120 (frontal) e 115 (lateral), aberta em 170-180 (movimentos.py).\n* Tronco: abaixa 58 (frontal) / 35 (lateral) para pegar, 82 / 67 antes de entrar no cubo, 90 para soltar\n  na plataforma, 107 / 103 por cima dela, 180 em pé. Com a horizontal em 90 a cabeça da frente pararia\n  com a base do cubo a 19 mm (alto demais para pegar) e a lateral bateria a comporta no cubo ao entrar.\n  Deduzido: horizontal em 99 (frontal) e 80 (lateral). A CONFERIR no robô.\n* TCS: a lib nova divide cada sensor pelo branco dele (tcs34725.LIMITES_RGB). A refletância de cada cor\n  agora é por sensor: o meio das faixas HSV120 novas (sensores_I2C.py), na distância em que o código\n  lê (medida no simulador: lixeira, ~1050 contagens por unidade de refletância; cubo apertado na cabeça,\n  ganho ajustado para o branco dar o branco de referência deles)."
 }

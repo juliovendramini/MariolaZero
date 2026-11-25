@@ -4,14 +4,17 @@ da frente e leva até a plataforma da cor dele.
     python simulador.py --robo robo_bombertinho.json --programa exemplo_bombertinho/main.py
 
 A garra é um paralelogramo: a cabeça desce POR CIMA do cubo (aberta embaixo) e a comporta fecha,
-apertando o cubo contra a parede de trás. Descendo, a cabeça também chega para perto do robô. Por
-isso o robô para com o cubo um pouco à frente do meio da cabeça: se parar perto demais, a parede de
-trás bate em cima do cubo; longe demais, a comporta bate.
+apertando o cubo contra a parede de trás. A comporta abre só 12 mm, então descer direto por cima do
+cubo pede o robô parado numa faixa de ~5 mm (a parede de trás ou a comporta batem em cima dele), e o
+VL53 varia mais que isso. Por isso, como a equipe faz: a cabeça desce até ENTRA mm (a comporta passa
+por cima do cubo, a parede de trás fica abaixo do topo dele), o robô avança e a parede de trás
+empurra o cubo até o lugar certo, e só então a cabeça desce de vez.
 
 1. sai da área verde com a garra da frente alta e aberta e acha a rua (linha preta);
 2. segue a linha até o VL53 da frente ver o cubo e chega devagar até a DISTANCIA_PEGAR;
-3. desce a garra até PEGAR mm e lê a cor do cubo com o TCS da cabeça. Branco não pode ser pego:
-   acende os LEDs para o árbitro (+50), sobe a garra e para por aí. Os outros: fecha e sobe;
+3. desce a garra até ENTRA, avança AVANCO mm, desce até PEGAR e lê a cor do cubo com o TCS da cabeça.
+   Branco não pode ser pego: acende os LEDs para o árbitro (+50), sobe a garra e para por aí. Os
+   outros: fecha e sobe;
 4. volta de ré até a linha azul, entra na área verde e dá meia-volta;
 5. anda até ficar a FOLGA_PLATAFORMA da plataforma da frente (o cubo passa por cima dela);
 6. anda de lado pelos locais de descarte lendo a cor de cada plataforma com o TCS baixo da frente;
@@ -31,7 +34,9 @@ VEL = 40             # velocidade de cruzeiro (-100 a 100)
 LENTO = 15
 KP = 0.35            # ganho do seguidor de linha
 KZ = 1.5             # ganho para manter a direção pelo giroscópio
-DISTANCIA_PEGAR = 34     # mm do VL53 da frente até o cubo para descer a garra (A DEFINIR no robô)
+DISTANCIA_PEGAR = 45     # mm do VL53 da frente até o cubo para descer a garra (A DEFINIR no robô)
+ENTRA = 34               # base do cubo (mm) para entrar: comporta (23 mm acima) por cima, parede de trás embaixo
+AVANCO = 28              # mm que o robô avança com a cabeça em ENTRA (a parede de trás empurra o cubo)
 FOLGA_PLATAFORMA = 20    # mm entre o VL53 da frente e a plataforma
 MEIA_PLATAFORMA = 80     # mm (a plataforma tem 160 de comprimento)
 TCS_FRENTE_Y = -31       # o TCS baixo da frente fica 31 mm à direita do centro
@@ -74,6 +79,8 @@ def pega_cubo(r):
     while r.distancia('frente') > DISTANCIA_PEGAR:
         r.move(LENTO, 0, correcao(r.ir()))
     r.para()
+    r.garra('frente', altura=ENTRA)
+    anda_mm(r, AVANCO, vel=LENTO)
     r.garra('frente', altura=PEGAR)
     cor = r.cor_tcs('garra_frente')
     if cor == 'branco':

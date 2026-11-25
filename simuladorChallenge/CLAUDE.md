@@ -39,20 +39,33 @@ python simulador.py --sem-janela --velocidade 8 --tempo 120 --robo robo_mecanum.
 #   só locomoção: 3 cruzamentos, anda de lado, gira 180°, volta; pose final x=447 y=1049 ângulo=180.2°, 0 pontos
 #   (conferido em 12/11, igual com as libs do commit 333c442; a anotação antiga, x=449 y=1050 179.8°, era de antes)
 python simulador.py --sem-janela --velocidade 8 --tempo 200 --robo robo_bombertinho.json --programa exemplo_bombertinho/main.py
-#   Bombertinho, garra da frente: "+100 cubo entregue: azul (A3)" em 0:30.32,
-#   pose final x=341 y=213 ângulo=178.9° (09/11, reset do vl53.py; antes 0:30.25 e 178.8°;
-#   07/11: sobe a garra antes de recuar; antes y=214 179.5°);
-#   A3 amarelo: +100 em 0:44.01; A3 branco: +50 em 0:06.45
+#   Bombertinho, garra da frente: "+100 cubo entregue: azul (A3)" em 0:31.47,
+#   pose final x=339 y=212 ângulo=179.5° (24/11, robô ajustado ao código de 24/11 da equipe e pega
+#   empurrando o cubo com a parede de trás; antes 0:30.32, x=341 y=213 178.9°);
+#   A3 amarelo: +100 em 0:44.97; A3 branco: +50 em 0:07.48
 python simulador.py --sem-janela --velocidade 8 --tempo 300 --robo robo_bombertinho.json --programa exemplo_bombertinho/empilha.py --cenario cenarios/empilha.json
-#   empilhando: 5 entregues (2 com "em cima de outro cubo"), 500, partida completa em 3:17.11,
-#   pose final x=213 y=805 ângulo=88.6° (09/11, reset do vl53.py; antes 3:16.85, x=218 y=804);
-#   lote das sementes 1-8: 500 em todas (medido antes do reset)
+#   empilhando: 5 entregues (2 com "em cima de outro cubo"), 500, partida completa em 3:24.80,
+#   pose final x=208 y=805 ângulo=88.3° (24/11; antes 3:17.11, x=213 y=805)
 python testa_pilha.py
 #   física das pilhas: "TUDO CERTO"
 ```
 
-O código da Challenger (`professor/challenger2026/`, `cenario_challenger.json`, `--tempo 200`) continua
-com 200 (entregas em 2:40.95 e 2:58.96) depois das pilhas.
+**24/11/2026: `robo_bombertinho.json` ajustado ao código da equipe de 24/11** (o Julio: "na prática tá
+tudo certo"), por `professor/challenger2026/simulador/gera_robo_20261124.py` (o de antes ficou em
+`robo_bombertinho_antes_20261124.json` lá; o docstring diz cada troca): VL53 da frente no I2C5 e o da
+direita no I2C4; comporta fechada em 120 (frente) / 115 (esquerda), então abre só ~12,6 / 13,6 mm;
+barras na horizontal em 99 / 80 (**deduzido** dos ângulos que o código usa para pegar, entrar no cubo e
+soltar na plataforma: A CONFERIR); refletância **por sensor** (chave `refletancia` dentro de cada
+`tcs_i2c`, nova no `Robo.tcs()`): a lib nova da equipe divide cada TCS pelo branco dele
+(`LIMITES_RGB`), e as cores saem no meio das faixas HSV novas. O `exemplo_bombertinho` foi junto
+(portas, `GARRAS[...]['horizontal'/'fechada']`, `TCS_MAX` por sensor, pega entrando com a cabeça em
+`ENTRA` e empurrando o cubo com a parede, como a equipe; no `empilha.py`, solta o de cima com a base
+a 113 e desliza `DESLIZA` mm ao longo da plataforma, porque a comporta de 13 mm não deixa subir).
+
+O código da Challenger de 02/11 (`professor/challenger2026/codigo/`) foi feito para a ligação de antes
+(VL53 da frente e da direita trocados, comporta de 0 a 180): com o json de agora não vale mais (não
+testado). Com o json de antes dava 200 (entregas em 2:43.02 e 3:01.16). O de 24/11 (`codigo_20261124/`, `set CBR_CODIGO=...codigo_20261124`): ver
+`professor/challenger2026/ANALISE.md`.
 
 Números de 31/10/2026, depois da ligação do código da equipe no Bombertinho, da mancha de 19 pontos do
 sensor de linha (`PONTOS_MANCHA` em `sim/fisica.py`; antes era uma cruz de 5 pontos e os números eram

@@ -2,7 +2,7 @@
 
 Este arquivo roda igual no robô real e no simulador (robo_bombertinho.json): as libs são as mesmas.
 Portas, canais, servos e sentido dos motores são os do código da equipe (defs.py e movimentos.py, de
-30/10/2026). As constantes marcadas A DEFINIR seguem o robo_bombertinho.json; mudou no robô, mude nos dois.
+24/11/2026). As constantes marcadas A DEFINIR seguem o robo_bombertinho.json; mudou no robô, mude nos dois.
 """
 
 import math
@@ -36,26 +36,28 @@ PRETO = 40                    # IR abaixo disto = linha preta (0 = preto, ~100 =
 # plataforma, que tem 50). A comporta corre numa cremalheira: engrenagem de 24 dentes, módulo 1
 # (raio 12 mm), 0,21 mm por grau do servo.
 GARRAS = {
-    #             servo de subir, servo de abrir, barra (mm), TCS da cabeça (como no código da equipe)
-    'frente':   {'sobe': 3, 'abre': 4, 'barra': 66.5, 'tcs': Portas.I2C8},
-    'esquerda': {'sobe': 2, 'abre': 1, 'barra': 79.0, 'tcs': Portas.I2C6},
+    # servo de subir, servo de abrir, barra (mm), TCS da cabeça (como no código da equipe), ângulo do servo
+    # de subir com as barras na horizontal (deduzido dos ângulos da equipe: A DEFINIR) e do servo de abrir
+    # com a comporta fechada (a equipe fecha em 120 / 115 e abre até 180)
+    'frente':   {'sobe': 3, 'abre': 4, 'barra': 66.5, 'tcs': Portas.I2C8, 'horizontal': 99, 'fechada': 120},
+    'esquerda': {'sobe': 2, 'abre': 1, 'barra': 79.0, 'tcs': Portas.I2C6, 'horizontal': 80, 'fechada': 115},
 }
 ALTURA_EIXO = 66.0            # mm do chão até o eixo do servo de subir
 BASE_CUBO = -12.0             # base do cubo preso em relação ao furo de baixo da cabeça
-ANGULO_HORIZONTAL = 90        # ângulo do servo com as barras na horizontal (A DEFINIR)
 SENTIDO_SOBE = 1              # +1: aumentar o ângulo levanta a garra (A DEFINIR)
-ANGULO_FECHADA = 0            # ângulo do servo com a comporta fechada (a equipe usa 0 fechada, 180 aberta)
 SENTIDO_ABRE = 1              # +1: aumentar o ângulo abre
 MM_POR_GRAU = 12.0 * math.pi / 180.0
-ABERTA = 25                   # mm que a comporta abre (A DEFINIR)
+ABERTA = 12                   # mm que a comporta abre: de 120 a 180 a cremalheira anda 12,6 mm (A DEFINIR)
 ALTA = 54                     # base do cubo com as barras na horizontal: passa por cima de cubos e plataformas
 PEGAR = 10                    # base do cubo para pegar (a comporta aperta 17 mm da lateral do cubo)
 SOLTOU = 105                  # depois de soltar na plataforma: a comporta (23 mm acima da base) passa por cima do cubo
 TEMPO_SERVO = 0.4             # s para o servo chegar (com folga)
 
-# TCS34725: contagem de cada canal num branco encostado (a equipe usa estes) e o "escuro" (0-255)
-TCS_MAX = (1580, 1880, 1770)
-TCS_ESCURO = 33
+# TCS34725: contagem de cada canal (R, G, B) no branco de referência de cada sensor (os da equipe,
+# libs/tcs34725.py de 24/11) e o "escuro" (0-255)
+TCS_MAX = {'frente': (1580, 1880, 1770), 'garra_frente': (16500, 20500, 13800),
+           'garra_esquerda': (10000, 17100, 16200)}
+TCS_ESCURO = 25
 
 
 class Robo:
@@ -81,10 +83,10 @@ class Robo:
         self.cor_esq = CorReflexao(Portas.SERIAL3, arquivo_cores=arquivo_cores)    # o da esquerda
         self.cor_esq.usa_cores(cores)
         self.vl = {
-            'frente': VL53L0X(Portas.I2C4),
+            'frente': VL53L0X(Portas.I2C5),
             'tras': VL53L0X(Portas.I2C7),
             'esquerda': VL53L0X(Portas.I2C2),
-            'direita': VL53L0X(Portas.I2C5),
+            'direita': VL53L0X(Portas.I2C4),
         }
         self.tcs = {'frente': TCS34725(Portas.I2C3)}  # baixo, na frente, 31 mm à direita do centro
         for nome, g in GARRAS.items():
@@ -135,9 +137,9 @@ class Robo:
         Com espera=True fica parado o tempo de o servo chegar."""
         g = GARRAS[nome]
         if abertura is not None:
-            self.motores.move_servo(g['abre'], angulo_abre(abertura))
+            self.motores.move_servo(g['abre'], angulo_abre(abertura, g['fechada']))
         if altura is not None:
-            self.motores.move_servo(g['sobe'], angulo_sobe(altura, g['barra']))
+            self.motores.move_servo(g['sobe'], angulo_sobe(altura, g['barra'], g['horizontal']))
         self.motores.atualiza_servos()
         if espera:
             self.espera(TEMPO_SERVO)
@@ -155,7 +157,7 @@ class Robo:
             for i, v in enumerate(self.tcs[nome].le_valores()):
                 soma[i] += v
             time.sleep(0.16)          # tempo de integração do TCS (~154 ms)
-        return classifica_cor(*(v / leituras for v in soma))
+        return classifica_cor(*(v / leituras for v in soma), TCS_MAX[nome])
 
     # ------------------------------------------------------------------ sensores
     def z(self):
@@ -200,23 +202,24 @@ class Robo:
             time.sleep(0.02)
 
 
-def angulo_sobe(altura, barra):
-    """Ângulo do servo de subir para a base do cubo ficar a 'altura' mm do chão."""
+def angulo_sobe(altura, barra, horizontal):
+    """Ângulo do servo de subir para a base do cubo ficar a 'altura' mm do chão (no máximo 180: acima
+    disso o servo fica solto e a garra cai)."""
     s = (altura - BASE_CUBO - ALTURA_EIXO) / barra
     graus_barra = math.degrees(math.asin(max(-1.0, min(1.0, s))))
-    return int(round(ANGULO_HORIZONTAL + SENTIDO_SOBE * graus_barra))
+    return max(0, min(180, int(round(horizontal + SENTIDO_SOBE * graus_barra))))
 
 
-def angulo_abre(abertura):
-    """Ângulo do servo de abrir para a comporta abrir 'abertura' mm."""
-    return int(round(ANGULO_FECHADA + SENTIDO_ABRE * abertura / MM_POR_GRAU))
+def angulo_abre(abertura, fechada):
+    """Ângulo do servo de abrir para a comporta abrir 'abertura' mm (no máximo 180)."""
+    return max(0, min(180, int(round(fechada + SENTIDO_ABRE * abertura / MM_POR_GRAU))))
 
 
-def classifica_cor(r, g, b, c):
+def classifica_cor(r, g, b, c, maximo):
     """Cor pela proporção entre os canais (não depende tanto da distância), com cada canal dividido
-    pela contagem dele no branco (TCS_MAX), como a equipe faz. Os limites são para o simulador: no
-    robô, ajuste com os cubos e as plataformas de verdade."""
-    r, g, b = (v / mx * 255 for v, mx in zip((r, g, b), TCS_MAX))
+    pela contagem dele no branco do sensor (TCS_MAX), como a equipe faz. Os limites são para o
+    simulador: no robô, ajuste com os cubos e as plataformas de verdade."""
+    r, g, b = (v / mx * 255 for v, mx in zip((r, g, b), maximo))
     m = max(r, g, b)
     if m < TCS_ESCURO:
         return 'preto'
@@ -226,8 +229,8 @@ def classifica_cor(r, g, b, c):
         return 'azul'
     if g == m:
         return 'verde'
-    if b / m < 0.45 and g / m > 0.7:
+    if b / m < 0.45 and g / m > 0.55:
         return 'amarelo'
-    if g / m < 0.35:
+    if g / m < 0.45:
         return 'vermelho'
     return 'marrom'

@@ -649,7 +649,11 @@ class Robo:
         ang = b.angle + la
         amb = float(sc.get('ambiente', 0.03))
         ganho = float(sc.get('ganho', 1.0))
-        tabela = dict(REFLETANCIA, **self.cfg.get('refletancia', {}))    # o robo.json pode trocar
+        # o robo.json pode trocar, para todos os TCS ou só para este (cada sensor da equipe Challenger
+        # tem o seu branco de referência)
+        tabela = dict(REFLETANCIA)
+        tabela.update(self.cfg.get('refletancia', {}))
+        tabela.update(sc.get('refletancia', {}))
         hit = self._raio(p0, ang, 150.0, h)
         if hit is None:
             rgb = [amb, amb, amb]

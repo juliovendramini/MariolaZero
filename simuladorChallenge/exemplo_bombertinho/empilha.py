@@ -12,16 +12,20 @@ O plano, com as medidas do robo_bombertinho.json (posições ao longo da platafo
   lado de outro cubo (topo a 100), eles batem nele. Por isso as pontas primeiro e o do meio por
   último, solto mais alto (base a 65 mm, cai 15).
 * EM CIMA, garra da ESQUERDA: cubos em -40 e +40 mm (30 mm entre eles: os braços do "V" passam), com
-  a base a 108 mm (o topo da 1ª camada fica a 100). Subindo, a cabeça do paralelogramo chega para
-  perto do robô: a da frente, na altura da 2ª camada, pediria a plataforma a 96 mm do centro do
-  robô, e as rodas da frente vão até 97,5. A da esquerda (barra mais comprida) alcança com a
-  lateral do robô a uns 23 mm da plataforma.
+  a base a 113 mm (o topo da 1ª camada fica a 100; o cubo cai 13). Subindo, a cabeça do
+  paralelogramo chega para perto do robô: a da frente, na altura da 2ª camada, pediria a plataforma
+  a 96 mm do centro do robô, e as rodas da frente vão até 97,5. A da esquerda (barra mais comprida)
+  alcança com a lateral do robô a uns 18 mm da plataforma.
+* Soltou o de cima: a comporta só abre 13 mm (o servo vai de 115 a 180) e, subindo, a cabeça chegaria
+  34 mm para perto do robô e puxaria o cubo. Com a base a 113 mm os braços do "V" (38 mm acima da
+  base) já passam por cima do cubo de cima (topo a 150): o robô desliza 70 mm ao longo da plataforma,
+  para o lado de fora, e só então se afasta.
 * A garra da esquerda não pega o cubo da rua: o robô traz o cubo na da frente, larga no chão da área
   verde (a regra deixa ajustar o cubo lá, até 30 s), gira 90° e pega com a da esquerda.
 * Nunca passar com a cabeça (ou o cubo preso) do lado da pilha e na altura dela: os ajustes ao longo
   da plataforma são feitos longe dela, e só depois o robô chega perto.
-* Depois de soltar, levantar a garra antes de recuar: a comporta aberta fica do outro lado do cubo e,
-  na altura dele, puxaria o cubo da plataforma.
+* Depois de soltar embaixo, levantar a garra antes de recuar: a comporta aberta fica do outro lado do
+  cubo e, na altura dele, puxaria o cubo da plataforma.
 
 No cenarios/empilha.json os 5 cubos azuis estão na rua do meio (A3, B3, C3, B3' e A3') e a plataforma
 azul na P3, bem em frente a ela: voltando pela rua, o robô chega na frente do meio da plataforma. Na
@@ -45,12 +49,12 @@ RECUO = 150                # mm de ré depois de ver a linha azul: o cubo largad
 
 # (mm ao longo da plataforma, altura da base do cubo ao soltar, mm do VL53 até a plataforma)
 CAMADA1 = [(-55, ALTA, 29), (55, ALTA, 29), (0, 65, 28)]     # garra da frente, VL53 da frente
-CAMADA2 = [(-40, 108, 26), (40, 108, 26)]                    # garra da esquerda, VL53 da esquerda
+CAMADA2 = [(-40, 113, 21), (40, 113, 21)]                    # garra da esquerda, VL53 da esquerda
 
-ABERTA_MAX = 37            # mm: comporta toda aberta (o "V" fica mais longe do cubo)
-SOBE_ESQ = 128             # depois de soltar em cima: a comporta (23 mm acima da base) passa do topo (150)
+ABERTA_ESQ = 13            # mm: comporta da esquerda toda aberta (servo de 115 a 180)
+DESLIZA = 70               # mm ao longo da plataforma depois de soltar em cima: o "V" sai de cima do cubo
 RECOLHIDA = 120            # garra da frente lá no alto: a cabeça não passa da frente do robô
-PEGA_ESQ = 52              # mm do VL53 da esquerda até o cubo largado no chão para descer a garra
+PEGA_ESQ = 51              # mm do VL53 da esquerda até o cubo largado no chão para descer a garra
 
 
 def segura(r, rumo):
@@ -157,7 +161,7 @@ def entrega_embaixo(r, dy, altura, dist):
 def troca_de_garra(r):
     """Na área verde, olhando para a cidade: larga o cubo da garra da frente no chão (cai 4 mm), gira
     90° para a direita (o cubo fica do lado esquerdo) e pega com a garra da esquerda."""
-    r.garra('esquerda', abertura=ABERTA_MAX, altura=ALTA)
+    r.garra('esquerda', abertura=ABERTA_ESQ, altura=ALTA)
     r.garra('frente', abertura=ABERTA)
     r.garra('frente', altura=RECOLHIDA)
     gira_para(r, -90)
@@ -170,14 +174,14 @@ def troca_de_garra(r):
     r.para()
     r.garra('esquerda', altura=PEGAR)
     r.garra('esquerda', abertura=0)
-    r.espera(0.3)              # de 37 mm até fechar o servo anda 177°: ~0,6 s
     r.garra('esquerda', altura=ALTA)
     print(f'troquei de garra: cubo {r.cor_tcs("garra_esquerda")} na garra da esquerda')
 
 
 def entrega_em_cima(r, dy, altura, dist):
     """2ª camada, com a garra da esquerda: gira para a esquerda do robô ficar para as plataformas, anda
-    até a posição ao longo delas (longe), sobe a garra, chega de lado, solta, sobe mais e volta."""
+    até a posição ao longo delas (longe), sobe a garra, chega de lado e solta. Depois desliza ao longo
+    da plataforma, para fora, até a cabeça sair de cima do cubo, se afasta e volta."""
     gira_para(r, 90)
     vai_y(r, 90, dy)
     r.garra('esquerda', altura=altura)
@@ -186,12 +190,12 @@ def entrega_em_cima(r, dy, altura, dist):
         r.move(0, LENTO, segura(r, 90))
     r.para()
     chegou = r.deslocamento()[1] * EFICIENCIA_LATERAL
-    r.garra('esquerda', abertura=ABERTA_MAX)
-    r.espera(0.3)              # toda aberta antes de subir: subindo, a cabeça chega 30 mm para perto do robô
-    r.garra('esquerda', altura=SOBE_ESQ)
+    r.garra('esquerda', abertura=ABERTA_ESQ)
+    fora = math.copysign(DESLIZA, dy)            # para o lado em que não há outro cubo em cima
+    vai_y(r, 90, fora)
     anda_lado(r, 90, -chegou)
     r.garra('esquerda', abertura=0, altura=ALTA)
-    vai_y(r, 90, -dy)
+    vai_y(r, 90, -dy - fora)
     gira_para(r, 0)
 
 
